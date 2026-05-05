@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vela — Leads Tracker</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #030712; --surface: #0f172a; --surface2: #1e293b;
+      --border: rgba(148,163,184,0.1); --indigo: #6366f1; --cyan: #06b6d4;
+      --text: #f1f5f9; --muted: #94a3b8; --faint: #334155;
+      --green: #10b981; --amber: #f59e0b; --red: #f87171; --blue: #38bdf8;
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    body::before { content:''; position:fixed; inset:0; background-image:radial-gradient(rgba(99,102,241,0.1) 1px,transparent 1px); background-size:28px 28px; pointer-events:none; z-index:0; }
+
+    /* ── HEADER ── */
+    header {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(3,7,18,0.85); backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 32px;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+    }
+    .logo-mark { display:flex; align-items:center; gap:8px; font-family:'Syne',sans-serif; font-weight:800; font-size:1.1rem; letter-spacing:-0.02em; text-decoration:none; color:var(--text); }
+    .page-title { font-size:0.8rem; color:var(--muted); font-weight:500; }
+
+    .header-actions { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+
+    .btn { padding:8px 16px; border-radius:8px; font-size:0.82rem; font-weight:600; cursor:pointer; font-family:'Inter',sans-serif; border:none; transition:opacity 0.2s, box-shadow 0.2s; }
+    .btn-primary { background:linear-gradient(120deg,var(--indigo),#4f46e5); color:#fff; }
+    .btn-primary:hover { opacity:0.88; box-shadow:0 4px 20px rgba(99,102,241,0.4); }
+    .btn-outline { background:transparent; border:1px solid var(--border); color:var(--muted); }
+    .btn-outline:hover { border-color:var(--indigo); color:var(--text); }
+
+    /* ── STATS BAR ── */
+    .stats-bar {
+      display: flex; gap: 1px; flex-wrap: wrap;
+      padding: 0 32px;
+      background: var(--border);
+      border-bottom: 1px solid var(--border);
+      position: relative; z-index: 1;
+    }
+    .stat-pill {
+      background: var(--bg); flex: 1; min-width: 120px;
+      padding: 16px 20px; text-align: center;
+    }
+    .stat-pill .val { font-family:'Syne',sans-serif; font-size:1.5rem; font-weight:800; letter-spacing:-0.04em; background:linear-gradient(120deg,var(--indigo),var(--cyan)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+    .stat-pill .lbl { font-size:0.72rem; color:var(--muted); margin-top:2px; }
+
+    /* ── FILTERS ── */
+    .toolbar {
+      padding: 16px 32px; display:flex; gap:12px; align-items:center; flex-wrap:wrap;
+      position: relative; z-index: 1;
+    }
+    .search-box {
+      flex: 1; min-width: 200px;
+      background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+      color: var(--text); padding: 9px 14px; border-radius: 8px;
+      font-size: 0.85rem; font-family: inherit; outline: none;
+      transition: border-color 0.2s;
+    }
+    .search-box:focus { border-color: rgba(99,102,241,0.5); }
+    .search-box::placeholder { color: var(--faint); }
+
+    select.filter-select {
+      background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+      color: var(--muted); padding: 9px 12px; border-radius: 8px;
+      font-size: 0.82rem; font-family: inherit; outline: none; cursor: pointer;
+    }
+    select.filter-select:focus { border-color: rgba(99,102,241,0.5); }
+
+    /* ── TABLE ── */
+    .table-wrap { overflow-x: auto; padding: 0 32px 40px; position: relative; z-index: 1; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.83rem; min-width: 900px; }
+
+    thead tr { border-bottom: 1px solid var(--border); }
+    thead th {
+      text-align: left; padding: 10px 12px;
+      font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.1em; color: var(--faint);
+      white-space: nowrap;
+    }
+    thead th.sortable { cursor: pointer; user-select: none; }
+    thead th.sortable:hover { color: var(--muted); }
+
+    tbody tr {
+      border-bottom: 1px solid rgba(148,163,184,0.05);
+      transition: background 0.15s;
+    }
+    tbody tr:hover { background: rgba(255,255,255,0.025); }
+
+    td { padding: 13px 12px; vertical-align: middle; color: var(--muted); }
+    td.name { color: var(--text); font-weight: 500; }
+    td.company { color: var(--text); }
+
+    /* status badges */
+    .badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 10px; border-radius: 100px; font-size: 0.72rem; font-weight: 600;
+      white-space: nowrap; cursor: pointer; transition: opacity 0.2s;
+    }
+    .badge:hover { opacity: 0.8; }
+    .badge-dot { width: 5px; height: 5px; border-radius: 50%; }
+
+    .s-not-contacted  { background:rgba(148,163,184,0.1); color:var(--muted); }
+    .s-not-contacted .badge-dot { background: var(--muted); }
+    .s-contacted      { background:rgba(56,189,248,0.1);   color:var(--blue); }
+    .s-contacted .badge-dot { background: var(--blue); }
+    .s-replied        { background:rgba(99,102,241,0.12);  color:#a5b4fc; }
+    .s-replied .badge-dot { background: var(--indigo); }
+    .s-demo-booked    { background:rgba(245,158,11,0.1);   color:var(--amber); }
+    .s-demo-booked .badge-dot { background: var(--amber); }
+    .s-customer       { background:rgba(16,185,129,0.1);   color:var(--green); }
+    .s-customer .badge-dot { background: var(--green); }
+    .s-not-interested { background:rgba(248,113,113,0.1);  color:var(--red); }
+    .s-not-interested .badge-dot { background: var(--red); }
+
+    /* industry tag */
+    .industry-tag {
+      background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.15);
+      color: #a5b4fc; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 500;
+      white-space: nowrap;
+    }
+
+    /* editable cells */
+    td[contenteditable="true"] { outline: none; cursor: text; }
+    td[contenteditable="true"]:focus {
+      background: rgba(99,102,241,0.06);
+      border-radius: 4px;
+    }
+
+    /* linkedin icon */
+    .li-link { color: var(--indigo); text-decoration: none; font-size: 0.78rem; }
+    .li-link:hover { color: var(--cyan); text-decoration: underline; }
+
+    /* add row button */
+    .add-row-btn {
+      width: 100%; padding: 12px; background: transparent;
+      border: 1px dashed var(--border); border-radius: 8px;
+      color: var(--faint); font-size: 0.82rem; cursor: pointer;
+      font-family: inherit; margin-top: 8px;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .add-row-btn:hover { border-color: var(--indigo); color: var(--indigo); }
+
+    /* empty state */
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--faint); font-size: 0.9rem; }
+
+    /* ICP GUIDE panel */
+    .icp-panel {
+      max-width: 1080px; margin: 0 32px 40px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+      overflow: hidden; position: relative; z-index: 1;
+    }
+    .icp-header {
+      padding: 20px 28px; border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .icp-header h3 { font-family:'Syne',sans-serif; font-size:0.9rem; font-weight:800; letter-spacing:-0.02em; }
+    .icp-body { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1px; background: var(--border); }
+    .icp-cell { background: var(--surface); padding: 20px 24px; }
+    .icp-cell h4 { font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:var(--indigo); margin-bottom:10px; }
+    .icp-cell ul { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+    .icp-cell li { font-size: 0.8rem; color: var(--muted); display: flex; align-items: flex-start; gap: 6px; }
+    .icp-cell li::before { content: '›'; color: var(--cyan); font-weight: 700; flex-shrink: 0; }
+
+    @media(max-width:600px) { header,  .toolbar, .table-wrap, .stats-bar, .icp-panel { padding-left:16px; padding-right:16px; } .icp-panel { margin:0 16px 32px; } }
+  </style>
+</head>
+<body>
+
+<header>
+  <div style="display:flex;align-items:center;gap:16px;">
+    <a href="index.html" class="logo-mark">
+      <svg width="26" height="26" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs><linearGradient id="lg" x1="4" y1="4" x2="44" y2="44" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#818cf8"/><stop offset="100%" stop-color="#06b6d4"/></linearGradient></defs>
+        <path d="M 6 4 Q 16 26 23 46 L 23 4 Z" fill="url(#lg)"/>
+        <path d="M 42 4 Q 32 26 25 46 L 25 4 Z" fill="url(#lg)" opacity="0.72"/>
+        <path d="M 12 44 Q 24 48 36 44" stroke="url(#lg)" stroke-width="2.2" stroke-linecap="round" fill="none" opacity="0.55"/>
+      </svg>
+      Vela
+    </a>
+    <span class="page-title">Leads Tracker</span>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-outline" onclick="exportCSV()">↓ Export CSV</button>
+    <button class="btn btn-primary" onclick="addRow()">+ Add Lead</button>
+  </div>
+</header>
+
+<!-- STATS -->
+<div class="stats-bar">
+  <div class="stat-pill"><div class="val" id="s-total">0</div><div class="lbl">Total Leads</div></div>
+  <div class="stat-pill"><div class="val" id="s-contacted">0</div><div class="lbl">Contacted</div></div>
+  <div class="stat-pill"><div class="val" id="s-replied">0</div><div class="lbl">Replied</div></div>
+  <div class="stat-pill"><div class="val" id="s-demo">0</div><div class="lbl">Demos Booked</div></div>
+  <div class="stat-pill"><div class="val" id="s-customer">0</div><div class="lbl">Customers</div></div>
+</div>
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+  <input class="search-box" type="text" id="searchInput" placeholder="Search by name, company, industry…" oninput="filterTable()" />
+  <select class="filter-select" id="statusFilter" onchange="filterTable()">
+    <option value="">All Statuses</option>
+    <option>Not Contacted</option>
+    <option>Contacted</option>
+    <option>Replied</option>
+    <option>Demo Booked</option>
+    <option>Customer</option>
+    <option>Not Interested</option>
+  </select>
+  <select class="filter-select" id="industryFilter" onchange="filterTable()">
+    <option value="">All Industries</option>
+  </select>
+</div>
+
+<!-- ICP GUIDE -->
+<div class="icp-panel">
+  <div class="icp-header">
+    <h3>Ideal Customer Profile (ICP) — who to target</h3>
+    <button class="btn btn-outline" style="font-size:0.75rem;padding:5px 12px;" onclick="toggleICP()">Hide</button>
+  </div>
+  <div class="icp-body" id="icpBody">
+    <div class="icp-cell">
+      <h4>Best Job Titles</h4>
+      <ul>
+        <li>Head / Director of Operations</li>
+        <li>COO / VP Operations</li>
+        <li>Founder / CEO (small teams)</li>
+        <li>Revenue Ops Manager</li>
+        <li>Chief of Staff</li>
+        <li>Marketing Ops Manager</li>
+      </ul>
+    </div>
+    <div class="icp-cell">
+      <h4>Best Industries</h4>
+      <ul>
+        <li>B2B SaaS (Series A–C)</li>
+        <li>Marketing / Creative Agencies</li>
+        <li>E-commerce brands</li>
+        <li>Fintech startups</li>
+        <li>Professional Services</li>
+        <li>Real Estate</li>
+      </ul>
+    </div>
+    <div class="icp-cell">
+      <h4>Company Sweet Spot</h4>
+      <ul>
+        <li>10–200 employees</li>
+        <li>Growing faster than their ops</li>
+        <li>Uses 5+ SaaS tools</li>
+        <li>No dedicated automation engineer</li>
+        <li>$1M–$50M ARR range</li>
+      </ul>
+    </div>
+    <div class="icp-cell">
+      <h4>Lead With These Pains</h4>
+      <ul>
+        <li>Manual reporting eating hours</li>
+        <li>Data scattered across tools</li>
+        <li>Repetitive copy-paste between apps</li>
+        <li>Onboarding / offboarding chaos</li>
+        <li>CRM always out of date</li>
+        <li>Too much in spreadsheets</li>
+      </ul>
+    </div>
+    <div class="icp-cell">
+      <h4>Where to Find Them</h4>
+      <ul>
+        <li>LinkedIn Sales Navigator</li>
+        <li>Apollo.io (free tier)</li>
+        <li>Twitter / X (ops community)</li>
+        <li>Indie Hackers, Product Hunt</li>
+        <li>Slack communities (Ops, RevOps)</li>
+        <li>Your own network first</li>
+      </ul>
+    </div>
+    <div class="icp-cell">
+      <h4>Outreach That Works</h4>
+      <ul>
+        <li>Lead with the specific pain, not the product</li>
+        <li>Mention a tool they likely use</li>
+        <li>Ask one question, not a pitch</li>
+        <li>Follow up 3× before moving on</li>
+        <li>Offer a free 15-min audit call</li>
+        <li>Reference a relevant result / stat</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- TABLE -->
+<div class="table-wrap">
+  <table id="leadsTable">
+    <thead>
+      <tr>
+        <th class="sortable" onclick="sortTable(0)">Name ↕</th>
+        <th class="sortable" onclick="sortTable(1)">Title ↕</th>
+        <th class="sortable" onclick="sortTable(2)">Company ↕</th>
+        <th class="sortable" onclick="sortTable(3)">Industry ↕</th>
+        <th>Size</th>
+        <th>Email</th>
+        <th>LinkedIn</th>
+        <th>Pain Point</th>
+        <th class="sortable" onclick="sortTable(8)">Status ↕</th>
+        <th>Follow Up</th>
+        <th>Notes</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="leadsBody"></tbody>
+  </table>
+  <button class="add-row-btn" onclick="addRow()">+ Add new lead</button>
+</div>
+
+<script>
+  const STATUSES = ['Not Contacted','Contacted','Replied','Demo Booked','Customer','Not Interested'];
+  const STATUS_CLASS = {
+    'Not Contacted': 's-not-contacted',
+    'Contacted': 's-contacted',
+    'Replied': 's-replied',
+    'Demo Booked': 's-demo-booked',
+    'Customer': 's-customer',
+    'Not Interested': 's-not-interested'
+  };
+
+  const SEED = [
+    { name:'', title:'Head of Operations',         company:'', industry:'SaaS',                    size:'11–50',   email:'', linkedin:'', pain:'Manual reporting, data entry between tools',            status:'Not Contacted', followup:'', notes:'' },
+    { name:'', title:'VP of Operations',            company:'', industry:'E-commerce',              size:'50–200',  email:'', linkedin:'', pain:'Order processing, inventory sync, customer comms',      status:'Not Contacted', followup:'', notes:'' },
+    { name:'', title:'Founder / CEO',               company:'', industry:'Marketing Agency',        size:'1–10',    email:'', linkedin:'', pain:'Client reporting, onboarding workflows, invoicing',     status:'Not Contacted', followup:'', notes:'' },
+    { name:'', title:'Revenue Operations Manager',  company:'', industry:'B2B SaaS',                size:'50–200',  email:'', linkedin:'', pain:'CRM hygiene, lead routing, pipeline updates',           status:'Not Contacted', followup:'', notes:'' },
+    { name:'', title:'Director of Operations',      company:'', industry:'Logistics',               size:'200–500', email:'', linkedin:'', pain:'Shipment tracking, vendor comms, document processing',  status:'Not Contacted', followup:'', notes:'' },
+    { name:'', title:'COO',                         company:'', industry:'Professional Services',   size:'50–200',  email:'', linkedin:'', pain:'Timesheet collection, project updates, billing',        status:'Not Contacted', followup:'', notes:'' },
+    { name:'', title:'Head of Growth',              company:'', industry:'Fintech',                 size:'11–50',   email:'', linkedin:'', pain:'Onboarding flows, KYC follow-ups, user activation',     status:'Not Contacted', followup:'', notes:'' },
+    { name:'', title:'Operations Manager',          company:'', industry:'Real Estate',             size:'11–50',   email:'', linkedin:'', pain:'Lead follow-up, contract prep, scheduling',             status:'Not Contacted', followup:'', notes:'' },
+    { name:'', title:'Chief of Staff',              company:'', industry:'Startup (Series A–C)',    size:'50–200',  email:'', linkedin:'', pain:'Cross-team reporting, meeting prep, task tracking',     status:'Not Contacted', followup:'', notes:'' },
+    { name:'', title:'Marketing Ops Manager',       company:'', industry:'B2B Tech',                size:'50–200',  email:'', linkedin:'', pain:'Campaign ops, lead enrichment, CRM sync',              status:'Not Contacted', followup:'', notes:'' },
+    { name:'', title:'IT Manager',                  company:'', industry:'Mid-Market',              size:'200–500', email:'', linkedin:'', pain:'Employee onboarding, software provisioning, helpdesk',  status:'Not Contacted', followup:'', notes:'' },
+    { name:'', title:'Head of Customer Success',    company:'', industry:'SaaS Product',            size:'50–200',  email:'', linkedin:'', pain:'Health score updates, QBR prep, churn alerts',         status:'Not Contacted', followup:'', notes:'' },
+    { name:'', title:'Founder / COO',               company:'', industry:'E-commerce Brand',        size:'1–10',    email:'', linkedin:'', pain:'Returns processing, review requests, restock alerts',   status:'Not Contacted', followup:'', notes:'' },
+    { name:'', title:'Operations Director',         company:'', industry:'Healthcare Admin',        size:'50–200',  email:'', linkedin:'', pain:'Appointment reminders, insurance follow-ups',           status:'Not Contacted', followup:'', notes:'' },
+    { name:'', title:'Business Operations Manager', company:'', industry:'Consulting',              size:'11–50',   email:'', linkedin:'', pain:'Proposal generation, timesheet aggregation',            status:'Not Contacted', followup:'', notes:'' },
+  ];
+
+  let leads = JSON.parse(localStorage.getItem('velaLeads') || 'null') || SEED;
+
+  function save() { localStorage.setItem('velaLeads', JSON.stringify(leads)); updateStats(); }
+
+  function renderBadge(status) {
+    const cls = STATUS_CLASS[status] || 's-not-contacted';
+    return `<span class="badge ${cls}"><span class="badge-dot"></span>${status}</span>`;
+  }
+
+  function cycleStatus(idx) {
+    const cur = leads[idx].status;
+    const next = STATUSES[(STATUSES.indexOf(cur) + 1) % STATUSES.length];
+    leads[idx].status = next;
+    save();
+    render();
+  }
+
+  function deleteRow(idx) {
+    if (confirm('Remove this lead?')) { leads.splice(idx, 1); save(); render(); }
+  }
+
+  function addRow() {
+    leads.push({ name:'', title:'', company:'', industry:'', size:'', email:'', linkedin:'', pain:'', status:'Not Contacted', followup:'', notes:'' });
+    save(); render();
+    // scroll to last row
+    const rows = document.querySelectorAll('#leadsBody tr');
+    if (rows.length) rows[rows.length-1].scrollIntoView({ behavior:'smooth', block:'center' });
+  }
+
+  function editField(idx, field, val) {
+    leads[idx][field] = val;
+    save();
+  }
+
+  function render() {
+    const search = (document.getElementById('searchInput')?.value || '').toLowerCase();
+    const statusF = document.getElementById('statusFilter')?.value || '';
+    const industryF = document.getElementById('industryFilter')?.value || '';
+
+    const filtered = leads.filter((l, i) => {
+      const text = [l.name, l.title, l.company, l.industry, l.pain].join(' ').toLowerCase();
+      return (!search || text.includes(search))
+          && (!statusF || l.status === statusF)
+          && (!industryF || l.industry === industryF);
+    });
+
+    const body = document.getElementById('leadsBody');
+    if (filtered.length === 0) {
+      body.innerHTML = `<tr><td colspan="12"><div class="empty-state">No leads match your filters.</div></td></tr>`;
+      return;
+    }
+
+    body.innerHTML = filtered.map((l) => {
+      const idx = leads.indexOf(l);
+      return `<tr>
+        <td class="name" contenteditable="true" onblur="editField(${idx},'name',this.innerText)">${l.name}</td>
+        <td contenteditable="true" onblur="editField(${idx},'title',this.innerText)">${l.title}</td>
+        <td class="company" contenteditable="true" onblur="editField(${idx},'company',this.innerText)">${l.company}</td>
+        <td><span class="industry-tag" contenteditable="true" onblur="editField(${idx},'industry',this.innerText);populateIndustries()">${l.industry}</span></td>
+        <td contenteditable="true" onblur="editField(${idx},'size',this.innerText)">${l.size}</td>
+        <td contenteditable="true" onblur="editField(${idx},'email',this.innerText)" style="color:var(--cyan)">${l.email}</td>
+        <td>${l.linkedin ? `<a class="li-link" href="${l.linkedin}" target="_blank" rel="noopener">↗ View</a>` : `<span contenteditable="true" onblur="editField(${idx},'linkedin',this.innerText)" style="color:var(--faint)">Add URL</span>`}</td>
+        <td contenteditable="true" onblur="editField(${idx},'pain',this.innerText)" style="max-width:200px;white-space:normal;">${l.pain}</td>
+        <td onclick="cycleStatus(${idx})" style="cursor:pointer;">${renderBadge(l.status)}</td>
+        <td><input type="date" value="${l.followup}" onchange="editField(${idx},'followup',this.value)" style="background:transparent;border:none;color:var(--muted);font-size:0.8rem;font-family:inherit;outline:none;cursor:pointer;" /></td>
+        <td contenteditable="true" onblur="editField(${idx},'notes',this.innerText)" style="max-width:180px;white-space:normal;color:var(--faint)">${l.notes}</td>
+        <td><button onclick="deleteRow(${idx})" style="background:none;border:none;color:var(--faint);cursor:pointer;font-size:1rem;padding:4px 8px;border-radius:4px;" title="Delete">✕</button></td>
+      </tr>`;
+    }).join('');
+
+    updateStats();
+  }
+
+  function updateStats() {
+    document.getElementById('s-total').textContent     = leads.length;
+    document.getElementById('s-contacted').textContent = leads.filter(l => l.status !== 'Not Contacted').length;
+    document.getElementById('s-replied').textContent   = leads.filter(l => l.status === 'Replied').length;
+    document.getElementById('s-demo').textContent      = leads.filter(l => l.status === 'Demo Booked').length;
+    document.getElementById('s-customer').textContent  = leads.filter(l => l.status === 'Customer').length;
+  }
+
+  function filterTable() { render(); }
+
+  function populateIndustries() {
+    const sel = document.getElementById('industryFilter');
+    const current = sel.value;
+    const industries = [...new Set(leads.map(l => l.industry).filter(Boolean))].sort();
+    sel.innerHTML = `<option value="">All Industries</option>` + industries.map(i => `<option${i===current?' selected':''}>${i}</option>`).join('');
+  }
+
+  let sortDir = {};
+  function sortTable(col) {
+    const keys = ['name','title','company','industry','size','email','linkedin','pain','status'];
+    const key = keys[col];
+    sortDir[col] = !sortDir[col];
+    leads.sort((a, b) => {
+      const av = (a[key]||'').toLowerCase(), bv = (b[key]||'').toLowerCase();
+      return sortDir[col] ? av.localeCompare(bv) : bv.localeCompare(av);
+    });
+    save(); render();
+  }
+
+  function exportCSV() {
+    const headers = ['Name','Title','Company','Industry','Size','Email','LinkedIn','Pain Point','Status','Follow Up','Notes'];
+    const rows = leads.map(l => [l.name,l.title,l.company,l.industry,l.size,l.email,l.linkedin,l.pain,l.status,l.followup,l.notes].map(v => `"${(v||'').replace(/"/g,'""')}"`).join(','));
+    const csv = [headers.join(','), ...rows].join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+    a.download = 'vela-leads.csv';
+    a.click();
+  }
+
+  let icpVisible = true;
+  function toggleICP() {
+    icpVisible = !icpVisible;
+    document.getElementById('icpBody').style.display = icpVisible ? '' : 'none';
+    document.querySelector('[onclick="toggleICP()"]').textContent = icpVisible ? 'Hide' : 'Show';
+  }
+
+  // init
+  populateIndustries();
+  render();
+</script>
+</body>
+</html>
