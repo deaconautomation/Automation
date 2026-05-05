@@ -644,7 +644,7 @@
   <div class="wl-wrap" id="heroWrap">
     <form class="wl-form" id="heroForm">
       <input type="email" name="email" placeholder="Your work email" required autocomplete="email" />
-      <button type="submit" class="btn-cta">Reserve My Spot →</button>
+      <button type="submit" class="btn-cta" data-fs-submit-btn>Reserve My Spot →</button>
     </form>
     <div class="spots-wrap">
       <div class="spots-label">
@@ -821,7 +821,7 @@
   <div class="wl-wrap" id="ctaWrap" style="margin: 0 auto;">
     <form class="wl-form" id="ctaForm" style="justify-content:center;">
       <input type="email" name="email" placeholder="Your work email" required autocomplete="email" />
-      <button type="submit" class="btn-cta">Claim My Spot →</button>
+      <button type="submit" class="btn-cta" data-fs-submit-btn>Claim My Spot →</button>
     </form>
     <div class="spots-wrap">
       <div class="spots-label">
@@ -866,43 +866,44 @@
 </footer>
 
 <script>
-  const FORMSPREE_ID = 'YOUR_FORMSPREE_ID'; // ← replace this after setup
+  const FS_ENDPOINT = 'https://formspree.io/f/mvzladze';
 
-  async function submitEmail(email, formEl, wrapId, successId) {
-    const btn = formEl.querySelector('button');
-    btn.textContent = 'Joining...';
+  async function submitWaitlist(formId, wrapId, successId) {
+    const form   = document.getElementById(formId);
+    const btn    = form.querySelector('[data-fs-submit-btn]');
+    const email  = form.querySelector('[name="email"]').value;
+
+    btn.textContent = 'Joining…';
     btn.disabled = true;
 
     try {
-      const res = await fetch(`https://formspree.io/f/${FORMSPREE_ID}`, {
+      const res = await fetch(FS_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({ email, _subject: 'New Vela Waitlist Signup' })
       });
 
-      if (res.ok || FORMSPREE_ID === 'YOUR_FORMSPREE_ID') {
+      if (res.ok) {
         document.getElementById(wrapId).style.display = 'none';
-        const s = document.getElementById(successId);
-        s.style.display = 'flex';
+        document.getElementById(successId).style.display = 'flex';
       } else {
         btn.textContent = 'Try again';
         btn.disabled = false;
       }
     } catch {
-      // fallback: still show success so signups aren't lost
-      document.getElementById(wrapId).style.display = 'none';
-      document.getElementById(successId).style.display = 'flex';
+      btn.textContent = 'Try again';
+      btn.disabled = false;
     }
   }
 
   document.getElementById('heroForm').addEventListener('submit', e => {
     e.preventDefault();
-    submitEmail(e.target.email.value, e.target, 'heroWrap', 'heroSuccess');
+    submitWaitlist('heroForm', 'heroWrap', 'heroSuccess');
   });
 
   document.getElementById('ctaForm').addEventListener('submit', e => {
     e.preventDefault();
-    submitEmail(e.target.email.value, e.target, 'ctaWrap', 'ctaSuccess');
+    submitWaitlist('ctaForm', 'ctaWrap', 'ctaSuccess');
   });
 </script>
 
