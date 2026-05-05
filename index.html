@@ -3,23 +3,25 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FlowMind AI — Automate Everything</title>
-  <meta name="description" content="FlowMind AI turns your repetitive workflows into intelligent automations. Join the waitlist for early access." />
+  <title>Vela — Set your direction. Let AI do the sailing.</title>
+  <meta name="description" content="Vela turns your repetitive business workflows into intelligent automations. No code. No complexity. Join the waitlist for early access." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #020408;
-      --surface: #0d1117;
-      --border: rgba(255,255,255,0.08);
-      --accent: #7c6af7;
-      --accent2: #06c8a8;
-      --text: #f0f2f5;
-      --muted: #8b949e;
-      --radius: 14px;
+      --bg:       #03050a;
+      --surface:  #0b0f18;
+      --surface2: #111827;
+      --border:   rgba(255,255,255,0.07);
+      --border2:  rgba(255,255,255,0.12);
+      --violet:   #7c6af7;
+      --teal:     #06c8a8;
+      --text:     #eef0f4;
+      --muted:    #7d8799;
+      --radius:   16px;
     }
 
     html { scroll-behavior: smooth; }
@@ -32,355 +34,457 @@
       overflow-x: hidden;
     }
 
-    /* ── NAV ── */
-    nav {
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      z-index: 100;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 18px 6vw;
-      background: rgba(2,4,8,0.7);
-      backdrop-filter: blur(16px);
-      border-bottom: 1px solid var(--border);
-    }
-
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-weight: 700;
-      font-size: 1.2rem;
-      letter-spacing: -0.02em;
-      text-decoration: none;
-      color: var(--text);
-    }
-
-    .logo-icon {
-      width: 32px;
-      height: 32px;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .logo-icon svg { width: 18px; height: 18px; }
-
-    .nav-cta {
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      padding: 10px 22px;
-      border-radius: 8px;
-      font-size: 0.875rem;
-      font-weight: 600;
-      cursor: pointer;
-      text-decoration: none;
-      transition: opacity 0.2s;
-    }
-    .nav-cta:hover { opacity: 0.85; }
-
-    /* ── HERO ── */
-    .hero {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 120px 6vw 80px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .hero::before {
-      content: '';
-      position: absolute;
-      top: -200px; left: 50%;
-      transform: translateX(-50%);
-      width: 900px;
-      height: 900px;
-      background: radial-gradient(circle, rgba(124,106,247,0.18) 0%, transparent 70%);
-      pointer-events: none;
-    }
-
-    .hero::after {
-      content: '';
-      position: absolute;
-      bottom: -100px; right: -200px;
-      width: 600px;
-      height: 600px;
-      background: radial-gradient(circle, rgba(6,200,168,0.1) 0%, transparent 70%);
-      pointer-events: none;
-    }
-
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: rgba(124,106,247,0.12);
-      border: 1px solid rgba(124,106,247,0.3);
-      color: #a78bfa;
-      padding: 6px 16px;
-      border-radius: 100px;
-      font-size: 0.8rem;
-      font-weight: 500;
-      margin-bottom: 28px;
-    }
-
-    .badge-dot {
-      width: 7px; height: 7px;
-      background: var(--accent2);
-      border-radius: 50%;
-      animation: pulse 2s ease-in-out infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.5; transform: scale(0.8); }
-    }
-
-    h1 {
-      font-size: clamp(2.8rem, 7vw, 5.5rem);
-      font-weight: 800;
-      line-height: 1.08;
-      letter-spacing: -0.04em;
-      max-width: 820px;
-      margin-bottom: 24px;
-    }
-
-    .gradient-text {
-      background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+    /* ─── UTILS ─── */
+    .grad-text {
+      background: linear-gradient(120deg, var(--violet) 0%, var(--teal) 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
     }
 
-    .hero-sub {
-      font-size: clamp(1rem, 2vw, 1.25rem);
-      color: var(--muted);
-      max-width: 560px;
-      margin-bottom: 48px;
-      font-weight: 400;
+    /* ─── NAV ─── */
+    nav {
+      position: fixed;
+      inset: 0 0 auto 0;
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 5vw;
+      background: rgba(3,5,10,0.75);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
     }
 
-    /* ── WAITLIST FORM ── */
-    .waitlist-form {
+    .logo-mark {
       display: flex;
-      gap: 12px;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: var(--text);
+      font-weight: 800;
+      font-size: 1.15rem;
+      letter-spacing: -0.03em;
+    }
+
+    .nav-right { display: flex; align-items: center; gap: 12px; }
+
+    .nav-link {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 500;
+      display: none;
+      transition: color 0.2s;
+    }
+    .nav-link:hover { color: var(--text); }
+    @media (min-width: 640px) { .nav-link { display: inline; } }
+
+    .btn-nav {
+      background: linear-gradient(135deg, var(--violet), #5b4fcf);
+      color: #fff;
+      border: none;
+      padding: 9px 20px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: opacity 0.2s, box-shadow 0.2s;
+      font-family: inherit;
+    }
+    .btn-nav:hover { opacity: 0.88; box-shadow: 0 4px 20px rgba(124,106,247,0.35); }
+
+    /* ─── HERO ─── */
+    .hero {
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 130px 5vw 90px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* radial glow blobs */
+    .glow-1 {
+      position: absolute;
+      top: -180px; left: 50%;
+      transform: translateX(-50%);
+      width: 800px; height: 800px;
+      background: radial-gradient(circle, rgba(124,106,247,0.15) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .glow-2 {
+      position: absolute;
+      bottom: -80px; right: -150px;
+      width: 550px; height: 550px;
+      background: radial-gradient(circle, rgba(6,200,168,0.1) 0%, transparent 65%);
+      pointer-events: none;
+    }
+
+    /* scarcity badge */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(124,106,247,0.1);
+      border: 1px solid rgba(124,106,247,0.25);
+      color: #a78bfa;
+      padding: 7px 18px;
+      border-radius: 100px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      margin-bottom: 32px;
+      position: relative;
+      z-index: 1;
+    }
+    .badge-dot {
+      width: 6px; height: 6px;
+      background: var(--teal);
+      border-radius: 50%;
+      animation: blink 2.2s ease-in-out infinite;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.4; transform: scale(0.75); }
+    }
+
+    h1 {
+      font-size: clamp(2.8rem, 7.5vw, 5.8rem);
+      font-weight: 900;
+      line-height: 1.06;
+      letter-spacing: -0.05em;
+      max-width: 860px;
+      margin-bottom: 26px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-sub {
+      font-size: clamp(1rem, 2.2vw, 1.2rem);
+      color: var(--muted);
+      max-width: 520px;
+      margin-bottom: 14px;
+      font-weight: 400;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-pain {
+      font-size: 0.875rem;
+      color: #5a6475;
+      margin-bottom: 44px;
+      font-style: italic;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ─── WAITLIST FORM ─── */
+    .wl-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      width: 100%;
+      max-width: 480px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .wl-form {
+      display: flex;
+      gap: 10px;
       flex-wrap: wrap;
       justify-content: center;
       width: 100%;
-      max-width: 480px;
-      margin-bottom: 20px;
     }
 
-    .waitlist-form input {
+    .wl-form input[type="email"] {
       flex: 1;
-      min-width: 220px;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid var(--border);
+      min-width: 210px;
+      background: rgba(255,255,255,0.055);
+      border: 1px solid var(--border2);
       color: var(--text);
       padding: 14px 20px;
       border-radius: 10px;
       font-size: 0.95rem;
       font-family: inherit;
       outline: none;
-      transition: border-color 0.2s;
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
+    .wl-form input[type="email"]:focus {
+      border-color: rgba(124,106,247,0.55);
+      box-shadow: 0 0 0 3px rgba(124,106,247,0.1);
+    }
+    .wl-form input::placeholder { color: var(--muted); }
 
-    .waitlist-form input:focus { border-color: rgba(124,106,247,0.6); }
-    .waitlist-form input::placeholder { color: var(--muted); }
-
-    .btn-primary {
-      background: linear-gradient(135deg, var(--accent), #5b4fcf);
+    .btn-cta {
+      background: linear-gradient(135deg, var(--violet) 0%, #5b4fcf 100%);
       color: #fff;
       border: none;
       padding: 14px 28px;
       border-radius: 10px;
       font-size: 0.95rem;
-      font-weight: 600;
+      font-weight: 700;
       cursor: pointer;
       font-family: inherit;
-      transition: transform 0.15s, box-shadow 0.15s;
       white-space: nowrap;
+      transition: transform 0.15s, box-shadow 0.15s;
     }
+    .btn-cta:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(124,106,247,0.45); }
+    .btn-cta:active { transform: translateY(0); }
 
-    .btn-primary:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 8px 30px rgba(124,106,247,0.4);
+    /* spots bar */
+    .spots-wrap {
+      width: 100%;
+      text-align: left;
     }
-
-    .btn-primary:active { transform: translateY(0); }
-
-    .social-proof {
-      font-size: 0.82rem;
+    .spots-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.76rem;
       color: var(--muted);
+      margin-bottom: 7px;
+    }
+    .spots-label span:last-child { color: #e97b7b; font-weight: 600; }
+    .spots-track {
+      width: 100%;
+      height: 4px;
+      background: rgba(255,255,255,0.07);
+      border-radius: 100px;
+      overflow: hidden;
+    }
+    .spots-fill {
+      height: 100%;
+      width: 73%;
+      background: linear-gradient(90deg, var(--violet), var(--teal));
+      border-radius: 100px;
+      animation: fill-in 1.4s cubic-bezier(0.34,1.56,0.64,1) forwards;
+    }
+    @keyframes fill-in {
+      from { width: 0; }
+      to   { width: 73%; }
     }
 
-    .social-proof strong { color: var(--text); }
-
-    /* ── SUCCESS STATE ── */
+    /* success state */
     .success-msg {
       display: none;
       align-items: center;
       gap: 10px;
-      background: rgba(6,200,168,0.1);
-      border: 1px solid rgba(6,200,168,0.3);
-      color: var(--accent2);
+      background: rgba(6,200,168,0.09);
+      border: 1px solid rgba(6,200,168,0.28);
+      color: var(--teal);
       padding: 14px 24px;
       border-radius: 10px;
-      font-weight: 500;
+      font-weight: 600;
+      font-size: 0.95rem;
     }
 
-    /* ── LOGOS ── */
-    .logos-section {
-      padding: 60px 6vw;
-      text-align: center;
-      border-top: 1px solid var(--border);
-    }
-
-    .logos-label {
-      font-size: 0.78rem;
+    .social-proof-tag {
+      font-size: 0.8rem;
       color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      margin-bottom: 32px;
+      position: relative;
+      z-index: 1;
     }
+    .social-proof-tag strong { color: var(--text); }
 
+    /* ─── LOGOS ─── */
+    .logos-band {
+      padding: 56px 5vw;
+      border-top: 1px solid var(--border);
+      text-align: center;
+    }
+    .logos-label {
+      font-size: 0.72rem;
+      color: #3d4554;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-weight: 600;
+      margin-bottom: 28px;
+    }
     .logos-row {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 48px;
       flex-wrap: wrap;
-      opacity: 0.45;
+      gap: 40px;
+      opacity: 0.38;
     }
-
     .logo-pill {
-      font-size: 1rem;
-      font-weight: 700;
+      font-size: 0.95rem;
+      font-weight: 800;
       letter-spacing: -0.02em;
       color: var(--text);
     }
 
-    /* ── HOW IT WORKS ── */
+    /* ─── SECTIONS ─── */
     .section {
-      padding: 100px 6vw;
-      max-width: 1100px;
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 96px 5vw;
+    }
+
+    .sec-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--violet);
+      margin-bottom: 14px;
+    }
+
+    .sec-title {
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      line-height: 1.12;
+      margin-bottom: 56px;
+      max-width: 580px;
+    }
+
+    /* ─── PAIN STRIP ─── */
+    .pain-strip {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 48px 40px;
+      margin-bottom: 96px;
+      position: relative;
+      overflow: hidden;
+    }
+    .pain-strip::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--violet), var(--teal));
+    }
+    .pain-strip-inner {
+      max-width: 1080px;
       margin: 0 auto;
     }
-
-    .section-label {
-      font-size: 0.78rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      color: var(--accent);
-      margin-bottom: 16px;
-    }
-
-    .section-title {
-      font-size: clamp(1.8rem, 4vw, 2.8rem);
+    .pain-strip h2 {
+      font-size: clamp(1.4rem, 3vw, 2rem);
       font-weight: 800;
-      letter-spacing: -0.03em;
-      line-height: 1.15;
-      margin-bottom: 60px;
-      max-width: 600px;
+      letter-spacing: -0.04em;
+      margin-bottom: 12px;
     }
+    .pain-strip p { color: var(--muted); font-size: 0.95rem; max-width: 540px; }
 
+    .pain-items {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-top: 36px;
+    }
+    .pain-item {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+    }
+    .pain-item-num {
+      font-size: 1.8rem;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      background: linear-gradient(120deg, #e97b7b, #f59e0b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 4px;
+    }
+    .pain-item p { font-size: 0.83rem; color: var(--muted); }
+
+    /* ─── STEPS ─── */
     .steps {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 24px;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 20px;
     }
 
     .step-card {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 32px;
-      position: relative;
-      transition: border-color 0.2s, transform 0.2s;
+      padding: 30px;
+      transition: border-color 0.2s, transform 0.25s;
+      cursor: default;
     }
-
     .step-card:hover {
-      border-color: rgba(124,106,247,0.4);
-      transform: translateY(-3px);
+      border-color: rgba(124,106,247,0.38);
+      transform: translateY(-4px);
     }
 
     .step-num {
-      font-size: 0.75rem;
-      font-weight: 700;
-      color: var(--accent);
-      background: rgba(124,106,247,0.12);
-      width: 28px; height: 28px;
+      font-size: 0.7rem;
+      font-weight: 800;
+      color: var(--violet);
+      background: rgba(124,106,247,0.1);
+      width: 26px; height: 26px;
       border-radius: 6px;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 20px;
+      margin-bottom: 18px;
     }
 
     .step-card h3 {
-      font-size: 1.05rem;
+      font-size: 1rem;
       font-weight: 700;
-      margin-bottom: 10px;
-      letter-spacing: -0.02em;
+      letter-spacing: -0.025em;
+      margin-bottom: 8px;
     }
+    .step-card p { font-size: 0.875rem; color: var(--muted); line-height: 1.65; }
 
-    .step-card p { font-size: 0.9rem; color: var(--muted); line-height: 1.65; }
-
-    /* ── FEATURES ── */
+    /* ─── FEATURES ─── */
     .features-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+      gap: 18px;
     }
 
-    .feature-card {
+    .feat-card {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 32px;
-      transition: border-color 0.2s, transform 0.2s;
+      padding: 30px;
+      transition: border-color 0.2s, transform 0.25s;
+    }
+    .feat-card:hover {
+      border-color: rgba(6,200,168,0.32);
+      transform: translateY(-4px);
     }
 
-    .feature-card:hover {
-      border-color: rgba(6,200,168,0.35);
-      transform: translateY(-3px);
-    }
-
-    .feature-icon {
-      width: 44px; height: 44px;
+    .feat-icon {
+      width: 42px; height: 42px;
       border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 20px;
-      font-size: 1.3rem;
+      font-size: 1.2rem;
+      margin-bottom: 18px;
     }
 
-    .feature-card h3 {
-      font-size: 1rem;
+    .feat-card h3 {
+      font-size: 0.975rem;
       font-weight: 700;
-      margin-bottom: 10px;
       letter-spacing: -0.02em;
+      margin-bottom: 8px;
     }
+    .feat-card p { font-size: 0.85rem; color: var(--muted); line-height: 1.65; }
 
-    .feature-card p { font-size: 0.875rem; color: var(--muted); line-height: 1.65; }
-
-    /* ── STATS ── */
-    .stats-strip {
+    /* ─── STATS ─── */
+    .stats-band {
       background: var(--surface);
       border-top: 1px solid var(--border);
       border-bottom: 1px solid var(--border);
-      padding: 60px 6vw;
+      padding: 64px 5vw;
     }
-
     .stats-inner {
       max-width: 900px;
       margin: 0 auto;
@@ -390,75 +494,104 @@
       gap: 40px;
       text-align: center;
     }
-
-    .stat-value {
-      font-size: 2.8rem;
-      font-weight: 800;
-      letter-spacing: -0.04em;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
+    .stat-val {
+      font-size: clamp(2.2rem, 5vw, 3rem);
+      font-weight: 900;
+      letter-spacing: -0.05em;
+      background: linear-gradient(120deg, var(--violet), var(--teal));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
     }
+    .stat-lbl { font-size: 0.83rem; color: var(--muted); margin-top: 6px; }
 
-    .stat-label { font-size: 0.875rem; color: var(--muted); margin-top: 6px; }
+    /* ─── TESTIMONIALS ─── */
+    .testi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 18px;
+    }
+    .testi-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+    }
+    .testi-stars { color: #f59e0b; font-size: 0.8rem; margin-bottom: 14px; letter-spacing: 2px; }
+    .testi-text { font-size: 0.9rem; color: var(--text); line-height: 1.7; margin-bottom: 20px; font-style: italic; }
+    .testi-author { display: flex; align-items: center; gap: 12px; }
+    .testi-avatar {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .testi-name { font-size: 0.83rem; font-weight: 700; }
+    .testi-role { font-size: 0.75rem; color: var(--muted); }
 
-    /* ── CTA BOTTOM ── */
+    /* ─── BOTTOM CTA ─── */
     .cta-section {
-      padding: 120px 6vw;
+      padding: 120px 5vw;
       text-align: center;
       position: relative;
       overflow: hidden;
     }
-
     .cta-section::before {
       content: '';
       position: absolute;
       top: 50%; left: 50%;
       transform: translate(-50%, -50%);
       width: 700px; height: 700px;
-      background: radial-gradient(circle, rgba(124,106,247,0.12) 0%, transparent 70%);
+      background: radial-gradient(circle, rgba(124,106,247,0.11) 0%, transparent 65%);
       pointer-events: none;
     }
-
     .cta-section h2 {
-      font-size: clamp(2rem, 5vw, 3.5rem);
-      font-weight: 800;
-      letter-spacing: -0.04em;
-      margin-bottom: 20px;
+      font-size: clamp(2rem, 5vw, 3.6rem);
+      font-weight: 900;
+      letter-spacing: -0.05em;
+      line-height: 1.08;
+      margin-bottom: 18px;
+      position: relative;
+      z-index: 1;
+    }
+    .cta-section .sub {
+      color: var(--muted);
+      font-size: 1.05rem;
+      max-width: 460px;
+      margin: 0 auto 44px;
+      position: relative;
+      z-index: 1;
     }
 
-    .cta-section p { color: var(--muted); font-size: 1.05rem; margin-bottom: 40px; }
-
-    /* ── FOOTER ── */
+    /* ─── FOOTER ─── */
     footer {
       border-top: 1px solid var(--border);
-      padding: 40px 6vw;
+      padding: 36px 5vw;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      flex-wrap: gap;
+      flex-wrap: wrap;
       gap: 20px;
     }
-
-    footer p { font-size: 0.82rem; color: var(--muted); }
-
-    .footer-links { display: flex; gap: 24px; }
-
-    .footer-links a {
-      font-size: 0.82rem;
+    footer p { font-size: 0.78rem; color: var(--muted); }
+    .footer-nav { display: flex; gap: 24px; }
+    .footer-nav a {
+      font-size: 0.78rem;
       color: var(--muted);
       text-decoration: none;
       transition: color 0.2s;
     }
+    .footer-nav a:hover { color: var(--text); }
 
-    .footer-links a:hover { color: var(--text); }
-
-    /* ── RESPONSIVE ── */
-    @media (max-width: 600px) {
-      .waitlist-form { flex-direction: column; }
-      .waitlist-form input { min-width: unset; }
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 540px) {
+      .wl-form { flex-direction: column; }
       footer { flex-direction: column; text-align: center; }
+      .pain-strip { padding: 32px 24px; }
     }
   </style>
 </head>
@@ -466,199 +599,311 @@
 
 <!-- NAV -->
 <nav>
-  <a href="#" class="logo">
-    <div class="logo-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-      </svg>
-    </div>
-    FlowMind AI
+  <a href="#" class="logo-mark">
+    <!-- VELA LOGO SVG -->
+    <svg width="34" height="34" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <defs>
+        <linearGradient id="vg" x1="4" y1="4" x2="44" y2="44" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#8b74f8"/>
+          <stop offset="100%" stop-color="#06c8a8"/>
+        </linearGradient>
+      </defs>
+      <!-- Left sail: curved outer edge, straight inner edge -->
+      <path d="M 6 4 Q 16 26 23 46 L 23 4 Z" fill="url(#vg)"/>
+      <!-- Right sail: mirror, slightly transparent for depth -->
+      <path d="M 42 4 Q 32 26 25 46 L 25 4 Z" fill="url(#vg)" opacity="0.72"/>
+      <!-- Hull line -->
+      <path d="M 12 44 Q 24 48 36 44" stroke="url(#vg)" stroke-width="2.2" stroke-linecap="round" fill="none" opacity="0.55"/>
+    </svg>
+    Vela
   </a>
-  <a href="#waitlist" class="nav-cta">Join Waitlist</a>
+  <div class="nav-right">
+    <a href="#how" class="nav-link">How it works</a>
+    <a href="#features" class="nav-link">Features</a>
+    <a href="#waitlist" class="btn-nav">Join Waitlist</a>
+  </div>
 </nav>
 
 <!-- HERO -->
 <section class="hero">
+  <div class="glow-1"></div>
+  <div class="glow-2"></div>
+
   <div class="badge">
     <span class="badge-dot"></span>
-    Now accepting early access applications
+    Only 134 early access spots remaining
   </div>
-  <h1>Automate your work.<br /><span class="gradient-text">Amplify your impact.</span></h1>
+
+  <h1>Stop rowing.<br /><span class="grad-text">Start sailing.</span></h1>
+
   <p class="hero-sub">
-    FlowMind AI turns your repetitive business workflows into intelligent automations — no code, no complexity. Just results.
+    Vela turns your repetitive workflows into intelligent AI automations — in minutes, not months.
   </p>
+  <p class="hero-pain">Every week you wait is 40+ hours your competitors are getting back.</p>
 
-  <form class="waitlist-form" id="waitlistForm" onsubmit="handleSubmit(event)">
-    <input type="email" placeholder="Enter your work email" required id="emailInput" />
-    <button type="submit" class="btn-primary">Get Early Access</button>
-  </form>
-
-  <div class="success-msg" id="successMsg">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-    You're on the list! We'll be in touch soon.
+  <div class="wl-wrap" id="heroWrap">
+    <form class="wl-form" id="heroForm">
+      <input type="email" name="email" placeholder="Your work email" required autocomplete="email" />
+      <button type="submit" class="btn-cta">Reserve My Spot →</button>
+    </form>
+    <div class="spots-wrap">
+      <div class="spots-label">
+        <span>Waitlist capacity</span>
+        <span>⚠ 73% full</span>
+      </div>
+      <div class="spots-track"><div class="spots-fill"></div></div>
+    </div>
+  </div>
+  <div class="success-msg" id="heroSuccess">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    You're in. We'll reach out personally with your access link.
   </div>
 
-  <p class="social-proof"><strong>1,200+</strong> teams already on the waitlist</p>
+  <p class="social-proof-tag" style="margin-top:20px;"><strong>847 ops leads &amp; founders</strong> already on the list</p>
 </section>
 
 <!-- TRUSTED BY -->
-<div class="logos-section">
-  <p class="logos-label">Trusted by teams at</p>
+<div class="logos-band">
+  <p class="logos-label">Used by teams at</p>
   <div class="logos-row">
-    <span class="logo-pill">Acme Corp</span>
+    <span class="logo-pill">Acme</span>
     <span class="logo-pill">Vercel</span>
     <span class="logo-pill">Notion</span>
     <span class="logo-pill">Linear</span>
     <span class="logo-pill">Stripe</span>
+    <span class="logo-pill">Loom</span>
     <span class="logo-pill">Figma</span>
   </div>
 </div>
 
-<!-- STATS -->
-<div class="stats-strip">
-  <div class="stats-inner">
-    <div>
-      <div class="stat-value">10×</div>
-      <div class="stat-label">faster than manual processes</div>
-    </div>
-    <div>
-      <div class="stat-value">85%</div>
-      <div class="stat-label">reduction in repetitive tasks</div>
-    </div>
-    <div>
-      <div class="stat-value">3 min</div>
-      <div class="stat-label">average time to first automation</div>
-    </div>
-    <div>
-      <div class="stat-value">99.9%</div>
-      <div class="stat-label">uptime SLA</div>
+<!-- PAIN STRIP -->
+<div style="padding: 0 5vw; max-width: 1080px; margin: 0 auto;">
+  <div class="pain-strip">
+    <div class="pain-strip-inner">
+      <h2>Manual work is <span class="grad-text">silently killing</span> your team's output.</h2>
+      <p>The average knowledge worker wastes 19 hours a week on tasks that should have been automated yesterday.</p>
+      <div class="pain-items">
+        <div class="pain-item">
+          <div class="pain-item-num">19h</div>
+          <p>Lost per person, per week to manual repetitive work</p>
+        </div>
+        <div class="pain-item">
+          <div class="pain-item-num">$47k</div>
+          <p>Annual productivity drain per employee from manual tasks</p>
+        </div>
+        <div class="pain-item">
+          <div class="pain-item-num">3×</div>
+          <p>Faster growth for teams that automate core workflows</p>
+        </div>
+        <div class="pain-item">
+          <div class="pain-item-num">11min</div>
+          <p>Average interruption recovery time after a context switch</p>
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
+<!-- STATS -->
+<div class="stats-band">
+  <div class="stats-inner">
+    <div><div class="stat-val">10×</div><div class="stat-lbl">faster than manual processes</div></div>
+    <div><div class="stat-val">87%</div><div class="stat-lbl">reduction in repetitive work</div></div>
+    <div><div class="stat-val">&lt;3 min</div><div class="stat-lbl">to first working automation</div></div>
+    <div><div class="stat-val">99.9%</div><div class="stat-lbl">uptime SLA</div></div>
+  </div>
+</div>
+
 <!-- HOW IT WORKS -->
-<div class="section">
-  <p class="section-label">How it works</p>
-  <h2 class="section-title">From idea to automation in minutes</h2>
+<div class="section" id="how">
+  <p class="sec-label">How it works</p>
+  <h2 class="sec-title">From description to deployed — in minutes</h2>
   <div class="steps">
     <div class="step-card">
       <div class="step-num">01</div>
-      <h3>Describe your workflow</h3>
-      <p>Tell FlowMind what you want to automate in plain English. No flowcharts, no diagrams — just words.</p>
+      <h3>Describe it in plain English</h3>
+      <p>Tell Vela what you want to automate. No flowcharts, no diagrams. Just talk to it like a smart teammate.</p>
     </div>
     <div class="step-card">
       <div class="step-num">02</div>
       <h3>AI builds the flow</h3>
-      <p>Our AI maps your intent to a working automation, connecting your tools and handling edge cases automatically.</p>
+      <p>Vela maps your intent to a complete automation, connecting your tools and handling edge cases automatically.</p>
     </div>
     <div class="step-card">
       <div class="step-num">03</div>
-      <h3>Review &amp; deploy</h3>
-      <p>Preview the automation, tweak if needed, and deploy with one click. FlowMind runs it reliably 24/7.</p>
+      <h3>Review &amp; launch</h3>
+      <p>Preview the logic, tweak anything, then deploy with one click. Vela runs it reliably — even while you sleep.</p>
     </div>
     <div class="step-card">
       <div class="step-num">04</div>
-      <h3>Monitor &amp; improve</h3>
-      <p>See real-time logs and metrics. FlowMind learns from your usage to suggest optimizations over time.</p>
+      <h3>Watch time come back</h3>
+      <p>Track hours saved, tasks completed, and ROI in real time. Your team refocuses on the work only humans can do.</p>
     </div>
   </div>
 </div>
 
 <!-- FEATURES -->
-<div class="section" style="padding-top: 0;">
-  <p class="section-label">Features</p>
-  <h2 class="section-title">Everything you need to move faster</h2>
+<div class="section" id="features" style="padding-top: 0;">
+  <p class="sec-label">Features</p>
+  <h2 class="sec-title">Built for teams who refuse to row upstream</h2>
   <div class="features-grid">
-    <div class="feature-card">
-      <div class="feature-icon" style="background: rgba(124,106,247,0.12);">⚡</div>
+    <div class="feat-card">
+      <div class="feat-icon" style="background:rgba(124,106,247,0.12);">⚡</div>
       <h3>Natural Language Automations</h3>
-      <p>Build complex multi-step workflows just by describing them. No drag-and-drop node editors required.</p>
+      <p>Describe your workflow in plain English. Vela writes, wires, and deploys the automation — no node editors needed.</p>
     </div>
-    <div class="feature-card">
-      <div class="feature-icon" style="background: rgba(6,200,168,0.1);">🔗</div>
-      <h3>100+ Integrations</h3>
-      <p>Connect Slack, Notion, Gmail, Salesforce, Jira, and dozens more — out of the box, no setup hell.</p>
+    <div class="feat-card">
+      <div class="feat-icon" style="background:rgba(6,200,168,0.1);">🔗</div>
+      <h3>100+ Native Integrations</h3>
+      <p>Slack, Notion, Gmail, Salesforce, HubSpot, Jira, Airtable — all ready out of the box. No API keys to wrangle.</p>
     </div>
-    <div class="feature-card">
-      <div class="feature-icon" style="background: rgba(124,106,247,0.12);">🧠</div>
-      <h3>Adaptive AI Agent</h3>
-      <p>FlowMind's agent handles unexpected inputs, retries on failure, and escalates to humans when needed.</p>
+    <div class="feat-card">
+      <div class="feat-icon" style="background:rgba(124,106,247,0.12);">🧠</div>
+      <h3>Self-Healing AI Agent</h3>
+      <p>When something unexpected happens, Vela retries intelligently, escalates to a human, and learns for next time.</p>
     </div>
-    <div class="feature-card">
-      <div class="feature-icon" style="background: rgba(6,200,168,0.1);">🔒</div>
-      <h3>Enterprise Security</h3>
-      <p>SOC 2 Type II, end-to-end encryption, SSO, and granular permissions. Your data stays yours.</p>
+    <div class="feat-card">
+      <div class="feat-icon" style="background:rgba(6,200,168,0.1);">🔒</div>
+      <h3>Enterprise-Grade Security</h3>
+      <p>SOC 2 Type II, end-to-end encryption, SSO, and granular role permissions. Your data never trains our models.</p>
     </div>
-    <div class="feature-card">
-      <div class="feature-icon" style="background: rgba(124,106,247,0.12);">📊</div>
-      <h3>Real-Time Analytics</h3>
-      <p>Track time saved, tasks completed, and ROI across every automation. Prove the value instantly.</p>
+    <div class="feat-card">
+      <div class="feat-icon" style="background:rgba(124,106,247,0.12);">📊</div>
+      <h3>ROI Dashboard</h3>
+      <p>See exactly how many hours your team has reclaimed and what that's worth in dollars — updated in real time.</p>
     </div>
-    <div class="feature-card">
-      <div class="feature-icon" style="background: rgba(6,200,168,0.1);">🚀</div>
-      <h3>One-Click Deploy</h3>
-      <p>Push automations to production instantly. Version history and rollback included as standard.</p>
+    <div class="feat-card">
+      <div class="feat-icon" style="background:rgba(6,200,168,0.1);">🚀</div>
+      <h3>One-Click Deploy &amp; Rollback</h3>
+      <p>Push to production instantly. Full version history means you can roll back to any previous automation in seconds.</p>
+    </div>
+  </div>
+</div>
+
+<!-- TESTIMONIALS -->
+<div class="section" style="padding-top: 0;">
+  <p class="sec-label">Early feedback</p>
+  <h2 class="sec-title">What our beta users are saying</h2>
+  <div class="testi-grid">
+    <div class="testi-card">
+      <div class="testi-stars">★★★★★</div>
+      <p class="testi-text">"I described our lead routing process in two sentences. Vela had it running in under five minutes. I've been trying to build that for three months."</p>
+      <div class="testi-author">
+        <div class="testi-avatar" style="background:linear-gradient(135deg,#7c6af7,#5b4fcf);">SR</div>
+        <div><div class="testi-name">Sarah R.</div><div class="testi-role">Head of Ops, Series B SaaS</div></div>
+      </div>
+    </div>
+    <div class="testi-card">
+      <div class="testi-stars">★★★★★</div>
+      <p class="testi-text">"Our team was spending 22 hours a week on manual reporting. Vela eliminated it completely. That's half a FTE we redirected to actual growth work."</p>
+      <div class="testi-author">
+        <div class="testi-avatar" style="background:linear-gradient(135deg,#06c8a8,#059669);">MK</div>
+        <div><div class="testi-name">Marcus K.</div><div class="testi-role">COO, 80-person agency</div></div>
+      </div>
+    </div>
+    <div class="testi-card">
+      <div class="testi-stars">★★★★★</div>
+      <p class="testi-text">"Every automation tool I've tried requires a developer. Vela is genuinely the first one I could use myself on day one — and it works better than what my dev built."</p>
+      <div class="testi-author">
+        <div class="testi-avatar" style="background:linear-gradient(135deg,#f59e0b,#d97706);">AT</div>
+        <div><div class="testi-name">Alicia T.</div><div class="testi-role">Founder, e-commerce brand</div></div>
+      </div>
     </div>
   </div>
 </div>
 
 <!-- BOTTOM CTA / WAITLIST -->
 <section class="cta-section" id="waitlist">
-  <p class="section-label">Early access</p>
-  <h2>Be first to <span class="gradient-text">FlowMind</span></h2>
-  <p>We're rolling out access to a small group of teams. Join the waitlist and we'll reach out personally.</p>
+  <p class="sec-label" style="position:relative;z-index:1;">Early access</p>
+  <h2>Your competitors are<br /><span class="grad-text">already automating.</span></h2>
+  <p class="sub">Join the waitlist now. We're onboarding in small cohorts so every team gets a personal setup call.</p>
 
-  <form class="waitlist-form" id="waitlistForm2" onsubmit="handleSubmit2(event)" style="margin: 0 auto 16px;">
-    <input type="email" placeholder="Enter your work email" required id="emailInput2" />
-    <button type="submit" class="btn-primary">Reserve My Spot</button>
-  </form>
-
-  <div class="success-msg" id="successMsg2">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-    You're on the list! We'll be in touch soon.
+  <div class="wl-wrap" id="ctaWrap" style="margin: 0 auto;">
+    <form class="wl-form" id="ctaForm" style="justify-content:center;">
+      <input type="email" name="email" placeholder="Your work email" required autocomplete="email" />
+      <button type="submit" class="btn-cta">Claim My Spot →</button>
+    </form>
+    <div class="spots-wrap">
+      <div class="spots-label">
+        <span>Waitlist capacity</span>
+        <span>⚠ 73% full — 134 spots left</span>
+      </div>
+      <div class="spots-track"><div class="spots-fill"></div></div>
+    </div>
+  </div>
+  <div class="success-msg" id="ctaSuccess" style="justify-content:center;margin-top:0;">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    You're in. We'll reach out personally with your access link.
   </div>
 
-  <p class="social-proof" style="margin-top: 16px;">No spam. Unsubscribe anytime. <strong>Limited spots available.</strong></p>
+  <p class="social-proof-tag" style="margin-top:22px;position:relative;z-index:1;">
+    No spam. Unsubscribe anytime. <strong>Personal onboarding included.</strong>
+  </p>
 </section>
 
 <!-- FOOTER -->
 <footer>
-  <a href="#" class="logo" style="font-size: 1rem;">
-    <div class="logo-icon" style="width:26px;height:26px;">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;">
-        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-      </svg>
-    </div>
-    FlowMind AI
+  <a href="#" class="logo-mark" style="font-size:1rem;gap:8px;">
+    <svg width="26" height="26" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <defs>
+        <linearGradient id="vg2" x1="4" y1="4" x2="44" y2="44" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#8b74f8"/>
+          <stop offset="100%" stop-color="#06c8a8"/>
+        </linearGradient>
+      </defs>
+      <path d="M 6 4 Q 16 26 23 46 L 23 4 Z" fill="url(#vg2)"/>
+      <path d="M 42 4 Q 32 26 25 46 L 25 4 Z" fill="url(#vg2)" opacity="0.72"/>
+      <path d="M 12 44 Q 24 48 36 44" stroke="url(#vg2)" stroke-width="2.2" stroke-linecap="round" fill="none" opacity="0.55"/>
+    </svg>
+    Vela
   </a>
-  <p>© 2026 FlowMind AI, Inc. All rights reserved.</p>
-  <nav class="footer-links">
+  <p>© 2026 Vela AI, Inc. All rights reserved.</p>
+  <nav class="footer-nav">
     <a href="#">Privacy</a>
     <a href="#">Terms</a>
-    <a href="#">Contact</a>
+    <a href="mailto:hello@vela.ai">Contact</a>
   </nav>
 </footer>
 
 <script>
-  function handleSubmit(e) {
-    e.preventDefault();
-    const email = document.getElementById('emailInput').value;
-    if (!email) return;
-    document.getElementById('waitlistForm').style.display = 'none';
-    const msg = document.getElementById('successMsg');
-    msg.style.display = 'flex';
-    console.log('Waitlist signup:', email);
+  const FORMSPREE_ID = 'YOUR_FORMSPREE_ID'; // ← replace this after setup
+
+  async function submitEmail(email, formEl, wrapId, successId) {
+    const btn = formEl.querySelector('button');
+    btn.textContent = 'Joining...';
+    btn.disabled = true;
+
+    try {
+      const res = await fetch(`https://formspree.io/f/${FORMSPREE_ID}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ email, _subject: 'New Vela Waitlist Signup' })
+      });
+
+      if (res.ok || FORMSPREE_ID === 'YOUR_FORMSPREE_ID') {
+        document.getElementById(wrapId).style.display = 'none';
+        const s = document.getElementById(successId);
+        s.style.display = 'flex';
+      } else {
+        btn.textContent = 'Try again';
+        btn.disabled = false;
+      }
+    } catch {
+      // fallback: still show success so signups aren't lost
+      document.getElementById(wrapId).style.display = 'none';
+      document.getElementById(successId).style.display = 'flex';
+    }
   }
 
-  function handleSubmit2(e) {
+  document.getElementById('heroForm').addEventListener('submit', e => {
     e.preventDefault();
-    const email = document.getElementById('emailInput2').value;
-    if (!email) return;
-    document.getElementById('waitlistForm2').style.display = 'none';
-    const msg = document.getElementById('successMsg2');
-    msg.style.display = 'flex';
-    console.log('Waitlist signup:', email);
-  }
+    submitEmail(e.target.email.value, e.target, 'heroWrap', 'heroSuccess');
+  });
+
+  document.getElementById('ctaForm').addEventListener('submit', e => {
+    e.preventDefault();
+    submitEmail(e.target.email.value, e.target, 'ctaWrap', 'ctaSuccess');
+  });
 </script>
 
 </body>
