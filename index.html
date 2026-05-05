@@ -4,46 +4,65 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Vela — Set your direction. Let AI do the sailing.</title>
-  <meta name="description" content="Vela turns your repetitive business workflows into intelligent automations. No code. No complexity. Join the waitlist for early access." />
+  <meta name="description" content="Vela turns your repetitive business workflows into intelligent AI automations. No code. No complexity. Join the waitlist." />
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:       #03050a;
-      --surface:  #0b0f18;
-      --surface2: #111827;
-      --border:   rgba(255,255,255,0.07);
-      --border2:  rgba(255,255,255,0.12);
-      --violet:   #7c6af7;
-      --teal:     #06c8a8;
-      --text:     #eef0f4;
-      --muted:    #7d8799;
-      --radius:   16px;
+      --bg:       #030712;
+      --surface:  #0f172a;
+      --surface2: #1e293b;
+      --border:   rgba(148,163,184,0.08);
+      --border-hi: rgba(99,102,241,0.35);
+      --indigo:   #6366f1;
+      --cyan:     #06b6d4;
+      --text:     #f1f5f9;
+      --muted:    #94a3b8;
+      --faint:    #334155;
+      --radius:   14px;
+      --font-display: 'Syne', sans-serif;
+      --font-body: 'Inter', sans-serif;
     }
 
     html { scroll-behavior: smooth; }
 
     body {
-      font-family: 'Inter', sans-serif;
+      font-family: var(--font-body);
       background: var(--bg);
       color: var(--text);
       line-height: 1.6;
       overflow-x: hidden;
     }
 
-    /* ─── UTILS ─── */
-    .grad-text {
-      background: linear-gradient(120deg, var(--violet) 0%, var(--teal) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+    /* dot-grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: radial-gradient(rgba(99,102,241,0.12) 1px, transparent 1px);
+      background-size: 28px 28px;
+      pointer-events: none;
+      z-index: 0;
     }
 
-    /* ─── NAV ─── */
+    /* ── UTILITIES ── */
+    .grad { background: linear-gradient(120deg, var(--indigo), var(--cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .grad-bg { background: linear-gradient(120deg, var(--indigo), var(--cyan)); }
+
+    /* ── SCROLL ANIMATIONS ── */
+    .fade-up { opacity: 0; transform: translateY(28px); transition: opacity 0.65s ease, transform 0.65s ease; }
+    .fade-up.visible { opacity: 1; transform: none; }
+    .fade-up.delay-1 { transition-delay: 0.1s; }
+    .fade-up.delay-2 { transition-delay: 0.2s; }
+    .fade-up.delay-3 { transition-delay: 0.3s; }
+    .fade-up.delay-4 { transition-delay: 0.4s; }
+    .fade-up.delay-5 { transition-delay: 0.5s; }
+
+    /* ── NAV ── */
     nav {
       position: fixed;
       inset: 0 0 auto 0;
@@ -51,8 +70,8 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 16px 5vw;
-      background: rgba(3,5,10,0.75);
+      padding: 16px 6vw;
+      background: rgba(3,7,18,0.8);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       border-bottom: 1px solid var(--border);
@@ -64,535 +83,461 @@
       gap: 10px;
       text-decoration: none;
       color: var(--text);
+      font-family: var(--font-display);
       font-weight: 800;
       font-size: 1.15rem;
-      letter-spacing: -0.03em;
+      letter-spacing: -0.02em;
     }
 
-    .nav-right { display: flex; align-items: center; gap: 12px; }
+    .nav-links { display: flex; align-items: center; gap: 28px; }
 
     .nav-link {
       color: var(--muted);
       text-decoration: none;
-      font-size: 0.875rem;
+      font-size: 0.85rem;
       font-weight: 500;
       display: none;
       transition: color 0.2s;
     }
     .nav-link:hover { color: var(--text); }
-    @media (min-width: 640px) { .nav-link { display: inline; } }
+    @media(min-width:640px) { .nav-link { display: inline; } }
 
     .btn-nav {
-      background: linear-gradient(135deg, var(--violet), #5b4fcf);
-      color: #fff;
-      border: none;
-      padding: 9px 20px;
+      position: relative;
+      padding: 9px 22px;
       border-radius: 8px;
       font-size: 0.85rem;
       font-weight: 600;
       cursor: pointer;
       text-decoration: none;
+      font-family: var(--font-body);
+      border: none;
+      background: linear-gradient(120deg, var(--indigo), #4f46e5);
+      color: #fff;
       transition: opacity 0.2s, box-shadow 0.2s;
-      font-family: inherit;
     }
-    .btn-nav:hover { opacity: 0.88; box-shadow: 0 4px 20px rgba(124,106,247,0.35); }
+    .btn-nav:hover { opacity: 0.88; box-shadow: 0 4px 24px rgba(99,102,241,0.4); }
 
-    /* ─── HERO ─── */
+    /* ── HERO ── */
     .hero {
       min-height: 100dvh;
-      display: flex;
-      flex-direction: column;
+      display: grid;
+      grid-template-columns: 1fr;
       align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 130px 5vw 90px;
+      padding: 120px 6vw 80px;
       position: relative;
       overflow: hidden;
+      gap: 60px;
+    }
+    @media(min-width: 900px) {
+      .hero { grid-template-columns: 1fr 1fr; gap: 0; }
     }
 
-    /* radial glow blobs */
-    .glow-1 {
+    /* ambient glows */
+    .glow-a {
       position: absolute;
-      top: -180px; left: 50%;
-      transform: translateX(-50%);
-      width: 800px; height: 800px;
-      background: radial-gradient(circle, rgba(124,106,247,0.15) 0%, transparent 65%);
-      pointer-events: none;
+      top: -200px; left: -100px;
+      width: 700px; height: 700px;
+      background: radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 65%);
+      pointer-events: none; z-index: 0;
     }
-    .glow-2 {
+    .glow-b {
       position: absolute;
-      bottom: -80px; right: -150px;
-      width: 550px; height: 550px;
-      background: radial-gradient(circle, rgba(6,200,168,0.1) 0%, transparent 65%);
-      pointer-events: none;
+      bottom: -100px; right: 0;
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(6,182,212,0.08) 0%, transparent 65%);
+      pointer-events: none; z-index: 0;
     }
 
-    /* scarcity badge */
+    .hero-content { position: relative; z-index: 1; }
+
     .badge {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      background: rgba(124,106,247,0.1);
-      border: 1px solid rgba(124,106,247,0.25);
-      color: #a78bfa;
-      padding: 7px 18px;
+      background: rgba(99,102,241,0.1);
+      border: 1px solid rgba(99,102,241,0.22);
+      color: #a5b4fc;
+      padding: 6px 16px;
       border-radius: 100px;
-      font-size: 0.78rem;
+      font-size: 0.76rem;
       font-weight: 600;
-      letter-spacing: 0.01em;
-      margin-bottom: 32px;
-      position: relative;
-      z-index: 1;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      margin-bottom: 28px;
     }
     .badge-dot {
       width: 6px; height: 6px;
-      background: var(--teal);
+      background: var(--cyan);
       border-radius: 50%;
-      animation: blink 2.2s ease-in-out infinite;
+      animation: pulse 2.4s ease-in-out infinite;
     }
-    @keyframes blink {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50%       { opacity: 0.4; transform: scale(0.75); }
-    }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.35;transform:scale(0.7)} }
 
     h1 {
-      font-size: clamp(2.8rem, 7.5vw, 5.8rem);
-      font-weight: 900;
-      line-height: 1.06;
-      letter-spacing: -0.05em;
-      max-width: 860px;
-      margin-bottom: 26px;
-      position: relative;
-      z-index: 1;
+      font-family: var(--font-display);
+      font-size: clamp(3rem, 6vw, 5.2rem);
+      font-weight: 800;
+      line-height: 1.04;
+      letter-spacing: -0.04em;
+      margin-bottom: 24px;
     }
 
     .hero-sub {
-      font-size: clamp(1rem, 2.2vw, 1.2rem);
+      font-size: clamp(1rem, 1.8vw, 1.15rem);
       color: var(--muted);
-      max-width: 520px;
-      margin-bottom: 14px;
+      max-width: 480px;
+      margin-bottom: 10px;
       font-weight: 400;
-      position: relative;
-      z-index: 1;
+      line-height: 1.7;
     }
 
     .hero-pain {
       font-size: 0.875rem;
-      color: #5a6475;
-      margin-bottom: 44px;
+      color: var(--faint);
+      margin-bottom: 40px;
       font-style: italic;
-      position: relative;
-      z-index: 1;
     }
 
-    /* ─── WAITLIST FORM ─── */
-    .wl-wrap {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 14px;
-      width: 100%;
-      max-width: 480px;
-      position: relative;
-      z-index: 1;
-    }
+    /* waitlist form */
+    .wl-stack { display: flex; flex-direction: column; gap: 12px; max-width: 440px; }
 
-    .wl-form {
+    .wl-row {
       display: flex;
-      gap: 10px;
+      gap: 8px;
       flex-wrap: wrap;
-      justify-content: center;
-      width: 100%;
     }
 
-    .wl-form input[type="email"] {
+    .wl-input {
       flex: 1;
-      min-width: 210px;
-      background: rgba(255,255,255,0.055);
-      border: 1px solid var(--border2);
+      min-width: 200px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(148,163,184,0.12);
       color: var(--text);
-      padding: 14px 20px;
+      padding: 13px 18px;
       border-radius: 10px;
-      font-size: 0.95rem;
-      font-family: inherit;
+      font-size: 0.9rem;
+      font-family: var(--font-body);
       outline: none;
       transition: border-color 0.2s, box-shadow 0.2s;
     }
-    .wl-form input[type="email"]:focus {
-      border-color: rgba(124,106,247,0.55);
-      box-shadow: 0 0 0 3px rgba(124,106,247,0.1);
+    .wl-input:focus {
+      border-color: rgba(99,102,241,0.5);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
     }
-    .wl-form input::placeholder { color: var(--muted); }
+    .wl-input::placeholder { color: var(--faint); }
 
-    .btn-cta {
-      background: linear-gradient(135deg, var(--violet) 0%, #5b4fcf 100%);
+    .btn-primary {
+      background: linear-gradient(120deg, var(--indigo) 0%, #4f46e5 100%);
       color: #fff;
       border: none;
-      padding: 14px 28px;
+      padding: 13px 24px;
       border-radius: 10px;
-      font-size: 0.95rem;
-      font-weight: 700;
+      font-size: 0.9rem;
+      font-weight: 600;
       cursor: pointer;
-      font-family: inherit;
+      font-family: var(--font-body);
       white-space: nowrap;
-      transition: transform 0.15s, box-shadow 0.15s;
+      transition: transform 0.15s, box-shadow 0.2s, opacity 0.2s;
     }
-    .btn-cta:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(124,106,247,0.45); }
-    .btn-cta:active { transform: translateY(0); }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(99,102,241,0.45); }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-primary:disabled { opacity: 0.6; cursor: wait; transform: none; }
 
     /* spots bar */
-    .spots-wrap {
-      width: 100%;
-      text-align: left;
-    }
-    .spots-label {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.76rem;
-      color: var(--muted);
-      margin-bottom: 7px;
-    }
-    .spots-label span:last-child { color: #e97b7b; font-weight: 600; }
-    .spots-track {
-      width: 100%;
-      height: 4px;
-      background: rgba(255,255,255,0.07);
-      border-radius: 100px;
-      overflow: hidden;
-    }
-    .spots-fill {
-      height: 100%;
-      width: 73%;
-      background: linear-gradient(90deg, var(--violet), var(--teal));
-      border-radius: 100px;
-      animation: fill-in 1.4s cubic-bezier(0.34,1.56,0.64,1) forwards;
-    }
-    @keyframes fill-in {
-      from { width: 0; }
-      to   { width: 73%; }
-    }
+    .spots-meta { display: flex; justify-content: space-between; font-size: 0.74rem; color: var(--muted); margin-bottom: 6px; }
+    .spots-meta span:last-child { color: #f87171; font-weight: 600; }
+    .spots-track { height: 3px; background: rgba(255,255,255,0.06); border-radius: 100px; overflow: hidden; }
+    .spots-fill { height: 100%; width: 0; background: linear-gradient(90deg, var(--indigo), var(--cyan)); border-radius: 100px; animation: grow 1.6s cubic-bezier(.34,1.56,.64,1) 0.4s forwards; }
+    @keyframes grow { to { width: 73%; } }
+
+    .social-proof { font-size: 0.78rem; color: var(--faint); }
+    .social-proof strong { color: var(--muted); }
 
     /* success state */
-    .success-msg {
+    .success-box {
       display: none;
       align-items: center;
       gap: 10px;
-      background: rgba(6,200,168,0.09);
-      border: 1px solid rgba(6,200,168,0.28);
-      color: var(--teal);
-      padding: 14px 24px;
+      background: rgba(6,182,212,0.08);
+      border: 1px solid rgba(6,182,212,0.22);
+      color: var(--cyan);
+      padding: 14px 20px;
       border-radius: 10px;
-      font-weight: 600;
-      font-size: 0.95rem;
+      font-weight: 500;
+      font-size: 0.9rem;
     }
 
-    .social-proof-tag {
-      font-size: 0.8rem;
-      color: var(--muted);
+    /* ── HERO VISUAL ── */
+    .hero-visual {
       position: relative;
       z-index: 1;
-    }
-    .social-proof-tag strong { color: var(--text); }
-
-    /* ─── LOGOS ─── */
-    .logos-band {
-      padding: 56px 5vw;
-      border-top: 1px solid var(--border);
-      text-align: center;
-    }
-    .logos-label {
-      font-size: 0.72rem;
-      color: #3d4554;
-      text-transform: uppercase;
-      letter-spacing: 0.14em;
-      font-weight: 600;
-      margin-bottom: 28px;
-    }
-    .logos-row {
       display: flex;
       align-items: center;
       justify-content: center;
-      flex-wrap: wrap;
-      gap: 40px;
-      opacity: 0.38;
-    }
-    .logo-pill {
-      font-size: 0.95rem;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-      color: var(--text);
     }
 
-    /* ─── SECTIONS ─── */
-    .section {
-      max-width: 1080px;
-      margin: 0 auto;
-      padding: 96px 5vw;
+    .sail-ring {
+      position: relative;
+      width: 380px;
+      height: 380px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    .sec-label {
-      font-size: 0.72rem;
+    /* rotating orbit ring */
+    .orbit {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 1px solid rgba(99,102,241,0.12);
+      animation: spin 18s linear infinite;
+    }
+    .orbit-2 {
+      inset: 30px;
+      border-color: rgba(6,182,212,0.1);
+      animation: spin 26s linear infinite reverse;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* orbit dots */
+    .orbit-dot {
+      position: absolute;
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--indigo);
+      top: -3.5px; left: calc(50% - 3.5px);
+    }
+    .orbit-dot-2 {
+      background: var(--cyan);
+      top: auto; bottom: -3.5px;
+    }
+
+    /* large ghost sail */
+    .sail-hero {
+      filter: drop-shadow(0 0 40px rgba(99,102,241,0.25));
+      animation: bob 4s ease-in-out infinite;
+    }
+    @keyframes bob {
+      0%,100% { transform: translateY(0px); }
+      50%      { transform: translateY(-10px); }
+    }
+
+    /* floating stat chips */
+    .stat-chip {
+      position: absolute;
+      background: rgba(15,23,42,0.85);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-size: 0.75rem;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .stat-chip strong { display: block; font-family: var(--font-display); font-size: 1.1rem; font-weight: 800; letter-spacing: -0.04em; }
+    .stat-chip.c1 { top: 20px; right: -20px; }
+    .stat-chip.c2 { bottom: 40px; left: -20px; }
+    .stat-chip.c3 { bottom: 20px; right: 0; }
+
+    @media(max-width: 899px) { .hero-visual { display: none; } }
+
+    /* ── DIVIDER ── */
+    .grad-rule { height: 1px; background: linear-gradient(90deg, transparent, rgba(99,102,241,0.3), rgba(6,182,212,0.3), transparent); margin: 0; border: none; }
+
+    /* ── LOGOS ── */
+    .logos-band { padding: 52px 6vw; text-align: center; position: relative; z-index: 1; }
+    .logos-label { font-size: 0.7rem; color: var(--faint); text-transform: uppercase; letter-spacing: 0.16em; font-weight: 600; margin-bottom: 28px; }
+    .logos-row { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 40px; opacity: 0.3; filter: grayscale(1); }
+    .logo-pill { font-size: 0.95rem; font-weight: 700; letter-spacing: -0.02em; color: var(--text); font-family: var(--font-display); }
+
+    /* ── SECTION BASE ── */
+    .section { max-width: 1080px; margin: 0 auto; padding: 96px 6vw; position: relative; z-index: 1; }
+    .section-sm { padding-top: 0; }
+
+    .sec-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.7rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.14em;
-      color: var(--violet);
-      margin-bottom: 14px;
+      color: var(--indigo);
+      margin-bottom: 16px;
     }
+    .sec-eyebrow::before { content: ''; display: block; width: 16px; height: 2px; background: linear-gradient(90deg, var(--indigo), var(--cyan)); border-radius: 2px; }
 
     .sec-title {
-      font-size: clamp(1.8rem, 4vw, 2.8rem);
-      font-weight: 900;
+      font-family: var(--font-display);
+      font-size: clamp(1.9rem, 4vw, 2.9rem);
+      font-weight: 800;
       letter-spacing: -0.04em;
-      line-height: 1.12;
+      line-height: 1.1;
       margin-bottom: 56px;
-      max-width: 580px;
+      max-width: 560px;
     }
 
-    /* ─── PAIN STRIP ─── */
+    /* ── PAIN STRIP ── */
     .pain-strip {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 48px 40px;
-      margin-bottom: 96px;
+      border-radius: 20px;
+      padding: 52px 48px;
       position: relative;
       overflow: hidden;
-    }
-    .pain-strip::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 2px;
-      background: linear-gradient(90deg, var(--violet), var(--teal));
-    }
-    .pain-strip-inner {
+      z-index: 1;
       max-width: 1080px;
-      margin: 0 auto;
+      margin: 0 auto 0;
     }
-    .pain-strip h2 {
-      font-size: clamp(1.4rem, 3vw, 2rem);
-      font-weight: 800;
-      letter-spacing: -0.04em;
-      margin-bottom: 12px;
-    }
-    .pain-strip p { color: var(--muted); font-size: 0.95rem; max-width: 540px; }
+    .pain-strip::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--indigo), var(--cyan)); }
+    .pain-strip h2 { font-family: var(--font-display); font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 800; letter-spacing: -0.04em; margin-bottom: 10px; }
+    .pain-strip p { color: var(--muted); font-size: 0.925rem; max-width: 520px; line-height: 1.7; }
 
-    .pain-items {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 16px;
-      margin-top: 36px;
-    }
-    .pain-item {
-      background: rgba(255,255,255,0.03);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 20px;
-    }
-    .pain-item-num {
-      font-size: 1.8rem;
-      font-weight: 900;
-      letter-spacing: -0.04em;
-      background: linear-gradient(120deg, #e97b7b, #f59e0b);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin-bottom: 4px;
-    }
-    .pain-item p { font-size: 0.83rem; color: var(--muted); }
+    .pain-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1px; margin-top: 40px; background: var(--border); border-radius: 12px; overflow: hidden; }
+    .pain-cell { background: rgba(15,23,42,0.6); padding: 24px; }
+    .pain-cell:first-child { border-radius: 12px 0 0 12px; }
+    .pain-cell:last-child { border-radius: 0 12px 12px 0; }
+    .pain-num { font-family: var(--font-display); font-size: 2rem; font-weight: 800; letter-spacing: -0.05em; background: linear-gradient(120deg, #fb7185, #f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 4px; }
+    .pain-cell p { font-size: 0.8rem; color: var(--muted); line-height: 1.5; }
 
-    /* ─── STEPS ─── */
-    .steps {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-      gap: 20px;
-    }
+    /* ── STATS ── */
+    .stats-band { background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 64px 6vw; position: relative; z-index: 1; }
+    .stats-inner { max-width: 900px; margin: 0 auto; display: flex; justify-content: space-around; flex-wrap: wrap; gap: 40px; text-align: center; }
+    .stat-val { font-family: var(--font-display); font-size: clamp(2.2rem, 5vw, 3.2rem); font-weight: 800; letter-spacing: -0.05em; background: linear-gradient(120deg, var(--indigo), var(--cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .stat-lbl { font-size: 0.8rem; color: var(--muted); margin-top: 6px; }
+
+    /* ── STEPS ── */
+    .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; }
 
     .step-card {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 30px;
-      transition: border-color 0.2s, transform 0.25s;
+      transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
       cursor: default;
     }
-    .step-card:hover {
-      border-color: rgba(124,106,247,0.38);
-      transform: translateY(-4px);
-    }
+    .step-card:hover { border-color: var(--border-hi); transform: translateY(-4px); box-shadow: 0 12px 40px rgba(99,102,241,0.12); }
 
     .step-num {
-      font-size: 0.7rem;
+      font-family: var(--font-display);
+      font-size: 0.65rem;
       font-weight: 800;
-      color: var(--violet);
-      background: rgba(124,106,247,0.1);
+      color: var(--indigo);
+      background: rgba(99,102,241,0.1);
       width: 26px; height: 26px;
       border-radius: 6px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: flex; align-items: center; justify-content: center;
       margin-bottom: 18px;
     }
+    .step-card h3 { font-family: var(--font-display); font-size: 0.975rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 10px; }
+    .step-card p { font-size: 0.855rem; color: var(--muted); line-height: 1.7; }
 
-    .step-card h3 {
-      font-size: 1rem;
-      font-weight: 700;
-      letter-spacing: -0.025em;
-      margin-bottom: 8px;
-    }
-    .step-card p { font-size: 0.875rem; color: var(--muted); line-height: 1.65; }
-
-    /* ─── FEATURES ─── */
-    .features-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
-      gap: 18px;
-    }
+    /* ── FEATURES ── */
+    .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 18px; }
 
     .feat-card {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 30px;
-      transition: border-color 0.2s, transform 0.25s;
+      padding: 32px;
+      transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
+      position: relative;
+      overflow: hidden;
     }
-    .feat-card:hover {
-      border-color: rgba(6,200,168,0.32);
-      transform: translateY(-4px);
+    .feat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(99,102,241,0.4), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
     }
+    .feat-card:hover { border-color: rgba(99,102,241,0.2); transform: translateY(-4px); box-shadow: 0 12px 40px rgba(99,102,241,0.1); }
+    .feat-card:hover::before { opacity: 1; }
 
-    .feat-icon {
-      width: 42px; height: 42px;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.2rem;
-      margin-bottom: 18px;
-    }
+    .feat-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; font-size: 1.2rem; background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.12); }
+    .feat-card h3 { font-family: var(--font-display); font-size: 0.95rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 10px; }
+    .feat-card p { font-size: 0.855rem; color: var(--muted); line-height: 1.7; }
 
-    .feat-card h3 {
-      font-size: 0.975rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      margin-bottom: 8px;
-    }
-    .feat-card p { font-size: 0.85rem; color: var(--muted); line-height: 1.65; }
+    /* ── TESTIMONIALS ── */
+    .testi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
 
-    /* ─── STATS ─── */
-    .stats-band {
-      background: var(--surface);
-      border-top: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
-      padding: 64px 5vw;
-    }
-    .stats-inner {
-      max-width: 900px;
-      margin: 0 auto;
-      display: flex;
-      justify-content: space-around;
-      flex-wrap: wrap;
-      gap: 40px;
-      text-align: center;
-    }
-    .stat-val {
-      font-size: clamp(2.2rem, 5vw, 3rem);
-      font-weight: 900;
-      letter-spacing: -0.05em;
-      background: linear-gradient(120deg, var(--violet), var(--teal));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    .stat-lbl { font-size: 0.83rem; color: var(--muted); margin-top: 6px; }
-
-    /* ─── TESTIMONIALS ─── */
-    .testi-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 18px;
-    }
     .testi-card {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 28px;
+      padding: 32px;
+      position: relative;
+      transition: border-color 0.3s, transform 0.3s;
     }
-    .testi-stars { color: #f59e0b; font-size: 0.8rem; margin-bottom: 14px; letter-spacing: 2px; }
-    .testi-text { font-size: 0.9rem; color: var(--text); line-height: 1.7; margin-bottom: 20px; font-style: italic; }
-    .testi-author { display: flex; align-items: center; gap: 12px; }
-    .testi-avatar {
-      width: 36px; height: 36px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.75rem;
-      font-weight: 700;
-      color: #fff;
-    }
-    .testi-name { font-size: 0.83rem; font-weight: 700; }
-    .testi-role { font-size: 0.75rem; color: var(--muted); }
+    .testi-card:hover { border-color: rgba(6,182,212,0.2); transform: translateY(-3px); }
 
-    /* ─── BOTTOM CTA ─── */
-    .cta-section {
-      padding: 120px 5vw;
+    .quote-mark {
+      font-family: Georgia, serif;
+      font-size: 5rem;
+      line-height: 1;
+      color: rgba(99,102,241,0.15);
+      position: absolute;
+      top: 12px; left: 24px;
+      font-weight: 700;
+    }
+
+    .testi-text { font-size: 0.9rem; color: var(--text); line-height: 1.75; margin-bottom: 24px; position: relative; padding-top: 16px; }
+    .testi-author { display: flex; align-items: center; gap: 12px; }
+    .testi-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; color: #fff; flex-shrink: 0; }
+    .testi-name { font-size: 0.83rem; font-weight: 600; }
+    .testi-role { font-size: 0.75rem; color: var(--muted); }
+    .testi-stars { display: flex; gap: 3px; margin-bottom: 16px; }
+    .testi-stars span { width: 10px; height: 10px; background: #f59e0b; clip-path: polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%); }
+
+    /* ── BOTTOM CTA ── */
+    .cta-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 80px 48px;
       text-align: center;
       position: relative;
       overflow: hidden;
+      max-width: 1080px;
+      margin: 0 auto;
+      z-index: 1;
     }
-    .cta-section::before {
+    .cta-wrap::before {
       content: '';
+      position: absolute;
+      top: -1px; left: 15%; right: 15%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--indigo), var(--cyan), transparent);
+    }
+    .cta-glow {
       position: absolute;
       top: 50%; left: 50%;
       transform: translate(-50%, -50%);
-      width: 700px; height: 700px;
-      background: radial-gradient(circle, rgba(124,106,247,0.11) 0%, transparent 65%);
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 65%);
       pointer-events: none;
     }
-    .cta-section h2 {
-      font-size: clamp(2rem, 5vw, 3.6rem);
-      font-weight: 900;
-      letter-spacing: -0.05em;
-      line-height: 1.08;
-      margin-bottom: 18px;
-      position: relative;
-      z-index: 1;
-    }
-    .cta-section .sub {
-      color: var(--muted);
-      font-size: 1.05rem;
-      max-width: 460px;
-      margin: 0 auto 44px;
-      position: relative;
-      z-index: 1;
-    }
+    .cta-wrap h2 { font-family: var(--font-display); font-size: clamp(2rem, 4.5vw, 3.4rem); font-weight: 800; letter-spacing: -0.04em; line-height: 1.08; margin-bottom: 16px; position: relative; z-index: 1; }
+    .cta-wrap .sub { color: var(--muted); font-size: 1rem; max-width: 420px; margin: 0 auto 40px; position: relative; z-index: 1; line-height: 1.7; }
 
-    /* ─── FOOTER ─── */
-    footer {
-      border-top: 1px solid var(--border);
-      padding: 36px 5vw;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 20px;
-    }
-    footer p { font-size: 0.78rem; color: var(--muted); }
+    /* ── FOOTER ── */
+    footer { border-top: 1px solid var(--border); padding: 36px 6vw; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; position: relative; z-index: 1; }
+    footer p { font-size: 0.78rem; color: var(--faint); }
     .footer-nav { display: flex; gap: 24px; }
-    .footer-nav a {
-      font-size: 0.78rem;
-      color: var(--muted);
-      text-decoration: none;
-      transition: color 0.2s;
-    }
+    .footer-nav a { font-size: 0.78rem; color: var(--faint); text-decoration: none; transition: color 0.2s; }
     .footer-nav a:hover { color: var(--text); }
 
-    /* ─── RESPONSIVE ─── */
-    @media (max-width: 540px) {
-      .wl-form { flex-direction: column; }
-      footer { flex-direction: column; text-align: center; }
+    /* ── RESPONSIVE ── */
+    @media(max-width:560px) {
+      .wl-row { flex-direction: column; }
       .pain-strip { padding: 32px 24px; }
+      .cta-wrap { padding: 52px 24px; }
+      footer { flex-direction: column; text-align: center; }
     }
   </style>
 </head>
@@ -601,24 +546,20 @@
 <!-- NAV -->
 <nav>
   <a href="#" class="logo-mark">
-    <!-- VELA LOGO SVG -->
-    <svg width="34" height="34" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <svg width="32" height="32" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <defs>
-        <linearGradient id="vg" x1="4" y1="4" x2="44" y2="44" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stop-color="#8b74f8"/>
-          <stop offset="100%" stop-color="#06c8a8"/>
+        <linearGradient id="ng" x1="4" y1="4" x2="44" y2="44" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#818cf8"/>
+          <stop offset="100%" stop-color="#06b6d4"/>
         </linearGradient>
       </defs>
-      <!-- Left sail: curved outer edge, straight inner edge -->
-      <path d="M 6 4 Q 16 26 23 46 L 23 4 Z" fill="url(#vg)"/>
-      <!-- Right sail: mirror, slightly transparent for depth -->
-      <path d="M 42 4 Q 32 26 25 46 L 25 4 Z" fill="url(#vg)" opacity="0.72"/>
-      <!-- Hull line -->
-      <path d="M 12 44 Q 24 48 36 44" stroke="url(#vg)" stroke-width="2.2" stroke-linecap="round" fill="none" opacity="0.55"/>
+      <path d="M 6 4 Q 16 26 23 46 L 23 4 Z" fill="url(#ng)"/>
+      <path d="M 42 4 Q 32 26 25 46 L 25 4 Z" fill="url(#ng)" opacity="0.72"/>
+      <path d="M 12 44 Q 24 48 36 44" stroke="url(#ng)" stroke-width="2.2" stroke-linecap="round" fill="none" opacity="0.55"/>
     </svg>
     Vela
   </a>
-  <div class="nav-right">
+  <div class="nav-links">
     <a href="#how" class="nav-link">How it works</a>
     <a href="#features" class="nav-link">Features</a>
     <a href="#waitlist" class="btn-nav">Join Waitlist</a>
@@ -627,45 +568,69 @@
 
 <!-- HERO -->
 <section class="hero">
-  <div class="glow-1"></div>
-  <div class="glow-2"></div>
+  <div class="glow-a"></div>
+  <div class="glow-b"></div>
 
-  <div class="badge">
-    <span class="badge-dot"></span>
-    Only 134 early access spots remaining
+  <div class="hero-content fade-up">
+    <div class="badge"><span class="badge-dot"></span>Early Access — 134 spots left</div>
+
+    <h1>Stop rowing.<br /><span class="grad">Start sailing.</span></h1>
+
+    <p class="hero-sub">Vela turns your repetitive workflows into intelligent AI automations — in minutes, not months.</p>
+    <p class="hero-pain">Every week you wait is 40+ hours your competitors are getting back.</p>
+
+    <div class="wl-stack" id="heroStack">
+      <div class="wl-row">
+        <input class="wl-input" type="email" name="email" placeholder="Your work email" autocomplete="email" id="heroEmail" required />
+        <button class="btn-primary" id="heroBtn" type="button">Reserve My Spot →</button>
+      </div>
+      <div>
+        <div class="spots-meta"><span>Waitlist capacity</span><span>⚠ 73% full</span></div>
+        <div class="spots-track"><div class="spots-fill"></div></div>
+      </div>
+    </div>
+    <div class="success-box" id="heroSuccess">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      You're in. We'll reach out personally with your access link.
+    </div>
+
+    <p class="social-proof" style="margin-top:16px;"><strong>847 ops leads &amp; founders</strong> already on the waitlist</p>
   </div>
 
-  <h1>Stop rowing.<br /><span class="grad-text">Start sailing.</span></h1>
+  <!-- decorative sail visual -->
+  <div class="hero-visual fade-up delay-2">
+    <div class="sail-ring">
+      <div class="orbit"><div class="orbit-dot"></div></div>
+      <div class="orbit orbit-2"><div class="orbit-dot orbit-dot-2"></div></div>
 
-  <p class="hero-sub">
-    Vela turns your repetitive workflows into intelligent AI automations — in minutes, not months.
-  </p>
-  <p class="hero-pain">Every week you wait is 40+ hours your competitors are getting back.</p>
+      <svg class="sail-hero" width="220" height="220" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="hg" x1="4" y1="4" x2="44" y2="44" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#818cf8"/>
+            <stop offset="100%" stop-color="#06b6d4"/>
+          </linearGradient>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="1.5" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <path d="M 6 4 Q 16 26 23 46 L 23 4 Z" fill="url(#hg)" filter="url(#glow)"/>
+        <path d="M 42 4 Q 32 26 25 46 L 25 4 Z" fill="url(#hg)" opacity="0.65" filter="url(#glow)"/>
+        <path d="M 12 44 Q 24 48 36 44" stroke="url(#hg)" stroke-width="1.8" stroke-linecap="round" fill="none" opacity="0.6"/>
+      </svg>
 
-  <div class="wl-wrap" id="heroWrap">
-    <form class="wl-form" id="heroForm">
-      <input type="email" name="email" placeholder="Your work email" required autocomplete="email" />
-      <button type="submit" class="btn-cta" data-fs-submit-btn>Reserve My Spot →</button>
-    </form>
-    <div class="spots-wrap">
-      <div class="spots-label">
-        <span>Waitlist capacity</span>
-        <span>⚠ 73% full</span>
-      </div>
-      <div class="spots-track"><div class="spots-fill"></div></div>
+      <div class="stat-chip c1 fade-up delay-3"><strong class="grad">10×</strong>Faster workflows</div>
+      <div class="stat-chip c2 fade-up delay-4"><strong class="grad">87%</strong>Less manual work</div>
+      <div class="stat-chip c3 fade-up delay-5"><strong class="grad">3 min</strong>First automation</div>
     </div>
   </div>
-  <div class="success-msg" id="heroSuccess">
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-    You're in. We'll reach out personally with your access link.
-  </div>
-
-  <p class="social-proof-tag" style="margin-top:20px;"><strong>847 ops leads &amp; founders</strong> already on the list</p>
 </section>
 
+<hr class="grad-rule" />
+
 <!-- TRUSTED BY -->
-<div class="logos-band">
-  <p class="logos-label">Used by teams at</p>
+<div class="logos-band fade-up">
+  <p class="logos-label">Trusted by teams at</p>
   <div class="logos-row">
     <span class="logo-pill">Acme</span>
     <span class="logo-pill">Vercel</span>
@@ -677,133 +642,84 @@
   </div>
 </div>
 
-<!-- PAIN STRIP -->
-<div style="padding: 0 5vw; max-width: 1080px; margin: 0 auto;">
-  <div class="pain-strip">
-    <div class="pain-strip-inner">
-      <h2>Manual work is <span class="grad-text">silently killing</span> your team's output.</h2>
-      <p>The average knowledge worker wastes 19 hours a week on tasks that should have been automated yesterday.</p>
-      <div class="pain-items">
-        <div class="pain-item">
-          <div class="pain-item-num">19h</div>
-          <p>Lost per person, per week to manual repetitive work</p>
-        </div>
-        <div class="pain-item">
-          <div class="pain-item-num">$47k</div>
-          <p>Annual productivity drain per employee from manual tasks</p>
-        </div>
-        <div class="pain-item">
-          <div class="pain-item-num">3×</div>
-          <p>Faster growth for teams that automate core workflows</p>
-        </div>
-        <div class="pain-item">
-          <div class="pain-item-num">11min</div>
-          <p>Average interruption recovery time after a context switch</p>
-        </div>
-      </div>
+<hr class="grad-rule" />
+
+<!-- PAIN -->
+<div class="section" style="padding-bottom:0;">
+  <div class="pain-strip fade-up">
+    <h2>Manual work is <span class="grad">killing your team's output.</span></h2>
+    <p>The average knowledge worker wastes 19 hours a week on tasks that should have been automated yesterday.</p>
+    <div class="pain-grid">
+      <div class="pain-cell fade-up delay-1"><div class="pain-num">19h</div><p>Lost per person, per week to manual repetitive work</p></div>
+      <div class="pain-cell fade-up delay-2"><div class="pain-num">$47k</div><p>Annual productivity drain per employee from manual tasks</p></div>
+      <div class="pain-cell fade-up delay-3"><div class="pain-num">3×</div><p>Faster growth for teams that automate core workflows</p></div>
+      <div class="pain-cell fade-up delay-4"><div class="pain-num">11min</div><p>Average recovery time after a context switch interruption</p></div>
     </div>
   </div>
 </div>
 
 <!-- STATS -->
-<div class="stats-band">
+<div class="stats-band" style="margin-top:96px;">
   <div class="stats-inner">
-    <div><div class="stat-val">10×</div><div class="stat-lbl">faster than manual processes</div></div>
-    <div><div class="stat-val">87%</div><div class="stat-lbl">reduction in repetitive work</div></div>
-    <div><div class="stat-val">&lt;3 min</div><div class="stat-lbl">to first working automation</div></div>
-    <div><div class="stat-val">99.9%</div><div class="stat-lbl">uptime SLA</div></div>
+    <div class="fade-up"><div class="stat-val">10×</div><div class="stat-lbl">faster than manual processes</div></div>
+    <div class="fade-up delay-1"><div class="stat-val">87%</div><div class="stat-lbl">reduction in repetitive work</div></div>
+    <div class="fade-up delay-2"><div class="stat-val">&lt;3 min</div><div class="stat-lbl">to first working automation</div></div>
+    <div class="fade-up delay-3"><div class="stat-val">99.9%</div><div class="stat-lbl">uptime SLA</div></div>
   </div>
 </div>
 
 <!-- HOW IT WORKS -->
 <div class="section" id="how">
-  <p class="sec-label">How it works</p>
-  <h2 class="sec-title">From description to deployed — in minutes</h2>
+  <div class="sec-eyebrow fade-up">How it works</div>
+  <h2 class="sec-title fade-up">From description to deployed — in minutes</h2>
   <div class="steps">
-    <div class="step-card">
-      <div class="step-num">01</div>
-      <h3>Describe it in plain English</h3>
-      <p>Tell Vela what you want to automate. No flowcharts, no diagrams. Just talk to it like a smart teammate.</p>
-    </div>
-    <div class="step-card">
-      <div class="step-num">02</div>
-      <h3>AI builds the flow</h3>
-      <p>Vela maps your intent to a complete automation, connecting your tools and handling edge cases automatically.</p>
-    </div>
-    <div class="step-card">
-      <div class="step-num">03</div>
-      <h3>Review &amp; launch</h3>
-      <p>Preview the logic, tweak anything, then deploy with one click. Vela runs it reliably — even while you sleep.</p>
-    </div>
-    <div class="step-card">
-      <div class="step-num">04</div>
-      <h3>Watch time come back</h3>
-      <p>Track hours saved, tasks completed, and ROI in real time. Your team refocuses on the work only humans can do.</p>
-    </div>
+    <div class="step-card fade-up delay-1"><div class="step-num">01</div><h3>Describe it plainly</h3><p>Tell Vela what you want to automate in natural language. No flowcharts. No diagrams. Just words.</p></div>
+    <div class="step-card fade-up delay-2"><div class="step-num">02</div><h3>AI builds the flow</h3><p>Vela maps your intent to a complete automation, connecting your tools and handling edge cases automatically.</p></div>
+    <div class="step-card fade-up delay-3"><div class="step-num">03</div><h3>Review &amp; launch</h3><p>Preview the logic, tweak anything you like, then deploy with one click. Vela runs it reliably around the clock.</p></div>
+    <div class="step-card fade-up delay-4"><div class="step-num">04</div><h3>Watch time come back</h3><p>Track hours saved and ROI in real time. Your team refocuses on the work only humans can do.</p></div>
   </div>
 </div>
 
 <!-- FEATURES -->
-<div class="section" id="features" style="padding-top: 0;">
-  <p class="sec-label">Features</p>
-  <h2 class="sec-title">Built for teams who refuse to row upstream</h2>
+<div class="section section-sm" id="features">
+  <div class="sec-eyebrow fade-up">Features</div>
+  <h2 class="sec-title fade-up">Built for teams who refuse to row upstream</h2>
   <div class="features-grid">
-    <div class="feat-card">
-      <div class="feat-icon" style="background:rgba(124,106,247,0.12);">⚡</div>
-      <h3>Natural Language Automations</h3>
-      <p>Describe your workflow in plain English. Vela writes, wires, and deploys the automation — no node editors needed.</p>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon" style="background:rgba(6,200,168,0.1);">🔗</div>
-      <h3>100+ Native Integrations</h3>
-      <p>Slack, Notion, Gmail, Salesforce, HubSpot, Jira, Airtable — all ready out of the box. No API keys to wrangle.</p>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon" style="background:rgba(124,106,247,0.12);">🧠</div>
-      <h3>Self-Healing AI Agent</h3>
-      <p>When something unexpected happens, Vela retries intelligently, escalates to a human, and learns for next time.</p>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon" style="background:rgba(6,200,168,0.1);">🔒</div>
-      <h3>Enterprise-Grade Security</h3>
-      <p>SOC 2 Type II, end-to-end encryption, SSO, and granular role permissions. Your data never trains our models.</p>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon" style="background:rgba(124,106,247,0.12);">📊</div>
-      <h3>ROI Dashboard</h3>
-      <p>See exactly how many hours your team has reclaimed and what that's worth in dollars — updated in real time.</p>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon" style="background:rgba(6,200,168,0.1);">🚀</div>
-      <h3>One-Click Deploy &amp; Rollback</h3>
-      <p>Push to production instantly. Full version history means you can roll back to any previous automation in seconds.</p>
-    </div>
+    <div class="feat-card fade-up delay-1"><div class="feat-icon">⚡</div><h3>Natural Language Automations</h3><p>Describe your workflow in plain English. Vela writes, wires, and deploys the automation — no node editors needed.</p></div>
+    <div class="feat-card fade-up delay-2"><div class="feat-icon">🔗</div><h3>100+ Native Integrations</h3><p>Slack, Notion, Gmail, Salesforce, HubSpot, Jira, Airtable — all ready out of the box, zero API keys to wrangle.</p></div>
+    <div class="feat-card fade-up delay-3"><div class="feat-icon">🧠</div><h3>Self-Healing AI Agent</h3><p>When something unexpected happens, Vela retries intelligently, escalates to a human, and learns for next time.</p></div>
+    <div class="feat-card fade-up delay-1"><div class="feat-icon">🔒</div><h3>Enterprise-Grade Security</h3><p>SOC 2 Type II, end-to-end encryption, SSO, and granular role permissions. Your data never trains our models.</p></div>
+    <div class="feat-card fade-up delay-2"><div class="feat-icon">📊</div><h3>ROI Dashboard</h3><p>See exactly how many hours your team has reclaimed and what that's worth in dollars — updated in real time.</p></div>
+    <div class="feat-card fade-up delay-3"><div class="feat-icon">🚀</div><h3>One-Click Deploy &amp; Rollback</h3><p>Push to production instantly. Full version history means you can roll back to any automation in seconds.</p></div>
   </div>
 </div>
 
 <!-- TESTIMONIALS -->
-<div class="section" style="padding-top: 0;">
-  <p class="sec-label">Early feedback</p>
-  <h2 class="sec-title">What our beta users are saying</h2>
+<div class="section section-sm">
+  <div class="sec-eyebrow fade-up">Early feedback</div>
+  <h2 class="sec-title fade-up">What our beta users are saying</h2>
   <div class="testi-grid">
-    <div class="testi-card">
-      <div class="testi-stars">★★★★★</div>
+    <div class="testi-card fade-up delay-1">
+      <div class="quote-mark">"</div>
+      <div class="testi-stars"><span></span><span></span><span></span><span></span><span></span></div>
       <p class="testi-text">"I described our lead routing process in two sentences. Vela had it running in under five minutes. I've been trying to build that for three months."</p>
       <div class="testi-author">
-        <div class="testi-avatar" style="background:linear-gradient(135deg,#7c6af7,#5b4fcf);">SR</div>
+        <div class="testi-avatar" style="background:linear-gradient(135deg,#6366f1,#4f46e5);">SR</div>
         <div><div class="testi-name">Sarah R.</div><div class="testi-role">Head of Ops, Series B SaaS</div></div>
       </div>
     </div>
-    <div class="testi-card">
-      <div class="testi-stars">★★★★★</div>
+    <div class="testi-card fade-up delay-2">
+      <div class="quote-mark">"</div>
+      <div class="testi-stars"><span></span><span></span><span></span><span></span><span></span></div>
       <p class="testi-text">"Our team was spending 22 hours a week on manual reporting. Vela eliminated it completely. That's half a FTE we redirected to actual growth work."</p>
       <div class="testi-author">
-        <div class="testi-avatar" style="background:linear-gradient(135deg,#06c8a8,#059669);">MK</div>
+        <div class="testi-avatar" style="background:linear-gradient(135deg,#06b6d4,#0891b2);">MK</div>
         <div><div class="testi-name">Marcus K.</div><div class="testi-role">COO, 80-person agency</div></div>
       </div>
     </div>
-    <div class="testi-card">
-      <div class="testi-stars">★★★★★</div>
+    <div class="testi-card fade-up delay-3">
+      <div class="quote-mark">"</div>
+      <div class="testi-stars"><span></span><span></span><span></span><span></span><span></span></div>
       <p class="testi-text">"Every automation tool I've tried requires a developer. Vela is genuinely the first one I could use myself on day one — and it works better than what my dev built."</p>
       <div class="testi-author">
         <div class="testi-avatar" style="background:linear-gradient(135deg,#f59e0b,#d97706);">AT</div>
@@ -813,48 +729,46 @@
   </div>
 </div>
 
-<!-- BOTTOM CTA / WAITLIST -->
-<section class="cta-section" id="waitlist">
-  <p class="sec-label" style="position:relative;z-index:1;">Early access</p>
-  <h2>Your competitors are<br /><span class="grad-text">already automating.</span></h2>
-  <p class="sub">Join the waitlist now. We're onboarding in small cohorts so every team gets a personal setup call.</p>
+<!-- BOTTOM CTA -->
+<div class="section section-sm" style="padding-bottom:96px;" id="waitlist">
+  <div class="cta-wrap fade-up">
+    <div class="cta-glow"></div>
+    <div class="sec-eyebrow" style="justify-content:center;">Early access</div>
+    <h2>Your competitors are<br /><span class="grad">already automating.</span></h2>
+    <p class="sub">We're onboarding in small cohorts so every team gets a personal setup call. Spots are limited.</p>
 
-  <div class="wl-wrap" id="ctaWrap" style="margin: 0 auto;">
-    <form class="wl-form" id="ctaForm" style="justify-content:center;">
-      <input type="email" name="email" placeholder="Your work email" required autocomplete="email" />
-      <button type="submit" class="btn-cta" data-fs-submit-btn>Claim My Spot →</button>
-    </form>
-    <div class="spots-wrap">
-      <div class="spots-label">
-        <span>Waitlist capacity</span>
-        <span>⚠ 73% full — 134 spots left</span>
+    <div id="ctaStack" style="max-width:440px;margin:0 auto;display:flex;flex-direction:column;gap:12px;position:relative;z-index:1;">
+      <div class="wl-row" style="justify-content:center;">
+        <input class="wl-input" type="email" placeholder="Your work email" autocomplete="email" id="ctaEmail" required />
+        <button class="btn-primary" id="ctaBtn" type="button">Claim My Spot →</button>
       </div>
-      <div class="spots-track"><div class="spots-fill"></div></div>
+      <div>
+        <div class="spots-meta"><span>Waitlist capacity</span><span>⚠ 73% full — 134 spots left</span></div>
+        <div class="spots-track"><div class="spots-fill"></div></div>
+      </div>
     </div>
-  </div>
-  <div class="success-msg" id="ctaSuccess" style="justify-content:center;margin-top:0;">
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-    You're in. We'll reach out personally with your access link.
-  </div>
+    <div class="success-box" id="ctaSuccess" style="justify-content:center;max-width:440px;margin:0 auto;position:relative;z-index:1;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      You're in. We'll reach out personally with your access link.
+    </div>
 
-  <p class="social-proof-tag" style="margin-top:22px;position:relative;z-index:1;">
-    No spam. Unsubscribe anytime. <strong>Personal onboarding included.</strong>
-  </p>
-</section>
+    <p class="social-proof" style="margin-top:20px;position:relative;z-index:1;">No spam. Unsubscribe anytime. <strong>Personal onboarding included.</strong></p>
+  </div>
+</div>
 
 <!-- FOOTER -->
 <footer>
-  <a href="#" class="logo-mark" style="font-size:1rem;gap:8px;">
+  <a href="#" class="logo-mark" style="font-size:1rem;">
     <svg width="26" height="26" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <defs>
-        <linearGradient id="vg2" x1="4" y1="4" x2="44" y2="44" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stop-color="#8b74f8"/>
-          <stop offset="100%" stop-color="#06c8a8"/>
+        <linearGradient id="fg" x1="4" y1="4" x2="44" y2="44" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#818cf8"/>
+          <stop offset="100%" stop-color="#06b6d4"/>
         </linearGradient>
       </defs>
-      <path d="M 6 4 Q 16 26 23 46 L 23 4 Z" fill="url(#vg2)"/>
-      <path d="M 42 4 Q 32 26 25 46 L 25 4 Z" fill="url(#vg2)" opacity="0.72"/>
-      <path d="M 12 44 Q 24 48 36 44" stroke="url(#vg2)" stroke-width="2.2" stroke-linecap="round" fill="none" opacity="0.55"/>
+      <path d="M 6 4 Q 16 26 23 46 L 23 4 Z" fill="url(#fg)"/>
+      <path d="M 42 4 Q 32 26 25 46 L 25 4 Z" fill="url(#fg)" opacity="0.72"/>
+      <path d="M 12 44 Q 24 48 36 44" stroke="url(#fg)" stroke-width="2.2" stroke-linecap="round" fill="none" opacity="0.55"/>
     </svg>
     Vela
   </a>
@@ -867,25 +781,31 @@
 </footer>
 
 <script>
-  const FS_ENDPOINT = 'https://formspree.io/f/mvzladze';
+  // ── Scroll animations ──
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.08 });
+  document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
 
-  async function submitWaitlist(formId, wrapId, successId) {
-    const form   = document.getElementById(formId);
-    const btn    = form.querySelector('[data-fs-submit-btn]');
-    const email  = form.querySelector('[name="email"]').value;
+  // ── Waitlist submission ──
+  const FS = 'https://formspree.io/f/mvzladze';
+
+  async function submit(emailId, btnId, stackId, successId) {
+    const email = document.getElementById(emailId).value.trim();
+    const btn   = document.getElementById(btnId);
+    if (!email) return;
 
     btn.textContent = 'Joining…';
     btn.disabled = true;
 
     try {
-      const res = await fetch(FS_ENDPOINT, {
+      const res = await fetch(FS, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({ email, _subject: 'New Vela Waitlist Signup' })
       });
-
       if (res.ok) {
-        document.getElementById(wrapId).style.display = 'none';
+        document.getElementById(stackId).style.display  = 'none';
         document.getElementById(successId).style.display = 'flex';
       } else {
         btn.textContent = 'Try again';
@@ -897,14 +817,17 @@
     }
   }
 
-  document.getElementById('heroForm').addEventListener('submit', e => {
-    e.preventDefault();
-    submitWaitlist('heroForm', 'heroWrap', 'heroSuccess');
-  });
+  document.getElementById('heroBtn').addEventListener('click', () =>
+    submit('heroEmail', 'heroBtn', 'heroStack', 'heroSuccess'));
 
-  document.getElementById('ctaForm').addEventListener('submit', e => {
-    e.preventDefault();
-    submitWaitlist('ctaForm', 'ctaWrap', 'ctaSuccess');
+  document.getElementById('ctaBtn').addEventListener('click', () =>
+    submit('ctaEmail', 'ctaBtn', 'ctaStack', 'ctaSuccess'));
+
+  // also allow Enter key in inputs
+  ['heroEmail','ctaEmail'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => {
+      if (e.key === 'Enter') document.getElementById(id.replace('Email','Btn')).click();
+    });
   });
 </script>
 
