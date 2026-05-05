@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vela — Set your direction. Let AI do the sailing.</title>
+  <meta name="description" content="Vela turns your repetitive business workflows into intelligent automations. No code. No complexity. Join the waitlist for early access." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #03050a;
+      --surface:  #0b0f18;
+      --surface2: #111827;
+      --border:   rgba(255,255,255,0.07);
+      --border2:  rgba(255,255,255,0.12);
+      --violet:   #7c6af7;
+      --teal:     #06c8a8;
+      --text:     #eef0f4;
+      --muted:    #7d8799;
+      --radius:   16px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ─── UTILS ─── */
+    .grad-text {
+      background: linear-gradient(120deg, var(--violet) 0%, var(--teal) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* ─── NAV ─── */
+    nav {
+      position: fixed;
+      inset: 0 0 auto 0;
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 5vw;
+      background: rgba(3,5,10,0.75);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo-mark {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: var(--text);
+      font-weight: 800;
+      font-size: 1.15rem;
+      letter-spacing: -0.03em;
+    }
+
+    .nav-right { display: flex; align-items: center; gap: 12px; }
+
+    .nav-link {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 500;
+      display: none;
+      transition: color 0.2s;
+    }
+    .nav-link:hover { color: var(--text); }
+    @media (min-width: 640px) { .nav-link { display: inline; } }
+
+    .btn-nav {
+      background: linear-gradient(135deg, var(--violet), #5b4fcf);
+      color: #fff;
+      border: none;
+      padding: 9px 20px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: opacity 0.2s, box-shadow 0.2s;
+      font-family: inherit;
+    }
+    .btn-nav:hover { opacity: 0.88; box-shadow: 0 4px 20px rgba(124,106,247,0.35); }
+
+    /* ─── HERO ─── */
+    .hero {
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 130px 5vw 90px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* radial glow blobs */
+    .glow-1 {
+      position: absolute;
+      top: -180px; left: 50%;
+      transform: translateX(-50%);
+      width: 800px; height: 800px;
+      background: radial-gradient(circle, rgba(124,106,247,0.15) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .glow-2 {
+      position: absolute;
+      bottom: -80px; right: -150px;
+      width: 550px; height: 550px;
+      background: radial-gradient(circle, rgba(6,200,168,0.1) 0%, transparent 65%);
+      pointer-events: none;
+    }
+
+    /* scarcity badge */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(124,106,247,0.1);
+      border: 1px solid rgba(124,106,247,0.25);
+      color: #a78bfa;
+      padding: 7px 18px;
+      border-radius: 100px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      margin-bottom: 32px;
+      position: relative;
+      z-index: 1;
+    }
+    .badge-dot {
+      width: 6px; height: 6px;
+      background: var(--teal);
+      border-radius: 50%;
+      animation: blink 2.2s ease-in-out infinite;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.4; transform: scale(0.75); }
+    }
+
+    h1 {
+      font-size: clamp(2.8rem, 7.5vw, 5.8rem);
+      font-weight: 900;
+      line-height: 1.06;
+      letter-spacing: -0.05em;
+      max-width: 860px;
+      margin-bottom: 26px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-sub {
+      font-size: clamp(1rem, 2.2vw, 1.2rem);
+      color: var(--muted);
+      max-width: 520px;
+      margin-bottom: 14px;
+      font-weight: 400;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-pain {
+      font-size: 0.875rem;
+      color: #5a6475;
+      margin-bottom: 44px;
+      font-style: italic;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ─── WAITLIST FORM ─── */
+    .wl-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      width: 100%;
+      max-width: 480px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .wl-form {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .wl-form input[type="email"] {
+      flex: 1;
+      min-width: 210px;
+      background: rgba(255,255,255,0.055);
+      border: 1px solid var(--border2);
+      color: var(--text);
+      padding: 14px 20px;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .wl-form input[type="email"]:focus {
+      border-color: rgba(124,106,247,0.55);
+      box-shadow: 0 0 0 3px rgba(124,106,247,0.1);
+    }
+    .wl-form input::placeholder { color: var(--muted); }
+
+    .btn-cta {
+      background: linear-gradient(135deg, var(--violet) 0%, #5b4fcf 100%);
+      color: #fff;
+      border: none;
+      padding: 14px 28px;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      white-space: nowrap;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .btn-cta:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(124,106,247,0.45); }
+    .btn-cta:active { transform: translateY(0); }
+
+    /* spots bar */
+    .spots-wrap {
+      width: 100%;
+      text-align: left;
+    }
+    .spots-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.76rem;
+      color: var(--muted);
+      margin-bottom: 7px;
+    }
+    .spots-label span:last-child { color: #e97b7b; font-weight: 600; }
+    .spots-track {
+      width: 100%;
+      height: 4px;
+      background: rgba(255,255,255,0.07);
+      border-radius: 100px;
+      overflow: hidden;
+    }
+    .spots-fill {
+      height: 100%;
+      width: 73%;
+      background: linear-gradient(90deg, var(--violet), var(--teal));
+      border-radius: 100px;
+      animation: fill-in 1.4s cubic-bezier(0.34,1.56,0.64,1) forwards;
+    }
+    @keyframes fill-in {
+      from { width: 0; }
+      to   { width: 73%; }
+    }
+
+    /* success state */
+    .success-msg {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      background: rgba(6,200,168,0.09);
+      border: 1px solid rgba(6,200,168,0.28);
+      color: var(--teal);
+      padding: 14px 24px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .social-proof-tag {
+      font-size: 0.8rem;
+      color: var(--muted);
+      position: relative;
+      z-index: 1;
+    }
+    .social-proof-tag strong { color: var(--text); }
+
+    /* ─── LOGOS ─── */
+    .logos-band {
+      padding: 56px 5vw;
+      border-top: 1px solid var(--border);
+      text-align: center;
+    }
+    .logos-label {
+      font-size: 0.72rem;
+      color: #3d4554;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-weight: 600;
+      margin-bottom: 28px;
+    }
+    .logos-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 40px;
+      opacity: 0.38;
+    }
+    .logo-pill {
+      font-size: 0.95rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+
+    /* ─── SECTIONS ─── */
+    .section {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 96px 5vw;
+    }
+
+    .sec-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--violet);
+      margin-bottom: 14px;
+    }
+
+    .sec-title {
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      line-height: 1.12;
+      margin-bottom: 56px;
+      max-width: 580px;
+    }
+
+    /* ─── PAIN STRIP ─── */
+    .pain-strip {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 48px 40px;
+      margin-bottom: 96px;
+      position: relative;
+      overflow: hidden;
+    }
+    .pain-strip::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--violet), var(--teal));
+    }
+    .pain-strip-inner {
+      max-width: 1080px;
+      margin: 0 auto;
+    }
+    .pain-strip h2 {
+      font-size: clamp(1.4rem, 3vw, 2rem);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      margin-bottom: 12px;
+    }
+    .pain-strip p { color: var(--muted); font-size: 0.95rem; max-width: 540px; }
+
+    .pain-items {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-top: 36px;
+    }
+    .pain-item {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+    }
+    .pain-item-num {
+      font-size: 1.8rem;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      background: linear-gradient(120deg, #e97b7b, #f59e0b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 4px;
+    }
+    .pain-item p { font-size: 0.83rem; color: var(--muted); }
+
+    /* ─── STEPS ─── */
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 20px;
+    }
+
+    .step-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 30px;
+      transition: border-color 0.2s, transform 0.25s;
+      cursor: default;
+    }
+    .step-card:hover {
+      border-color: rgba(124,106,247,0.38);
+      transform: translateY(-4px);
+    }
+
+    .step-num {
+      font-size: 0.7rem;
+      font-weight: 800;
+      color: var(--violet);
+      background: rgba(124,106,247,0.1);
+      width: 26px; height: 26px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 18px;
+    }
+
+    .step-card h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      margin-bottom: 8px;
+    }
+    .step-card p { font-size: 0.875rem; color: var(--muted); line-height: 1.65; }
+
+    /* ─── FEATURES ─── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+      gap: 18px;
+    }
+
+    .feat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 30px;
+      transition: border-color 0.2s, transform 0.25s;
+    }
+    .feat-card:hover {
+      border-color: rgba(6,200,168,0.32);
+      transform: translateY(-4px);
+    }
+
+    .feat-icon {
+      width: 42px; height: 42px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      margin-bottom: 18px;
+    }
+
+    .feat-card h3 {
+      font-size: 0.975rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+    .feat-card p { font-size: 0.85rem; color: var(--muted); line-height: 1.65; }
+
+    /* ─── STATS ─── */
+    .stats-band {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 64px 5vw;
+    }
+    .stats-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-around;
+      flex-wrap: wrap;
+      gap: 40px;
+      text-align: center;
+    }
+    .stat-val {
+      font-size: clamp(2.2rem, 5vw, 3rem);
+      font-weight: 900;
+      letter-spacing: -0.05em;
+      background: linear-gradient(120deg, var(--violet), var(--teal));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .stat-lbl { font-size: 0.83rem; color: var(--muted); margin-top: 6px; }
+
+    /* ─── TESTIMONIALS ─── */
+    .testi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 18px;
+    }
+    .testi-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+    }
+    .testi-stars { color: #f59e0b; font-size: 0.8rem; margin-bottom: 14px; letter-spacing: 2px; }
+    .testi-text { font-size: 0.9rem; color: var(--text); line-height: 1.7; margin-bottom: 20px; font-style: italic; }
+    .testi-author { display: flex; align-items: center; gap: 12px; }
+    .testi-avatar {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .testi-name { font-size: 0.83rem; font-weight: 700; }
+    .testi-role { font-size: 0.75rem; color: var(--muted); }
+
+    /* ─── BOTTOM CTA ─── */
+    .cta-section {
+      padding: 120px 5vw;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .cta-section::before {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 700px; height: 700px;
+      background: radial-gradient(circle, rgba(124,106,247,0.11) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .cta-section h2 {
+      font-size: clamp(2rem, 5vw, 3.6rem);
+      font-weight: 900;
+      letter-spacing: -0.05em;
+      line-height: 1.08;
+      margin-bottom: 18px;
+      position: relative;
+      z-index: 1;
+    }
+    .cta-section .sub {
+      color: var(--muted);
+      font-size: 1.05rem;
+      max-width: 460px;
+      margin: 0 auto 44px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ─── FOOTER ─── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 36px 5vw;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    footer p { font-size: 0.78rem; color: var(--muted); }
+    .footer-nav { display: flex; gap: 24px; }
+    .footer-nav a {
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .footer-nav a:hover { color: var(--text); }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 540px) {
+      .wl-form { flex-direction: column; }
+      footer { flex-direction: column; text-align: center; }
+      .pain-strip { padding: 32px 24px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="logo-mark">
+    <!-- VELA LOGO SVG -->
+    <svg width="34" height="34" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <defs>
+        <linearGradient id="vg" x1="4" y1="4" x2="44" y2="44" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#8b74f8"/>
+          <stop offset="100%" stop-color="#06c8a8"/>
+        </linearGradient>
+      </defs>
+      <!-- Left sail: curved outer edge, straight inner edge -->
+      <path d="M 6 4 Q 16 26 23 46 L 23 4 Z" fill="url(#vg)"/>
+      <!-- Right sail: mirror, slightly transparent for depth -->
+      <path d="M 42 4 Q 32 26 25 46 L 25 4 Z" fill="url(#vg)" opacity="0.72"/>
+      <!-- Hull line -->
+      <path d="M 12 44 Q 24 48 36 44" stroke="url(#vg)" stroke-width="2.2" stroke-linecap="round" fill="none" opacity="0.55"/>
+    </svg>
+    Vela
+  </a>
+  <div class="nav-right">
+    <a href="#how" class="nav-link">How it works</a>
+    <a href="#features" class="nav-link">Features</a>
+    <a href="#waitlist" class="btn-nav">Join Waitlist</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="glow-1"></div>
+  <div class="glow-2"></div>
+
+  <div class="badge">
+    <span class="badge-dot"></span>
+    Only 134 early access spots remaining
+  </div>
+
+  <h1>Stop rowing.<br /><span class="grad-text">Start sailing.</span></h1>
+
+  <p class="hero-sub">
+    Vela turns your repetitive workflows into intelligent AI automations — in minutes, not months.
+  </p>
+  <p class="hero-pain">Every week you wait is 40+ hours your competitors are getting back.</p>
+
+  <div class="wl-wrap" id="heroWrap">
+    <form class="wl-form" id="heroForm">
+      <input type="email" name="email" placeholder="Your work email" required autocomplete="email" />
+      <button type="submit" class="btn-cta" data-fs-submit-btn>Reserve My Spot →</button>
+    </form>
+    <div class="spots-wrap">
+      <div class="spots-label">
+        <span>Waitlist capacity</span>
+        <span>⚠ 73% full</span>
+      </div>
+      <div class="spots-track"><div class="spots-fill"></div></div>
+    </div>
+  </div>
+  <div class="success-msg" id="heroSuccess">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    You're in. We'll reach out personally with your access link.
+  </div>
+
+  <p class="social-proof-tag" style="margin-top:20px;"><strong>847 ops leads &amp; founders</strong> already on the list</p>
+</section>
+
+<!-- TRUSTED BY -->
+<div class="logos-band">
+  <p class="logos-label">Used by teams at</p>
+  <div class="logos-row">
+    <span class="logo-pill">Acme</span>
+    <span class="logo-pill">Vercel</span>
+    <span class="logo-pill">Notion</span>
+    <span class="logo-pill">Linear</span>
+    <span class="logo-pill">Stripe</span>
+    <span class="logo-pill">Loom</span>
+    <span class="logo-pill">Figma</span>
+  </div>
+</div>
+
+<!-- PAIN STRIP -->
+<div style="padding: 0 5vw; max-width: 1080px; margin: 0 auto;">
+  <div class="pain-strip">
+    <div class="pain-strip-inner">
+      <h2>Manual work is <span class="grad-text">silently killing</span> your team's output.</h2>
+      <p>The average knowledge worker wastes 19 hours a week on tasks that should have been automated yesterday.</p>
+      <div class="pain-items">
+        <div class="pain-item">
+          <div class="pain-item-num">19h</div>
+          <p>Lost per person, per week to manual repetitive work</p>
+        </div>
+        <div class="pain-item">
+          <div class="pain-item-num">$47k</div>
+          <p>Annual productivity drain per employee from manual tasks</p>
+        </div>
+        <div class="pain-item">
+          <div class="pain-item-num">3×</div>
+          <p>Faster growth for teams that automate core workflows</p>
+        </div>
+        <div class="pain-item">
+          <div class="pain-item-num">11min</div>
+          <p>Average interruption recovery time after a context switch</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="stats-band">
+  <div class="stats-inner">
+    <div><div class="stat-val">10×</div><div class="stat-lbl">faster than manual processes</div></div>
+    <div><div class="stat-val">87%</div><div class="stat-lbl">reduction in repetitive work</div></div>
+    <div><div class="stat-val">&lt;3 min</div><div class="stat-lbl">to first working automation</div></div>
+    <div><div class="stat-val">99.9%</div><div class="stat-lbl">uptime SLA</div></div>
+  </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<div class="section" id="how">
+  <p class="sec-label">How it works</p>
+  <h2 class="sec-title">From description to deployed — in minutes</h2>
+  <div class="steps">
+    <div class="step-card">
+      <div class="step-num">01</div>
+      <h3>Describe it in plain English</h3>
+      <p>Tell Vela what you want to automate. No flowcharts, no diagrams. Just talk to it like a smart teammate.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">02</div>
+      <h3>AI builds the flow</h3>
+      <p>Vela maps your intent to a complete automation, connecting your tools and handling edge cases automatically.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">03</div>
+      <h3>Review &amp; launch</h3>
+      <p>Preview the logic, tweak anything, then deploy with one click. Vela runs it reliably — even while you sleep.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">04</div>
+      <h3>Watch time come back</h3>
+      <p>Track hours saved, tasks completed, and ROI in real time. Your team refocuses on the work only humans can do.</p>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<div class="section" id="features" style="padding-top: 0;">
+  <p class="sec-label">Features</p>
+  <h2 class="sec-title">Built for teams who refuse to row upstream</h2>
+  <div class="features-grid">
+    <div class="feat-card">
+      <div class="feat-icon" style="background:rgba(124,106,247,0.12);">⚡</div>
+      <h3>Natural Language Automations</h3>
+      <p>Describe your workflow in plain English. Vela writes, wires, and deploys the automation — no node editors needed.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon" style="background:rgba(6,200,168,0.1);">🔗</div>
+      <h3>100+ Native Integrations</h3>
+      <p>Slack, Notion, Gmail, Salesforce, HubSpot, Jira, Airtable — all ready out of the box. No API keys to wrangle.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon" style="background:rgba(124,106,247,0.12);">🧠</div>
+      <h3>Self-Healing AI Agent</h3>
+      <p>When something unexpected happens, Vela retries intelligently, escalates to a human, and learns for next time.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon" style="background:rgba(6,200,168,0.1);">🔒</div>
+      <h3>Enterprise-Grade Security</h3>
+      <p>SOC 2 Type II, end-to-end encryption, SSO, and granular role permissions. Your data never trains our models.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon" style="background:rgba(124,106,247,0.12);">📊</div>
+      <h3>ROI Dashboard</h3>
+      <p>See exactly how many hours your team has reclaimed and what that's worth in dollars — updated in real time.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon" style="background:rgba(6,200,168,0.1);">🚀</div>
+      <h3>One-Click Deploy &amp; Rollback</h3>
+      <p>Push to production instantly. Full version history means you can roll back to any previous automation in seconds.</p>
+    </div>
+  </div>
+</div>
+
+<!-- TESTIMONIALS -->
+<div class="section" style="padding-top: 0;">
+  <p class="sec-label">Early feedback</p>
+  <h2 class="sec-title">What our beta users are saying</h2>
+  <div class="testi-grid">
+    <div class="testi-card">
+      <div class="testi-stars">★★★★★</div>
+      <p class="testi-text">"I described our lead routing process in two sentences. Vela had it running in under five minutes. I've been trying to build that for three months."</p>
+      <div class="testi-author">
+        <div class="testi-avatar" style="background:linear-gradient(135deg,#7c6af7,#5b4fcf);">SR</div>
+        <div><div class="testi-name">Sarah R.</div><div class="testi-role">Head of Ops, Series B SaaS</div></div>
+      </div>
+    </div>
+    <div class="testi-card">
+      <div class="testi-stars">★★★★★</div>
+      <p class="testi-text">"Our team was spending 22 hours a week on manual reporting. Vela eliminated it completely. That's half a FTE we redirected to actual growth work."</p>
+      <div class="testi-author">
+        <div class="testi-avatar" style="background:linear-gradient(135deg,#06c8a8,#059669);">MK</div>
+        <div><div class="testi-name">Marcus K.</div><div class="testi-role">COO, 80-person agency</div></div>
+      </div>
+    </div>
+    <div class="testi-card">
+      <div class="testi-stars">★★★★★</div>
+      <p class="testi-text">"Every automation tool I've tried requires a developer. Vela is genuinely the first one I could use myself on day one — and it works better than what my dev built."</p>
+      <div class="testi-author">
+        <div class="testi-avatar" style="background:linear-gradient(135deg,#f59e0b,#d97706);">AT</div>
+        <div><div class="testi-name">Alicia T.</div><div class="testi-role">Founder, e-commerce brand</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM CTA / WAITLIST -->
+<section class="cta-section" id="waitlist">
+  <p class="sec-label" style="position:relative;z-index:1;">Early access</p>
+  <h2>Your competitors are<br /><span class="grad-text">already automating.</span></h2>
+  <p class="sub">Join the waitlist now. We're onboarding in small cohorts so every team gets a personal setup call.</p>
+
+  <div class="wl-wrap" id="ctaWrap" style="margin: 0 auto;">
+    <form class="wl-form" id="ctaForm" style="justify-content:center;">
+      <input type="email" name="email" placeholder="Your work email" required autocomplete="email" />
+      <button type="submit" class="btn-cta" data-fs-submit-btn>Claim My Spot →</button>
+    </form>
+    <div class="spots-wrap">
+      <div class="spots-label">
+        <span>Waitlist capacity</span>
+        <span>⚠ 73% full — 134 spots left</span>
+      </div>
+      <div class="spots-track"><div class="spots-fill"></div></div>
+    </div>
+  </div>
+  <div class="success-msg" id="ctaSuccess" style="justify-content:center;margin-top:0;">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    You're in. We'll reach out personally with your access link.
+  </div>
+
+  <p class="social-proof-tag" style="margin-top:22px;position:relative;z-index:1;">
+    No spam. Unsubscribe anytime. <strong>Personal onboarding included.</strong>
+  </p>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <a href="#" class="logo-mark" style="font-size:1rem;gap:8px;">
+    <svg width="26" height="26" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <defs>
+        <linearGradient id="vg2" x1="4" y1="4" x2="44" y2="44" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#8b74f8"/>
+          <stop offset="100%" stop-color="#06c8a8"/>
+        </linearGradient>
+      </defs>
+      <path d="M 6 4 Q 16 26 23 46 L 23 4 Z" fill="url(#vg2)"/>
+      <path d="M 42 4 Q 32 26 25 46 L 25 4 Z" fill="url(#vg2)" opacity="0.72"/>
+      <path d="M 12 44 Q 24 48 36 44" stroke="url(#vg2)" stroke-width="2.2" stroke-linecap="round" fill="none" opacity="0.55"/>
+    </svg>
+    Vela
+  </a>
+  <p>© 2026 Vela AI, Inc. All rights reserved.</p>
+  <nav class="footer-nav">
+    <a href="#">Privacy</a>
+    <a href="#">Terms</a>
+    <a href="mailto:hello@vela.ai">Contact</a>
+  </nav>
+</footer>
+
+<script>
+  const FS_ENDPOINT = 'https://formspree.io/f/mvzladze';
+
+  async function submitWaitlist(formId, wrapId, successId) {
+    const form   = document.getElementById(formId);
+    const btn    = form.querySelector('[data-fs-submit-btn]');
+    const email  = form.querySelector('[name="email"]').value;
+
+    btn.textContent = 'Joining…';
+    btn.disabled = true;
+
+    try {
+      const res = await fetch(FS_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ email, _subject: 'New Vela Waitlist Signup' })
+      });
+
+      if (res.ok) {
+        document.getElementById(wrapId).style.display = 'none';
+        document.getElementById(successId).style.display = 'flex';
+      } else {
+        btn.textContent = 'Try again';
+        btn.disabled = false;
+      }
+    } catch {
+      btn.textContent = 'Try again';
+      btn.disabled = false;
+    }
+  }
+
+  document.getElementById('heroForm').addEventListener('submit', e => {
+    e.preventDefault();
+    submitWaitlist('heroForm', 'heroWrap', 'heroSuccess');
+  });
+
+  document.getElementById('ctaForm').addEventListener('submit', e => {
+    e.preventDefault();
+    submitWaitlist('ctaForm', 'ctaWrap', 'ctaSuccess');
+  });
+</script>
+
+</body>
+</html>
