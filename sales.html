@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vela — Sales Scripts</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #030712; --surface: #0f172a; --surface2: #1e293b;
+      --border: rgba(148,163,184,0.1); --indigo: #6366f1; --cyan: #06b6d4;
+      --text: #f1f5f9; --muted: #94a3b8; --faint: #334155;
+      --green: #10b981; --amber: #f59e0b;
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    body::before { content:''; position:fixed; inset:0; background-image:radial-gradient(rgba(99,102,241,0.1) 1px,transparent 1px); background-size:28px 28px; pointer-events:none; z-index:0; }
+
+    header {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(3,7,18,0.85); backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 32px;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .logo-mark { display:flex; align-items:center; gap:8px; font-family:'Syne',sans-serif; font-weight:800; font-size:1.1rem; letter-spacing:-0.02em; text-decoration:none; color:var(--text); }
+    .page-title { font-size:0.8rem; color:var(--muted); }
+    .back-btn { font-size:0.82rem; color:var(--muted); text-decoration:none; border:1px solid var(--border); padding:7px 14px; border-radius:8px; transition:color 0.2s,border-color 0.2s; }
+    .back-btn:hover { color:var(--text); border-color:var(--indigo); }
+
+    .page { max-width: 820px; margin: 0 auto; padding: 48px 24px 80px; position: relative; z-index: 1; }
+
+    h1 { font-family:'Syne',sans-serif; font-size:2rem; font-weight:800; letter-spacing:-0.04em; margin-bottom:8px; }
+    .page-sub { color:var(--muted); font-size:0.925rem; margin-bottom:48px; line-height:1.6; }
+
+    /* tabs */
+    .tabs { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:32px; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:4px; }
+    .tab { padding:8px 16px; border-radius:7px; font-size:0.82rem; font-weight:600; cursor:pointer; border:none; background:transparent; color:var(--muted); font-family:'Inter',sans-serif; transition:all 0.2s; white-space:nowrap; }
+    .tab.active { background:linear-gradient(120deg,var(--indigo),#4f46e5); color:#fff; }
+    .tab:not(.active):hover { color:var(--text); }
+
+    .tab-panel { display:none; }
+    .tab-panel.active { display:block; }
+
+    /* script cards */
+    .script-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; overflow: hidden; margin-bottom: 20px;
+    }
+    .card-header {
+      padding: 16px 20px; display:flex; align-items:center; justify-content:space-between;
+      border-bottom: 1px solid var(--border); gap: 12px;
+    }
+    .card-label { display:flex; align-items:center; gap:10px; }
+    .card-tag {
+      font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.1em;
+      padding:3px 10px; border-radius:100px;
+    }
+    .tag-linkedin { background:rgba(99,102,241,0.12); color:#a5b4fc; }
+    .tag-email    { background:rgba(6,182,212,0.1);   color:var(--cyan); }
+    .tag-call     { background:rgba(16,185,129,0.1);  color:var(--green); }
+    .tag-objection{ background:rgba(245,158,11,0.1);  color:var(--amber); }
+    .tag-tip      { background:rgba(248,113,113,0.1); color:#fca5a5; }
+
+    .card-title { font-family:'Syne',sans-serif; font-size:0.9rem; font-weight:800; letter-spacing:-0.02em; }
+
+    .copy-btn {
+      display:flex; align-items:center; gap:6px;
+      padding:7px 14px; border-radius:7px; font-size:0.78rem; font-weight:600;
+      cursor:pointer; border:1px solid var(--border); background:transparent;
+      color:var(--muted); font-family:'Inter',sans-serif;
+      transition:all 0.2s; white-space:nowrap; flex-shrink:0;
+    }
+    .copy-btn:hover { border-color:var(--indigo); color:var(--text); }
+    .copy-btn.copied { border-color:var(--green); color:var(--green); }
+
+    .card-body { padding: 20px; }
+
+    .script-text {
+      font-size: 0.875rem; line-height: 1.8; color: var(--text);
+      white-space: pre-wrap; font-family: 'Inter', sans-serif;
+    }
+
+    .fill-in { color: var(--cyan); font-weight: 600; }
+
+    .card-note {
+      margin-top: 14px; padding: 12px 16px;
+      background: rgba(99,102,241,0.06); border-left: 2px solid var(--indigo);
+      border-radius: 0 6px 6px 0; font-size: 0.8rem; color: var(--muted); line-height: 1.6;
+    }
+    .card-note strong { color: var(--indigo); }
+
+    /* subject line list */
+    .subject-list { display:flex; flex-direction:column; gap:8px; }
+    .subject-row {
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      background:rgba(255,255,255,0.03); border:1px solid var(--border);
+      border-radius:8px; padding:12px 16px;
+      transition: border-color 0.2s;
+    }
+    .subject-row:hover { border-color:rgba(99,102,241,0.3); }
+    .subject-text { font-size:0.875rem; color:var(--text); }
+
+    .mini-copy {
+      padding:5px 12px; border-radius:6px; font-size:0.75rem; font-weight:600;
+      cursor:pointer; border:1px solid var(--border); background:transparent;
+      color:var(--muted); font-family:'Inter',sans-serif; transition:all 0.2s; white-space:nowrap;
+    }
+    .mini-copy:hover { border-color:var(--indigo); color:var(--text); }
+    .mini-copy.copied { border-color:var(--green); color:var(--green); }
+
+    /* objection grid */
+    .obj-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(340px,1fr)); gap:16px; }
+    .obj-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+    .obj-q { padding:14px 18px; border-bottom:1px solid var(--border); font-size:0.85rem; font-weight:600; color:var(--amber); }
+    .obj-a { padding:14px 18px; font-size:0.85rem; line-height:1.7; color:var(--muted); }
+    .obj-a .highlight { color:var(--text); }
+
+    /* tip banner */
+    .tip-banner {
+      background: linear-gradient(120deg, rgba(99,102,241,0.08), rgba(6,182,212,0.06));
+      border: 1px solid rgba(99,102,241,0.2); border-radius: 12px;
+      padding: 20px 24px; margin-bottom: 20px;
+      display: flex; gap: 14px; align-items: flex-start;
+    }
+    .tip-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 2px; }
+    .tip-text { font-size: 0.875rem; color: var(--muted); line-height: 1.7; }
+    .tip-text strong { color: var(--text); }
+
+    @media(max-width:600px) { header { padding:14px 16px; } .page { padding:32px 16px 60px; } }
+  </style>
+</head>
+<body>
+
+<header>
+  <div style="display:flex;align-items:center;gap:16px;">
+    <a href="index.html" class="logo-mark">
+      <svg width="26" height="26" viewBox="0 0 48 48" fill="none">
+        <defs><linearGradient id="lg" x1="4" y1="4" x2="44" y2="44" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#818cf8"/><stop offset="100%" stop-color="#06b6d4"/></linearGradient></defs>
+        <path d="M 6 4 Q 16 26 23 46 L 23 4 Z" fill="url(#lg)"/>
+        <path d="M 42 4 Q 32 26 25 46 L 25 4 Z" fill="url(#lg)" opacity="0.72"/>
+        <path d="M 12 44 Q 24 48 36 44" stroke="url(#lg)" stroke-width="2.2" stroke-linecap="round" fill="none" opacity="0.55"/>
+      </svg>
+      Vela
+    </a>
+    <span class="page-title">Sales Scripts</span>
+  </div>
+  <a href="index.html" class="back-btn">← Back to site</a>
+</header>
+
+<div class="page">
+  <h1>Cold Outreach Scripts</h1>
+  <p class="page-sub">Click any <strong style="color:var(--text)">Copy</strong> button to grab the script. Replace the <span class="fill-in">[highlighted]</span> fields with real details before sending.</p>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('linkedin')">LinkedIn DMs</button>
+    <button class="tab" onclick="showTab('email')">Cold Email</button>
+    <button class="tab" onclick="showTab('call')">Discovery Call</button>
+    <button class="tab" onclick="showTab('objections')">Objections</button>
+    <button class="tab" onclick="showTab('tips')">Golden Rules</button>
+  </div>
+
+  <!-- LINKEDIN -->
+  <div class="tab-panel active" id="tab-linkedin">
+
+    <div class="script-card">
+      <div class="card-header">
+        <div class="card-label"><span class="card-tag tag-linkedin">LinkedIn</span><span class="card-title">First Touch Message</span></div>
+        <button class="copy-btn" onclick="copyCard(this)">⎘ Copy</button>
+      </div>
+      <div class="card-body">
+        <div class="script-text" data-copy>Hey <span class="fill-in">[First Name]</span> — noticed you're running ops at <span class="fill-in">[Company]</span>. Quick question: how much time does your team spend each week moving data between tools manually?
+
+Asking because most ops leads I talk to are losing 15–20 hours a week to stuff that should be automated. Working on something that fixes that — happy to share if it's relevant.</div>
+        <div class="card-note"><strong>Why it works:</strong> One question, zero pitch. Makes them answer and self-qualify. Don't add anything else.</div>
+      </div>
+    </div>
+
+    <div class="script-card">
+      <div class="card-header">
+        <div class="card-label"><span class="card-tag tag-linkedin">LinkedIn</span><span class="card-title">Follow-Up #1 — Day 4 (No Reply)</span></div>
+        <button class="copy-btn" onclick="copyCard(this)">⎘ Copy</button>
+      </div>
+      <div class="card-body">
+        <div class="script-text" data-copy>Hey <span class="fill-in">[First Name]</span> — just bumping this up. Totally understand if timing's off.
+
+One thing I'll leave you with: teams that automate their core workflows are moving 3× faster than those that don't. If that's a priority for <span class="fill-in">[Company]</span> this quarter, worth a 15-minute chat.
+
+Want me to send over a few examples of what we've automated for similar teams?</div>
+        <div class="card-note"><strong>Tip:</strong> End with a yes/no question — it's easier to reply to than an open-ended ask.</div>
+      </div>
+    </div>
+
+    <div class="script-card">
+      <div class="card-header">
+        <div class="card-label"><span class="card-tag tag-linkedin">LinkedIn</span><span class="card-title">Follow-Up #2 — Day 9 (Break-Up)</span></div>
+        <button class="copy-btn" onclick="copyCard(this)">⎘ Copy</button>
+      </div>
+      <div class="card-body">
+        <div class="script-text" data-copy><span class="fill-in">[First Name]</span> — last one from me, I promise.
+
+I built Vela specifically for ops leads who are too busy to deal with automation tools that require a developer. If that's ever you, the door's open.
+
+<span class="fill-in">[Your Vela URL]</span></div>
+        <div class="card-note"><strong>Why a break-up message works:</strong> People respond to finality. "Last one" often gets more replies than the first two combined.</div>
+      </div>
+    </div>
+
+    <div class="script-card">
+      <div class="card-header">
+        <div class="card-label"><span class="card-tag tag-linkedin">LinkedIn</span><span class="card-title">When They Ask "What Do You Do?"</span></div>
+        <button class="copy-btn" onclick="copyCard(this)">⎘ Copy</button>
+      </div>
+      <div class="card-body">
+        <div class="script-text" data-copy>Good question — Vela is an AI automation tool. You describe your workflow in plain English, it builds the automation for you. No developers, no node editors.
+
+Most teams use it to kill off the manual reporting, data syncing, and follow-up tasks that eat 15–20 hours a week.
+
+What does that look like at <span class="fill-in">[Company]</span> right now?</div>
+        <div class="card-note"><strong>Key:</strong> Always end by bouncing the question back to them. Keep them talking.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- EMAIL -->
+  <div class="tab-panel" id="tab-email">
+
+    <div class="script-card">
+      <div class="card-header">
+        <div class="card-label"><span class="card-tag tag-email">Email</span><span class="card-title">Subject Lines — A/B Test These</span></div>
+      </div>
+      <div class="card-body">
+        <div class="subject-list">
+          <div class="subject-row"><span class="subject-text">quick question about <span class="fill-in">[Company]</span>'s ops</span><button class="mini-copy" onclick="copyText(this,'quick question about [Company]\'s ops')">⎘ Copy</button></div>
+          <div class="subject-row"><span class="subject-text">how does <span class="fill-in">[Company]</span> handle <span class="fill-in">[specific manual task]</span>?</span><button class="mini-copy" onclick="copyText(this,'how does [Company] handle [specific manual task]?')">⎘ Copy</button></div>
+          <div class="subject-row"><span class="subject-text">saving 19 hours/week — relevant for you?</span><button class="mini-copy" onclick="copyText(this,'saving 19 hours/week — relevant for you?')">⎘ Copy</button></div>
+          <div class="subject-row"><span class="subject-text"><span class="fill-in">[First Name]</span> — honest question</span><button class="mini-copy" onclick="copyText(this,'[First Name] — honest question')">⎘ Copy</button></div>
+          <div class="subject-row"><span class="subject-text">your team is probably losing this many hours</span><button class="mini-copy" onclick="copyText(this,'your team is probably losing this many hours')">⎘ Copy</button></div>
+          <div class="subject-row"><span class="subject-text">re: automating <span class="fill-in">[Company]</span>'s workflows</span><button class="mini-copy" onclick="copyText(this,'re: automating [Company]\'s workflows')">⎘ Copy</button></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="script-card">
+      <div class="card-header">
+        <div class="card-label"><span class="card-tag tag-email">Email</span><span class="card-title">Cold Email — Main Body</span></div>
+        <button class="copy-btn" onclick="copyCard(this)">⎘ Copy</button>
+      </div>
+      <div class="card-body">
+        <div class="script-text" data-copy>Hey <span class="fill-in">[First Name]</span>,
+
+I'll keep this short.
+
+Most ops teams I talk to are losing 15–20 hours a week to the same things — manual reporting, copying data between tools, chasing people for updates.
+
+I built Vela to fix that. You describe the workflow in plain English, AI builds the automation, and it runs 24/7 without a developer.
+
+Worth a 15-minute call to see if it fits what you're doing at <span class="fill-in">[Company]</span>?
+
+— <span class="fill-in">[Your Name]</span>
+
+P.S. Happy to show you a live demo of automating <span class="fill-in">[specific pain point relevant to their industry]</span>.</div>
+        <div class="card-note"><strong>Keep the P.S. specific.</strong> For an agency: "automating client reporting." For SaaS: "automating your CRM updates." Generic = ignored.</div>
+      </div>
+    </div>
+
+    <div class="script-card">
+      <div class="card-header">
+        <div class="card-label"><span class="card-tag tag-email">Email</span><span class="card-title">Follow-Up Email — Day 3</span></div>
+        <button class="copy-btn" onclick="copyCard(this)">⎘ Copy</button>
+      </div>
+      <div class="card-body">
+        <div class="script-text" data-copy>Hey <span class="fill-in">[First Name]</span>,
+
+Just following up on this — did it land at a bad time?
+
+If the idea of automating <span class="fill-in">[their pain point]</span> is interesting, I can show you exactly how it works in 15 minutes. No slides, just a live demo.
+
+Any time this week work for you?
+
+— <span class="fill-in">[Your Name]</span></div>
+      </div>
+    </div>
+
+    <div class="script-card">
+      <div class="card-header">
+        <div class="card-label"><span class="card-tag tag-email">Email</span><span class="card-title">Break-Up Email — Day 10</span></div>
+        <button class="copy-btn" onclick="copyCard(this)">⎘ Copy</button>
+      </div>
+      <div class="card-body">
+        <div class="script-text" data-copy>Hey <span class="fill-in">[First Name]</span>,
+
+I won't keep following up — I know your inbox is full.
+
+I'll just leave this here: if your team is ever spending hours on work that should run automatically, Vela was built for exactly that.
+
+<span class="fill-in">[Your Vela URL]</span>
+
+Good luck with everything at <span class="fill-in">[Company]</span>.
+
+— <span class="fill-in">[Your Name]</span></div>
+        <div class="card-note"><strong>Never burn bridges.</strong> "Good luck" leaves a positive impression — people remember that and often come back months later.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- CALL -->
+  <div class="tab-panel" id="tab-call">
+
+    <div class="script-card">
+      <div class="card-header">
+        <div class="card-label"><span class="card-tag tag-call">Call</span><span class="card-title">Call Opener — First 60 Seconds</span></div>
+        <button class="copy-btn" onclick="copyCard(this)">⎘ Copy</button>
+      </div>
+      <div class="card-body">
+        <div class="script-text" data-copy>"Thanks for making the time, <span class="fill-in">[First Name]</span>. Before I show you anything, I want to make sure this is actually useful for you.
+
+Can you walk me through what a typical week looks like for your team in terms of repetitive work — what takes the most time that probably shouldn't?"</div>
+        <div class="card-note"><strong>Let them talk for 3–4 minutes. Do not pitch yet.</strong> The more they talk, the more they sell themselves.</div>
+      </div>
+    </div>
+
+    <div class="script-card">
+      <div class="card-header">
+        <div class="card-label"><span class="card-tag tag-call">Call</span><span class="card-title">Mirror Back Their Pain</span></div>
+        <button class="copy-btn" onclick="copyCard(this)">⎘ Copy</button>
+      </div>
+      <div class="card-body">
+        <div class="script-text" data-copy>"So it sounds like <span class="fill-in">[their pain in their own words]</span> is costing your team roughly <span class="fill-in">[X hours]</span> a week.
+
+Is that a problem you're actively trying to solve right now, or more of a background frustration?"</div>
+        <div class="card-note"><strong>This question is critical.</strong> "Actively trying to solve" = hot lead. "Background frustration" = nurture. Treat them differently.</div>
+      </div>
+    </div>
+
+    <div class="script-card">
+      <div class="card-header">
+        <div class="card-label"><span class="card-tag tag-call">Call</span><span class="card-title">Transition Into the Demo</span></div>
+        <button class="copy-btn" onclick="copyCard(this)">⎘ Copy</button>
+      </div>
+      <div class="card-body">
+        <div class="script-text" data-copy>"Based on what you just described, I think I can show you something really relevant. What I'm going to do is show you how Vela would handle <span class="fill-in">[their specific pain]</span> — I'll use your actual workflow so it's not hypothetical.
+
+If after 10 minutes it doesn't feel like a fit, just say so — no pressure at all. Sound good?"</div>
+      </div>
+    </div>
+
+    <div class="script-card">
+      <div class="card-header">
+        <div class="card-label"><span class="card-tag tag-call">Call</span><span class="card-title">Close / Next Step</span></div>
+        <button class="copy-btn" onclick="copyCard(this)">⎘ Copy</button>
+      </div>
+      <div class="card-body">
+        <div class="script-text" data-copy>"Based on everything you've told me — does this feel like something worth moving forward with?
+
+<span class="fill-in">[If yes:]</span> Great. The simplest next step is a 30-minute setup call where we actually build your first automation together. I can do <span class="fill-in">[time]</span> or <span class="fill-in">[time]</span> — which works better?
+
+<span class="fill-in">[If not sure:]</span> What would need to be true for this to be a yes?"</div>
+        <div class="card-note"><strong>"What would need to be true"</strong> is the most powerful closing question in sales. It makes them tell you exactly what to address.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- OBJECTIONS -->
+  <div class="tab-panel" id="tab-objections">
+
+    <div class="tip-banner">
+      <div class="tip-icon">💡</div>
+      <div class="tip-text"><strong>The rule with objections:</strong> never fight them. Acknowledge, then ask a question that makes them think. You want them to convince themselves.</div>
+    </div>
+
+    <div class="obj-grid">
+
+      <div class="obj-card">
+        <div class="obj-q">💬 "We already use Zapier / Make"</div>
+        <div class="obj-a">
+          <span class="highlight">"Good — Vela works alongside those. The difference is you describe what you want in plain English and it builds it. No node editors, no logic trees.</span> Most teams come to us when Zapier gets too complex to manage. What does yours look like right now?"
+          <button class="mini-copy" style="margin-top:12px;display:block;" onclick="copyText(this,'Good — Vela works alongside those. The difference is you describe what you want in plain English and it builds it. No node editors, no logic trees. Most teams come to us when Zapier gets too complex to manage. What does yours look like right now?')">⎘ Copy</button>
+        </div>
+      </div>
+
+      <div class="obj-card">
+        <div class="obj-q">💬 "We don't have budget right now"</div>
+        <div class="obj-a">
+          <span class="highlight">"Totally fair. Out of curiosity — what's your team's rough hourly cost? I ask because if we're saving 15 hours a week across even two people, the ROI math usually makes the conversation worth having.</span> Can I send you a quick breakdown?"
+          <button class="mini-copy" style="margin-top:12px;display:block;" onclick="copyText(this,'Totally fair. Out of curiosity — what\'s your team\'s rough hourly cost? I ask because if we\'re saving 15 hours a week across even two people, the ROI math usually makes the conversation worth having. Can I send you a quick breakdown?')">⎘ Copy</button>
+        </div>
+      </div>
+
+      <div class="obj-card">
+        <div class="obj-q">💬 "Just send me some info first"</div>
+        <div class="obj-a">
+          <span class="highlight">"Of course. To make sure I send the right thing — what's the one workflow that would make the biggest difference if it ran automatically tomorrow?"</span> That tells me exactly what to focus on.
+          <button class="mini-copy" style="margin-top:12px;display:block;" onclick="copyText(this,'Of course. To make sure I send the right thing — what\'s the one workflow that would make the biggest difference if it ran automatically tomorrow?')">⎘ Copy</button>
+        </div>
+      </div>
+
+      <div class="obj-card">
+        <div class="obj-q">💬 "We're too busy right now"</div>
+        <div class="obj-a">
+          <span class="highlight">"That's exactly why most people come to us — being too busy is the symptom. When do you think would be a better time?</span> And in the meantime — is the problem getting worse or staying the same?"
+          <button class="mini-copy" style="margin-top:12px;display:block;" onclick="copyText(this,'That\'s exactly why most people come to us — being too busy is the symptom. When do you think would be a better time? And in the meantime — is the problem getting worse or staying the same?')">⎘ Copy</button>
+        </div>
+      </div>
+
+      <div class="obj-card">
+        <div class="obj-q">💬 "We have a developer who handles this"</div>
+        <div class="obj-a">
+          <span class="highlight">"That's great — what's their backlog looking like? Most dev teams we work with are 6–8 weeks behind on internal tooling.</span> Vela handles the repetitive stuff so your dev can focus on product. Worth a look?"
+          <button class="mini-copy" style="margin-top:12px;display:block;" onclick="copyText(this,'That\'s great — what\'s their backlog looking like? Most dev teams we work with are 6–8 weeks behind on internal tooling. Vela handles the repetitive stuff so your dev can focus on product. Worth a look?')">⎘ Copy</button>
+        </div>
+      </div>
+
+      <div class="obj-card">
+        <div class="obj-q">💬 "How is this different from [competitor]?"</div>
+        <div class="obj-a">
+          <span class="highlight">"Good question. The main difference is how you build automations. With most tools you're dragging nodes and writing logic. With Vela you just describe what you want.</span> Have you used [competitor] before? What did you find frustrating about it?"
+          <button class="mini-copy" style="margin-top:12px;display:block;" onclick="copyText(this,'Good question. The main difference is how you build automations. With most tools you\'re dragging nodes and writing logic. With Vela you just describe what you want. Have you used [competitor] before? What did you find frustrating about it?')">⎘ Copy</button>
+        </div>
+      </div>
+
+      <div class="obj-card">
+        <div class="obj-q">💬 "I need to check with my team / boss"</div>
+        <div class="obj-a">
+          <span class="highlight">"Of course — who else would be involved in the decision? I'm happy to put together something specific to your use case that makes it easy for them to say yes.</span> What concerns do you think they'd have?"
+          <button class="mini-copy" style="margin-top:12px;display:block;" onclick="copyText(this,'Of course — who else would be involved in the decision? I\'m happy to put together something specific to your use case that makes it easy for them to say yes. What concerns do you think they\'d have?')">⎘ Copy</button>
+        </div>
+      </div>
+
+      <div class="obj-card">
+        <div class="obj-q">💬 "We tried automation before and it didn't stick"</div>
+        <div class="obj-a">
+          <span class="highlight">"That's really common — most automation tools require someone to maintain them constantly. What broke down?</span> The reason most of our customers switched is because Vela self-heals and doesn't need babysitting."
+          <button class="mini-copy" style="margin-top:12px;display:block;" onclick="copyText(this,'That\'s really common — most automation tools require someone to maintain them constantly. What broke down? The reason most of our customers switched is because Vela self-heals and doesn\'t need babysitting.')">⎘ Copy</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- TIPS -->
+  <div class="tab-panel" id="tab-tips">
+
+    <div class="tip-banner">
+      <div class="tip-icon">🎯</div>
+      <div class="tip-text"><strong>The golden rule:</strong> Never open with what Vela <em>is</em>. Always open with what it <em>solves</em> — and make it specific to them. The best salespeople ask more questions than they answer.</div>
+    </div>
+
+    <div class="script-card">
+      <div class="card-header"><div class="card-label"><span class="card-tag tag-tip">Rule</span><span class="card-title">Lead With Pain, Not Product</span></div></div>
+      <div class="card-body">
+        <div class="script-text">❌  "Hi, I have an AI automation tool called Vela that helps teams..."
+✅  "How much time does your team spend each week on manual reporting?"
+
+Nobody cares about your product. They care about their problem. Make the first message entirely about them.</div>
+      </div>
+    </div>
+
+    <div class="script-card">
+      <div class="card-header"><div class="card-label"><span class="card-tag tag-tip">Rule</span><span class="card-title">Specific Beats Generic Every Time</span></div></div>
+      <div class="card-body">
+        <div class="script-text">❌  "I help companies automate their workflows"
+✅  "I help marketing agencies automate client reporting so they stop spending Fridays in spreadsheets"
+
+Specificity builds instant credibility. It signals you understand their world.</div>
+      </div>
+    </div>
+
+    <div class="script-card">
+      <div class="card-header"><div class="card-label"><span class="card-tag tag-tip">Rule</span><span class="card-title">One Ask Per Message</span></div></div>
+      <div class="card-body">
+        <div class="script-text">❌  "Would love to connect, share more info, hop on a call, and show you a demo"
+✅  "Worth a 15-minute call?"
+
+Every message should have exactly one call to action. More than one = decision fatigue = no reply.</div>
+      </div>
+    </div>
+
+    <div class="script-card">
+      <div class="card-header"><div class="card-label"><span class="card-tag tag-tip">Rule</span><span class="card-title">Follow Up 3× Before Moving On</span></div></div>
+      <div class="card-body">
+        <div class="script-text">80% of deals close after the 3rd–5th follow-up. Most people give up after one.
+
+Day 1  → First message
+Day 4  → Follow-up #1 (add value or new angle)
+Day 9  → Break-up message (creates urgency through finality)
+
+After that, move them to a "nurture later" list and circle back in 60 days.</div>
+      </div>
+    </div>
+
+    <div class="script-card">
+      <div class="card-header"><div class="card-label"><span class="card-tag tag-tip">Rule</span><span class="card-title">The Best Closing Question in Sales</span></div></div>
+      <div class="card-body">
+        <div class="script-text">When someone is on the fence, ask:
+
+"What would need to be true for this to be a yes?"
+
+This forces them to articulate their real objection — and gives you exactly what to address. Most salespeople never ask it.</div>
+      </div>
+    </div>
+
+    <div class="script-card">
+      <div class="card-header"><div class="card-label"><span class="card-tag tag-tip">Rule</span><span class="card-title">Silence Is Your Best Tool on a Call</span></div></div>
+      <div class="card-body">
+        <div class="script-text">After you ask a question — stop talking. Count to 10 in your head if you have to.
+
+The person who speaks first after a question loses leverage. Let them fill the silence. They'll reveal their real concern, their budget, their urgency — everything you need to close.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  function showTab(id) {
+    document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', t.getAttribute('onclick').includes(id)));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + id));
+  }
+
+  function getPlainText(el) {
+    return el.innerText.trim();
+  }
+
+  async function copyCard(btn) {
+    const card = btn.closest('.script-card');
+    const textEl = card.querySelector('[data-copy]');
+    const text = getPlainText(textEl);
+    await navigator.clipboard.writeText(text);
+    btn.textContent = '✓ Copied';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = '⎘ Copy'; btn.classList.remove('copied'); }, 2000);
+  }
+
+  async function copyText(btn, text) {
+    await navigator.clipboard.writeText(text);
+    btn.textContent = '✓ Copied';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = '⎘ Copy'; btn.classList.remove('copied'); }, 2000);
+  }
+</script>
+</body>
+</html>
