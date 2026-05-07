@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vela — Automation Builder</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --indigo: #818cf8;
+      --cyan: #06b6d4;
+      --bg: #06070d;
+      --surface: #0e1017;
+      --surface2: #161820;
+      --border: rgba(129,140,248,.13);
+      --text: #e8eaf6;
+      --muted: #8b90b8;
+      --grad: linear-gradient(135deg, var(--indigo), var(--cyan));
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+    }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background-image: radial-gradient(circle, rgba(129,140,248,.07) 1px, transparent 1px);
+      background-size: 28px 28px;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 50;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 2rem; height: 64px;
+      background: rgba(6,7,13,.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-logo { display: flex; align-items: center; gap: .6rem; text-decoration: none; }
+    .nav-logo svg { width: 28px; height: 28px; }
+    .nav-logo span { font-family: 'Syne', sans-serif; font-size: 1.25rem; font-weight: 800;
+      background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+    .nav-links { display: flex; gap: 1.5rem; align-items: center; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-size: .875rem;
+      font-weight: 500; transition: color .2s; }
+    .nav-links a:hover { color: var(--text); }
+    .nav-links .btn-nav {
+      padding: .45rem 1.1rem; border-radius: 8px;
+      background: var(--grad); color: #fff; font-weight: 600;
+      font-size: .875rem; border: none; cursor: pointer; text-decoration: none;
+      transition: opacity .2s;
+    }
+    .nav-links .btn-nav:hover { opacity: .88; }
+
+    /* ── PAGE ── */
+    .page {
+      position: relative; z-index: 1;
+      max-width: 860px; margin: 0 auto;
+      padding: 3.5rem 1.5rem 6rem;
+    }
+
+    .page-header { text-align: center; margin-bottom: 3rem; }
+    .page-header h1 {
+      font-family: 'Syne', sans-serif; font-size: clamp(2rem, 5vw, 2.8rem);
+      font-weight: 800; line-height: 1.15;
+      background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      margin-bottom: .75rem;
+    }
+    .page-header p { color: var(--muted); font-size: 1.05rem; max-width: 520px; margin: 0 auto; }
+
+    /* ── EXAMPLES ── */
+    .examples-label { font-size: .8rem; font-weight: 600; letter-spacing: .06em;
+      text-transform: uppercase; color: var(--muted); margin-bottom: .75rem; }
+
+    .examples { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1.5rem; }
+    .example-chip {
+      padding: .4rem .9rem; border-radius: 20px; font-size: .8rem; font-weight: 500;
+      background: var(--surface2); border: 1px solid var(--border); color: var(--muted);
+      cursor: pointer; transition: all .2s; white-space: nowrap;
+    }
+    .example-chip:hover { border-color: var(--indigo); color: var(--text); }
+
+    /* ── INPUT CARD ── */
+    .input-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    textarea {
+      width: 100%; min-height: 120px; resize: vertical;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem; color: var(--text);
+      font-family: 'Inter', sans-serif; font-size: .95rem; line-height: 1.6;
+      outline: none; transition: border-color .2s;
+    }
+    textarea:focus { border-color: var(--indigo); }
+    textarea::placeholder { color: var(--muted); }
+
+    .input-footer { display: flex; align-items: center; justify-content: space-between;
+      margin-top: 1rem; flex-wrap: wrap; gap: .75rem; }
+    .char-count { font-size: .8rem; color: var(--muted); }
+
+    .btn-generate {
+      display: flex; align-items: center; gap: .5rem;
+      padding: .7rem 1.6rem; border-radius: 10px;
+      background: var(--grad); color: #fff; font-weight: 600;
+      font-size: .9rem; border: none; cursor: pointer;
+      transition: opacity .2s, transform .15s; position: relative;
+    }
+    .btn-generate:hover:not(:disabled) { opacity: .9; transform: translateY(-1px); }
+    .btn-generate:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+    /* spinner */
+    .spinner {
+      width: 16px; height: 16px; border-radius: 50%;
+      border: 2px solid rgba(255,255,255,.3);
+      border-top-color: #fff;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── RESULT AREA ── */
+    #result { display: none; }
+
+    .result-header {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem;
+    }
+
+    .workflow-title {
+      font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 800;
+      background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .workflow-summary { color: var(--muted); font-size: .9rem; margin-top: .3rem; max-width: 500px; }
+
+    /* stat chips */
+    .stat-chips { display: flex; gap: .6rem; flex-wrap: wrap; }
+    .chip {
+      display: flex; align-items: center; gap: .35rem;
+      padding: .35rem .85rem; border-radius: 20px; font-size: .78rem; font-weight: 600;
+      border: 1px solid var(--border); background: var(--surface2);
+    }
+    .chip .dot { width: 7px; height: 7px; border-radius: 50%; }
+    .chip.time .dot { background: var(--cyan); }
+    .chip.complexity-simple .dot { background: #4ade80; }
+    .chip.complexity-moderate .dot { background: #fbbf24; }
+    .chip.complexity-advanced .dot { background: #f87171; }
+    .chip.tools-chip .dot { background: var(--indigo); }
+
+    /* ── FLOW ── */
+    .flow { display: flex; flex-direction: column; gap: 0; }
+
+    .flow-node {
+      display: flex; align-items: flex-start; gap: 1rem;
+      opacity: 0; transform: translateY(16px);
+      transition: opacity .4s ease, transform .4s ease;
+    }
+    .flow-node.visible { opacity: 1; transform: none; }
+
+    .flow-left { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+    .flow-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; flex-shrink: 0; position: relative; z-index: 1;
+    }
+    .flow-icon.trigger { background: linear-gradient(135deg,#818cf8,#a78bfa); }
+    .flow-icon.action  { background: linear-gradient(135deg,#0ea5e9,#06b6d4); }
+    .flow-icon.condition{ background: linear-gradient(135deg,#f59e0b,#fbbf24); }
+    .flow-icon.transform{ background: linear-gradient(135deg,#8b5cf6,#a78bfa); }
+    .flow-icon.notify  { background: linear-gradient(135deg,#10b981,#34d399); }
+
+    .flow-line {
+      width: 2px; flex-grow: 1; min-height: 24px;
+      background: linear-gradient(to bottom, rgba(129,140,248,.4), rgba(6,182,212,.2));
+      margin: 2px 0;
+    }
+
+    .flow-content {
+      flex: 1; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 1rem 1.1rem; margin-bottom: 0;
+      cursor: default;
+      transition: border-color .2s;
+    }
+    .flow-node:hover .flow-content { border-color: rgba(129,140,248,.35); }
+
+    .flow-node-header { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+    .flow-label { font-weight: 600; font-size: .9rem; color: var(--text); }
+    .flow-tool-badge {
+      font-size: .72rem; font-weight: 600; color: var(--indigo);
+      background: rgba(129,140,248,.12); border-radius: 6px;
+      padding: .2rem .55rem; white-space: nowrap;
+    }
+    .flow-desc { font-size: .82rem; color: var(--muted); margin-top: .3rem; line-height: 1.5; }
+    .flow-type-tag {
+      display: inline-block; font-size: .68rem; font-weight: 700; letter-spacing: .05em;
+      text-transform: uppercase; border-radius: 4px; padding: .15rem .45rem; margin-top: .35rem;
+    }
+    .flow-type-tag.trigger   { background: rgba(129,140,248,.18); color: #a5b4fc; }
+    .flow-type-tag.action    { background: rgba(6,182,212,.15);   color: #67e8f9; }
+    .flow-type-tag.condition { background: rgba(251,191,36,.15);  color: #fde68a; }
+    .flow-type-tag.transform { background: rgba(139,92,246,.18);  color: #c4b5fd; }
+    .flow-type-tag.notify    { background: rgba(16,185,129,.15);  color: #6ee7b7; }
+
+    /* ── TOOLS ROW ── */
+    .tools-section { margin-top: 2rem; }
+    .section-label { font-size: .78rem; font-weight: 600; letter-spacing: .06em;
+      text-transform: uppercase; color: var(--muted); margin-bottom: .75rem; }
+    .tools-row { display: flex; flex-wrap: wrap; gap: .5rem; }
+    .tool-tag {
+      padding: .35rem .85rem; border-radius: 20px; font-size: .8rem; font-weight: 500;
+      background: rgba(129,140,248,.08); border: 1px solid rgba(129,140,248,.2); color: var(--indigo);
+    }
+
+    /* ── DEPLOY BANNER ── */
+    .deploy-banner {
+      margin-top: 2.5rem; padding: 1.5rem;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;
+    }
+    .deploy-banner-text h3 { font-family: 'Syne', sans-serif; font-size: 1.05rem; font-weight: 800; }
+    .deploy-banner-text p { font-size: .85rem; color: var(--muted); margin-top: .2rem; }
+    .deploy-actions { display: flex; gap: .75rem; flex-wrap: wrap; }
+
+    .btn-deploy {
+      padding: .65rem 1.4rem; border-radius: 10px; font-weight: 600;
+      font-size: .875rem; cursor: pointer; transition: all .2s; border: none;
+    }
+    .btn-deploy.primary { background: var(--grad); color: #fff; }
+    .btn-deploy.primary:hover { opacity: .88; }
+    .btn-deploy.secondary {
+      background: transparent; color: var(--muted);
+      border: 1px solid var(--border);
+    }
+    .btn-deploy.secondary:hover { border-color: var(--indigo); color: var(--text); }
+    .btn-deploy.disabled-v2 {
+      background: var(--surface2); color: var(--muted);
+      border: 1px solid var(--border); cursor: default; position: relative;
+    }
+    .v2-tag {
+      position: absolute; top: -8px; right: -8px;
+      font-size: .6rem; font-weight: 700; letter-spacing: .05em;
+      background: var(--grad); color: #fff; border-radius: 4px; padding: .15rem .4rem;
+    }
+
+    /* ── ERROR ── */
+    .error-msg {
+      padding: 1rem 1.25rem; border-radius: 12px;
+      background: rgba(248,113,113,.08); border: 1px solid rgba(248,113,113,.25);
+      color: #fca5a5; font-size: .875rem; display: none;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      position: relative; z-index: 1;
+      border-top: 1px solid var(--border);
+      text-align: center; padding: 1.5rem;
+      color: var(--muted); font-size: .8rem;
+    }
+    footer a { color: var(--indigo); text-decoration: none; }
+
+    @media (max-width: 600px) {
+      .result-header { flex-direction: column; }
+      .flow-icon { width: 36px; height: 36px; font-size: .9rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="index.html">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+      <defs>
+        <linearGradient id="ng" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#818cf8"/>
+          <stop offset="100%" stop-color="#06b6d4"/>
+        </linearGradient>
+      </defs>
+      <path d="M 6 4 Q 16 26 23 46 L 23 4 Z" fill="url(#ng)"/>
+      <path d="M 42 4 Q 32 26 25 46 L 25 4 Z" fill="url(#ng)" opacity="0.72"/>
+      <path d="M 12 44 Q 24 48 36 44" stroke="url(#ng)" stroke-width="2.2" stroke-linecap="round" fill="none" opacity="0.55"/>
+    </svg>
+    <span>Vela</span>
+  </a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="leads.html">Leads</a>
+    <a href="sales.html">Scripts</a>
+    <a href="app.html" class="btn-nav">Demo</a>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="page-header">
+    <h1>Build Your Automation</h1>
+    <p>Describe any workflow in plain English. Vela's AI will map it into a production-ready automation blueprint.</p>
+  </div>
+
+  <div class="examples-label">Try an example</div>
+  <div class="examples" id="examples">
+    <button class="example-chip" onclick="useExample(this)">When a lead fills out a form, add to HubSpot and send a Slack alert</button>
+    <button class="example-chip" onclick="useExample(this)">Sync new Shopify orders to Google Sheets and email the fulfillment team</button>
+    <button class="example-chip" onclick="useExample(this)">Every Monday, pull CRM data and send a pipeline report to Slack</button>
+    <button class="example-chip" onclick="useExample(this)">When a support ticket is opened in Zendesk, triage by keyword and assign to the right team</button>
+    <button class="example-chip" onclick="useExample(this)">Onboard new employees: create accounts, send welcome email, add to Notion</button>
+    <button class="example-chip" onclick="useExample(this)">Monitor invoice emails, extract data, and log to Airtable</button>
+  </div>
+
+  <div class="input-card">
+    <textarea
+      id="workflow-input"
+      placeholder="e.g. When a new lead submits our contact form, add them to HubSpot, send a personalized welcome email, and notify our sales team in Slack..."
+      oninput="onInput()"
+    ></textarea>
+    <div class="input-footer">
+      <span class="char-count" id="char-count">0 / 500</span>
+      <button class="btn-generate" id="gen-btn" onclick="generate()" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+        </svg>
+        Generate Automation
+      </button>
+    </div>
+  </div>
+
+  <div class="error-msg" id="error-msg"></div>
+
+  <!-- RESULT -->
+  <div id="result">
+    <div class="result-header">
+      <div>
+        <div class="workflow-title" id="wf-title"></div>
+        <div class="workflow-summary" id="wf-summary"></div>
+      </div>
+      <div class="stat-chips" id="stat-chips"></div>
+    </div>
+
+    <div class="flow" id="flow"></div>
+
+    <div class="tools-section">
+      <div class="section-label">Integrations needed</div>
+      <div class="tools-row" id="tools-row"></div>
+    </div>
+
+    <div class="deploy-banner">
+      <div class="deploy-banner-text">
+        <h3>Ready to deploy this automation?</h3>
+        <p>Join the waitlist and be first to run this live when Vela v2 launches.</p>
+      </div>
+      <div class="deploy-actions">
+        <button class="btn-deploy secondary" onclick="generate()">Regenerate</button>
+        <a href="index.html#waitlist" class="btn-deploy primary">Join Waitlist</a>
+        <button class="btn-deploy disabled-v2">
+          Deploy Live
+          <span class="v2-tag">v2</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <p>© 2025 Vela · <a href="index.html">Back to home</a></p>
+</footer>
+
+<script>
+  const textarea = document.getElementById('workflow-input');
+  const genBtn   = document.getElementById('gen-btn');
+  const charCount= document.getElementById('char-count');
+  const resultEl = document.getElementById('result');
+  const errorEl  = document.getElementById('error-msg');
+
+  const STEP_ICONS = {
+    trigger:   '⚡',
+    action:    '⚙️',
+    condition: '🔀',
+    transform: '🔄',
+    notify:    '🔔',
+  };
+
+  function onInput() {
+    const len = textarea.value.length;
+    charCount.textContent = `${Math.min(len, 500)} / 500`;
+    if (len > 500) textarea.value = textarea.value.slice(0, 500);
+    genBtn.disabled = textarea.value.trim().length < 10;
+  }
+
+  function useExample(el) {
+    textarea.value = el.textContent.trim();
+    onInput();
+    textarea.focus();
+    textarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  async function generate() {
+    const description = textarea.value.trim();
+    if (description.length < 10) return;
+
+    // UI: loading state
+    genBtn.disabled = true;
+    genBtn.innerHTML = `<div class="spinner"></div> Analyzing…`;
+    resultEl.style.display = 'none';
+    errorEl.style.display = 'none';
+
+    try {
+      const res = await fetch('/api/workflow', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ description }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        showError(data.error || 'Something went wrong. Please try again.');
+        return;
+      }
+
+      renderWorkflow(data);
+    } catch (err) {
+      showError('Network error — please check your connection and try again.');
+    } finally {
+      genBtn.disabled = false;
+      genBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Regenerate`;
+    }
+  }
+
+  function renderWorkflow(wf) {
+    // Header
+    document.getElementById('wf-title').textContent = wf.name;
+    document.getElementById('wf-summary').textContent = wf.summary;
+
+    // Stat chips
+    const chips = document.getElementById('stat-chips');
+    chips.innerHTML = `
+      <div class="chip time"><div class="dot"></div>${wf.timeSaved}</div>
+      <div class="chip complexity-${wf.complexity}"><div class="dot"></div>${capitalize(wf.complexity)}</div>
+      <div class="chip tools-chip"><div class="dot"></div>${wf.tools.length} tool${wf.tools.length !== 1 ? 's' : ''}</div>
+    `;
+
+    // Flow
+    const flow = document.getElementById('flow');
+    flow.innerHTML = '';
+
+    // Trigger node
+    const allNodes = [
+      { type: 'trigger', label: wf.trigger.label, description: wf.trigger.description, tool: wf.trigger.tool },
+      ...wf.steps
+    ];
+
+    allNodes.forEach((node, i) => {
+      const isLast = i === allNodes.length - 1;
+      const type = node.type || 'action';
+
+      const el = document.createElement('div');
+      el.className = 'flow-node';
+      el.innerHTML = `
+        <div class="flow-left">
+          <div class="flow-icon ${type}">${STEP_ICONS[type] || '⚙️'}</div>
+          ${!isLast ? '<div class="flow-line"></div>' : ''}
+        </div>
+        <div class="flow-content">
+          <div class="flow-node-header">
+            <span class="flow-label">${escHtml(node.label)}</span>
+            <span class="flow-tool-badge">${escHtml(node.tool)}</span>
+          </div>
+          <div class="flow-desc">${escHtml(node.description)}</div>
+          <span class="flow-type-tag ${type}">${type}</span>
+        </div>
+      `;
+      flow.appendChild(el);
+
+      // Staggered entrance animation
+      setTimeout(() => el.classList.add('visible'), i * 80);
+    });
+
+    // Tools
+    document.getElementById('tools-row').innerHTML = wf.tools
+      .map(t => `<span class="tool-tag">${escHtml(t)}</span>`)
+      .join('');
+
+    // Show result
+    resultEl.style.display = 'block';
+    resultEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function showError(msg) {
+    errorEl.textContent = msg;
+    errorEl.style.display = 'block';
+  }
+
+  function capitalize(s) { return s ? s[0].toUpperCase() + s.slice(1) : ''; }
+
+  function escHtml(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+</script>
+</body>
+</html>
