@@ -1,8 +1,8 @@
-import Anthropic from "@anthropic-ai/sdk";
+const Anthropic = require("@anthropic-ai/sdk");
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const client = new Anthropic.default({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-const SYSTEM_PROMPT = `You are an automation architect. The user will describe a business workflow they want to automate. Parse it and return ONLY valid JSON — no markdown, no explanation, just the JSON object.
+const SYSTEM_PROMPT = `You are an automation architect. The user will describe a business workflow they want to automate. Parse it and return ONLY valid JSON — no markdown, no explanation, no code fences, just the raw JSON object.
 
 Return this exact shape:
 {
@@ -16,40 +16,35 @@ Return this exact shape:
   "steps": [
     {
       "id": 1,
-      "type": "action|condition|transform|notify",
+      "type": "action",
       "label": "Step name",
       "description": "What this step does",
       "tool": "App/service used"
     }
   ],
   "tools": ["list", "of", "all", "tools", "used"],
-  "timeSaved": "Estimated time saved per week (e.g. '4 hours/week')",
-  "complexity": "simple|moderate|advanced"
+  "timeSaved": "Estimated time saved per week (e.g. 4 hours/week)",
+  "complexity": "simple"
 }
 
 Rules:
 - steps array: minimum 3, maximum 8 steps
+- type must be one of: action, condition, transform, notify
+- complexity must be one of: simple, moderate, advanced
 - Be specific about tools (use real app names like HubSpot, Notion, Airtable, Google Sheets, Slack, etc.)
 - timeSaved should be realistic
 - complexity: simple = 1-2 integrations, moderate = 3-4, advanced = 5+
-- If the description is vague, make reasonable assumptions for a typical business`;
+- Return ONLY the JSON object, nothing else`;
 
-export default async function handler(req, res) {
-  // CORS headers
+module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-  if (req.method === "OPTIONS") {
-    return res.status(200).end();
-  }
-
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
+  if (req.method === "OPTIONS") return res.status(200).end();
+  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
   const { description } = req.body || {};
-
   if (!description || description.trim().length < 10) {
     return res.status(400).json({ error: "Please describe a workflow (at least 10 characters)." });
   }
@@ -58,26 +53,14 @@ export default async function handler(req, res) {
     const message = await client.messages.create({
       model: "claude-opus-4-7",
       max_tokens: 1024,
-      thinking: { type: "adaptive" },
       system: SYSTEM_PROMPT,
-      messages: [
-        {
-          role: "user",
-          content: description.trim(),
-        },
-      ],
+      messages: [{ role: "user", content: description.trim() }],
     });
 
-    // Extract text content from the response (skip thinking blocks)
     const textBlock = message.content.find((b) => b.type === "text");
-    if (!textBlock) {
-      return res.status(500).json({ error: "No response from AI." });
-    }
+    if (!textBlock) return res.status(500).json({ error: "No response from AI." });
 
-    // Parse and validate JSON
-    const workflow = JSON.parse(textBlock.text);
-
-    // Basic shape validation
+    const workflow = JSON.parse(textBlock.text.trim());
     if (!workflow.name || !workflow.steps || !Array.isArray(workflow.steps)) {
       return res.status(500).json({ error: "Invalid workflow structure returned." });
     }
@@ -87,7 +70,7 @@ export default async function handler(req, res) {
     if (err instanceof SyntaxError) {
       return res.status(500).json({ error: "AI returned malformed JSON. Please try again." });
     }
-    console.error("Workflow API error:", err);
-    return res.status(500).json({ error: "Something went wrong. Please try again." });
+    console.error("Workflow API error:", err.message);
+    return res.status(500).json({ error: err.message || "Something went wrong. Please try again." });
   }
-}
+};
