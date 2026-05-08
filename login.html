@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vela — Sign In</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #06070d; --surface: #0e1017; --surface2: #161820;
+      --border: rgba(129,140,248,.13); --indigo: #818cf8; --cyan: #06b6d4;
+      --text: #e8eaf6; --muted: #8b90b8;
+      --grad: linear-gradient(135deg, var(--indigo), var(--cyan));
+    }
+    body {
+      background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif;
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    }
+    body::before {
+      content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background-image: radial-gradient(circle, rgba(129,140,248,.07) 1px, transparent 1px);
+      background-size: 28px 28px;
+    }
+    .card {
+      position: relative; z-index: 1;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+      padding: 2.5rem; width: 100%; max-width: 400px; margin: 1rem;
+    }
+    .logo { display: flex; align-items: center; gap: .6rem; margin-bottom: 2rem; text-decoration: none; }
+    .logo svg { width: 32px; height: 32px; }
+    .logo span { font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 800;
+      background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    h1 { font-family: 'Syne', sans-serif; font-size: 1.3rem; font-weight: 800; margin-bottom: .4rem; }
+    .sub { color: var(--muted); font-size: .875rem; margin-bottom: 1.75rem; }
+    .form-group { display: flex; flex-direction: column; gap: .35rem; margin-bottom: 1rem; }
+    label { font-size: .78rem; font-weight: 600; color: var(--muted); }
+    input {
+      background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+      padding: .7rem .9rem; color: var(--text); font-family: 'Inter', sans-serif;
+      font-size: .9rem; outline: none; transition: border-color .2s; width: 100%;
+    }
+    input:focus { border-color: var(--indigo); }
+    input::placeholder { color: var(--muted); }
+    .btn-submit {
+      width: 100%; padding: .8rem; border-radius: 10px; background: var(--grad);
+      color: #fff; font-weight: 600; font-size: .9rem; border: none; cursor: pointer;
+      margin-top: .5rem; transition: opacity .2s; font-family: 'Inter', sans-serif;
+    }
+    .btn-submit:hover:not(:disabled) { opacity: .88; }
+    .btn-submit:disabled { opacity: .5; cursor: not-allowed; }
+    .error {
+      background: rgba(248,113,113,.08); border: 1px solid rgba(248,113,113,.25);
+      color: #fca5a5; border-radius: 8px; padding: .75rem 1rem; font-size: .83rem;
+      margin-bottom: 1rem; display: none;
+    }
+    .spinner {
+      display: inline-block; width: 14px; height: 14px; border-radius: 50%;
+      border: 2px solid rgba(255,255,255,.3); border-top-color: #fff;
+      animation: spin .7s linear infinite; vertical-align: middle; margin-right: .4rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+<div class="card">
+  <a class="logo" href="index.html">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+      <defs><linearGradient id="ng" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#818cf8"/><stop offset="100%" stop-color="#06b6d4"/>
+      </linearGradient></defs>
+      <path d="M 6 4 Q 16 26 23 46 L 23 4 Z" fill="url(#ng)"/>
+      <path d="M 42 4 Q 32 26 25 46 L 25 4 Z" fill="url(#ng)" opacity="0.72"/>
+      <path d="M 12 44 Q 24 48 36 44" stroke="url(#ng)" stroke-width="2.2" stroke-linecap="round" fill="none" opacity="0.55"/>
+    </svg>
+    <span>Vela</span>
+  </a>
+  <h1>Sign in</h1>
+  <p class="sub">Enter your credentials to access your dashboard.</p>
+  <div class="error" id="error"></div>
+  <div class="form-group">
+    <label>Email</label>
+    <input type="email" id="email" placeholder="you@company.com" autocomplete="email" />
+  </div>
+  <div class="form-group">
+    <label>Password</label>
+    <input type="password" id="password" placeholder="••••••••" autocomplete="current-password"
+      onkeydown="if(event.key==='Enter')login()" />
+  </div>
+  <button class="btn-submit" id="btn" onclick="login()">Sign In</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const sb = supabase.createClient(
+    'https://ndbvmtuzmzbaaoxudmbk.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kYnZtdHV6bXpiYWFveHVkbWJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyNjUyODcsImV4cCI6MjA5Mzg0MTI4N30.CRqNEXZlUf4pRCjbVghCZg2p4rLh2Y-cKQpqSwkUw2k'
+  );
+
+  (async () => {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) await redirectByRole(session.user.id);
+  })();
+
+  async function redirectByRole(userId) {
+    const { data: profile } = await sb.from('profiles').select('is_admin').eq('id', userId).single();
+    window.location.href = profile?.is_admin ? 'dashboard.html' : 'inventory.html';
+  }
+
+  async function login() {
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const btn = document.getElementById('btn');
+    const errorEl = document.getElementById('error');
+
+    if (!email || !password) { showError('Please enter your email and password.'); return; }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Signing in…';
+    errorEl.style.display = 'none';
+
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+
+    if (error) {
+      showError(error.message === 'Invalid login credentials' ? 'Incorrect email or password.' : error.message);
+      btn.disabled = false;
+      btn.textContent = 'Sign In';
+      return;
+    }
+
+    await redirectByRole(data.user.id);
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('error');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+</script>
+</body>
+</html>
