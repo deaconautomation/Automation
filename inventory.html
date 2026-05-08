@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vela — Inventory</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #06070d; --surface: #0e1017; --surface2: #161820;
+      --border: rgba(129,140,248,.13); --indigo: #818cf8; --cyan: #06b6d4;
+      --text: #e8eaf6; --muted: #8b90b8; --red: #f87171; --amber: #fbbf24; --green: #4ade80;
+      --grad: linear-gradient(135deg, var(--indigo), var(--cyan));
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; }
+    body::before {
+      content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background-image: radial-gradient(circle, rgba(129,140,248,.07) 1px, transparent 1px);
+      background-size: 28px 28px;
+    }
+
+    /* NAV */
+    nav {
+      position: sticky; top: 0; z-index: 50;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 2rem; height: 64px;
+      background: rgba(6,7,13,.88); backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo { display: flex; align-items: center; gap: .6rem; text-decoration: none; }
+    .nav-logo svg { width: 28px; height: 28px; }
+    .nav-logo span { font-family: 'Syne', sans-serif; font-size: 1.25rem; font-weight: 800;
+      background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .nav-links { display: flex; gap: 1.5rem; align-items: center; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-size: .875rem; font-weight: 500; transition: color .2s; }
+    .nav-links a:hover, .nav-links a.active { color: var(--text); }
+    .nav-links .btn-nav { padding: .45rem 1.1rem; border-radius: 8px; background: var(--grad);
+      color: #fff; font-weight: 600; font-size: .875rem; border: none; cursor: pointer; }
+
+    /* PAGE */
+    .page { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem 5rem; }
+
+    .page-header { display: flex; align-items: flex-start; justify-content: space-between;
+      flex-wrap: wrap; gap: 1rem; margin-bottom: 1.75rem; }
+    .page-header h1 { font-family: 'Syne', sans-serif; font-size: 1.75rem; font-weight: 800;
+      background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .page-header p { color: var(--muted); font-size: .875rem; margin-top: .2rem; }
+    .header-actions { display: flex; gap: .6rem; flex-wrap: wrap; }
+
+    /* STATS */
+    .stats-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: .75rem; margin-bottom: 1.5rem; }
+    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+      padding: 1rem 1.1rem; }
+    .stat-label { font-size: .72rem; font-weight: 600; letter-spacing: .06em;
+      text-transform: uppercase; color: var(--muted); margin-bottom: .3rem; }
+    .stat-value { font-family: 'Syne', sans-serif; font-size: 1.6rem; font-weight: 800; }
+    .stat-value.green { color: var(--green); }
+    .stat-value.amber { color: var(--amber); }
+    .stat-value.red   { color: var(--red); }
+
+    /* ALERTS BANNER */
+    #alert-banner { display: none; background: rgba(251,191,36,.08); border: 1px solid rgba(251,191,36,.25);
+      border-radius: 12px; padding: .85rem 1.1rem; margin-bottom: 1.25rem;
+      font-size: .875rem; color: var(--amber); }
+    #alert-banner strong { font-weight: 600; }
+
+    /* TOOLBAR */
+    .toolbar { display: flex; gap: .75rem; flex-wrap: wrap; margin-bottom: 1.25rem; align-items: center; }
+    .search-wrap { position: relative; flex: 1; min-width: 200px; }
+    .search-wrap svg { position: absolute; left: .75rem; top: 50%; transform: translateY(-50%);
+      color: var(--muted); pointer-events: none; }
+    #search { width: 100%; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: .55rem .75rem .55rem 2.25rem; color: var(--text);
+      font-family: 'Inter', sans-serif; font-size: .875rem; outline: none; transition: border-color .2s; }
+    #search:focus { border-color: var(--indigo); }
+    #search::placeholder { color: var(--muted); }
+
+    select {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+      padding: .55rem .85rem; color: var(--text); font-family: 'Inter', sans-serif;
+      font-size: .875rem; outline: none; cursor: pointer;
+    }
+
+    /* BUTTONS */
+    .btn { display: inline-flex; align-items: center; gap: .4rem; padding: .55rem 1.1rem;
+      border-radius: 8px; font-size: .875rem; font-weight: 600; cursor: pointer;
+      border: none; transition: all .2s; font-family: 'Inter', sans-serif; }
+    .btn-primary { background: var(--grad); color: #fff; }
+    .btn-primary:hover { opacity: .88; }
+    .btn-ghost { background: var(--surface); border: 1px solid var(--border); color: var(--muted); }
+    .btn-ghost:hover { border-color: var(--indigo); color: var(--text); }
+    .btn-danger { background: rgba(248,113,113,.12); border: 1px solid rgba(248,113,113,.25); color: var(--red); }
+    .btn-danger:hover { background: rgba(248,113,113,.2); }
+    .btn-sm { padding: .35rem .7rem; font-size: .78rem; }
+
+    /* TABLE */
+    .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; }
+    thead tr { border-bottom: 1px solid var(--border); }
+    th { padding: .85rem 1rem; text-align: left; font-size: .72rem; font-weight: 600;
+      letter-spacing: .06em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+    td { padding: .8rem 1rem; font-size: .875rem; border-bottom: 1px solid rgba(129,140,248,.06); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(129,140,248,.03); }
+
+    .item-name { font-weight: 600; color: var(--text); }
+    .item-sku  { font-size: .75rem; color: var(--muted); margin-top: .1rem; }
+
+    /* STATUS BADGES */
+    .stock-badge { display: inline-flex; align-items: center; gap: .35rem;
+      padding: .25rem .7rem; border-radius: 20px; font-size: .75rem; font-weight: 600; }
+    .stock-badge.ok      { background: rgba(74,222,128,.1);  color: var(--green); }
+    .stock-badge.low     { background: rgba(251,191,36,.1);  color: var(--amber); }
+    .stock-badge.out     { background: rgba(248,113,113,.1); color: var(--red); }
+    .stock-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+    .qty-wrap { display: flex; align-items: center; gap: .5rem; }
+    .qty-btn { width: 26px; height: 26px; border-radius: 6px; border: 1px solid var(--border);
+      background: var(--surface2); color: var(--text); font-size: 1rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; transition: all .15s; }
+    .qty-btn:hover { border-color: var(--indigo); color: var(--indigo); }
+    .qty-num { font-weight: 600; min-width: 32px; text-align: center; font-size: .9rem; }
+
+    .category-tag { display: inline-block; padding: .2rem .6rem; border-radius: 6px;
+      font-size: .72rem; font-weight: 600; background: rgba(129,140,248,.1); color: var(--indigo); }
+
+    .empty-state { text-align: center; padding: 4rem 1rem; color: var(--muted); }
+    .empty-state svg { margin-bottom: 1rem; opacity: .4; }
+    .empty-state p { font-size: .9rem; }
+
+    /* MODAL */
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.65);
+      backdrop-filter: blur(4px); z-index: 100; display: none; align-items: center; justify-content: center; }
+    .modal-backdrop.open { display: flex; }
+    .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+      padding: 1.75rem; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; }
+    .modal h2 { font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 800; margin-bottom: 1.25rem; }
+
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .85rem; }
+    .form-group { display: flex; flex-direction: column; gap: .35rem; }
+    .form-group.full { grid-column: 1 / -1; }
+    label { font-size: .78rem; font-weight: 600; color: var(--muted); }
+    input, textarea, select.form-input {
+      background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+      padding: .6rem .85rem; color: var(--text); font-family: 'Inter', sans-serif;
+      font-size: .875rem; outline: none; transition: border-color .2s; width: 100%;
+    }
+    input:focus, textarea:focus, select.form-input:focus { border-color: var(--indigo); }
+    input::placeholder { color: var(--muted); }
+
+    .modal-footer { display: flex; gap: .6rem; justify-content: flex-end; margin-top: 1.25rem; }
+
+    footer { position: relative; z-index: 1; border-top: 1px solid var(--border);
+      text-align: center; padding: 1.5rem; color: var(--muted); font-size: .8rem; }
+    footer a { color: var(--indigo); text-decoration: none; }
+
+    @media (max-width: 640px) {
+      th:nth-child(4), td:nth-child(4),
+      th:nth-child(5), td:nth-child(5) { display: none; }
+      .form-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="index.html">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+      <defs><linearGradient id="ng" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#818cf8"/><stop offset="100%" stop-color="#06b6d4"/>
+      </linearGradient></defs>
+      <path d="M 6 4 Q 16 26 23 46 L 23 4 Z" fill="url(#ng)"/>
+      <path d="M 42 4 Q 32 26 25 46 L 25 4 Z" fill="url(#ng)" opacity="0.72"/>
+      <path d="M 12 44 Q 24 48 36 44" stroke="url(#ng)" stroke-width="2.2" stroke-linecap="round" fill="none" opacity="0.55"/>
+    </svg>
+    <span>Vela</span>
+  </a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="leads.html">Leads</a>
+    <a href="sales.html">Scripts</a>
+    <a href="app.html">Demo</a>
+    <a href="inventory.html" class="active btn-nav">Inventory</a>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1>Inventory Tracker</h1>
+      <p>Track stock levels, get low stock alerts, manage your items.</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-ghost" onclick="exportCSV()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export CSV
+      </button>
+      <button class="btn btn-primary" onclick="openModal()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Item
+      </button>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-bar">
+    <div class="stat-card">
+      <div class="stat-label">Total Items</div>
+      <div class="stat-value" id="stat-total">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Units</div>
+      <div class="stat-value" id="stat-units">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Inventory Value</div>
+      <div class="stat-value" id="stat-value">$0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Low Stock</div>
+      <div class="stat-value amber" id="stat-low">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Out of Stock</div>
+      <div class="stat-value red" id="stat-out">0</div>
+    </div>
+  </div>
+
+  <!-- ALERT BANNER -->
+  <div id="alert-banner"></div>
+
+  <!-- TOOLBAR -->
+  <div class="toolbar">
+    <div class="search-wrap">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="search" placeholder="Search items, SKU, supplier…" oninput="render()" />
+    </div>
+    <select id="filter-cat" onchange="render()">
+      <option value="">All Categories</option>
+    </select>
+    <select id="filter-status" onchange="render()">
+      <option value="">All Status</option>
+      <option value="ok">In Stock</option>
+      <option value="low">Low Stock</option>
+      <option value="out">Out of Stock</option>
+    </select>
+  </div>
+
+  <!-- TABLE -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Category</th>
+          <th>Quantity</th>
+          <th>Unit Price</th>
+          <th>Supplier</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div class="empty-state" id="empty" style="display:none">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+      <p>No items found. Add your first item above.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ADD / EDIT MODAL -->
+<div class="modal-backdrop" id="modal" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <h2 id="modal-title">Add Item</h2>
+    <div class="form-grid">
+      <div class="form-group full">
+        <label>Item Name *</label>
+        <input type="text" id="f-name" placeholder="e.g. Blue T-Shirt (M)" />
+      </div>
+      <div class="form-group">
+        <label>SKU / Code</label>
+        <input type="text" id="f-sku" placeholder="e.g. TS-BLU-M" />
+      </div>
+      <div class="form-group">
+        <label>Category</label>
+        <input type="text" id="f-cat" placeholder="e.g. Apparel" list="cat-list" />
+        <datalist id="cat-list"></datalist>
+      </div>
+      <div class="form-group">
+        <label>Quantity *</label>
+        <input type="number" id="f-qty" placeholder="0" min="0" />
+      </div>
+      <div class="form-group">
+        <label>Low Stock Threshold</label>
+        <input type="number" id="f-threshold" placeholder="10" min="0" />
+      </div>
+      <div class="form-group">
+        <label>Unit Price ($)</label>
+        <input type="number" id="f-price" placeholder="0.00" min="0" step="0.01" />
+      </div>
+      <div class="form-group">
+        <label>Supplier</label>
+        <input type="text" id="f-supplier" placeholder="e.g. Acme Co." />
+      </div>
+      <div class="form-group full">
+        <label>Notes</label>
+        <input type="text" id="f-notes" placeholder="Optional notes…" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveItem()">Save Item</button>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <p>© 2025 Vela · <a href="index.html">Back to home</a></p>
+</footer>
+
+<script>
+  const KEY = 'vela_inventory';
+  let items = JSON.parse(localStorage.getItem(KEY) || '[]');
+  let editId = null;
+
+  const SEED = [
+    { name: 'Blue T-Shirt (M)',      sku: 'TS-BLU-M',   category: 'Apparel',     qty: 42, threshold: 10, price: 18.99, supplier: 'ThreadCo',   notes: '' },
+    { name: 'Black Hoodie (L)',       sku: 'HD-BLK-L',   category: 'Apparel',     qty: 7,  threshold: 10, price: 45.00, supplier: 'ThreadCo',   notes: 'Reorder soon' },
+    { name: 'Wireless Mouse',         sku: 'ELEC-WM01',  category: 'Electronics', qty: 0,  threshold: 5,  price: 29.99, supplier: 'TechSupply', notes: 'Backordered' },
+    { name: 'Desk Lamp (LED)',         sku: 'HOME-DL01',  category: 'Home Office', qty: 15, threshold: 5,  price: 34.50, supplier: 'LightHouse', notes: '' },
+    { name: 'Protein Powder (Vanilla)',sku: 'SUPP-PP-V',  category: 'Supplements', qty: 3,  threshold: 8,  price: 54.99, supplier: 'NutriWorld', notes: 'Low — order by Friday' },
+    { name: 'Yoga Mat',               sku: 'FIT-YM01',   category: 'Fitness',     qty: 22, threshold: 6,  price: 28.00, supplier: 'FitGear',    notes: '' },
+    { name: 'Ceramic Coffee Mug',     sku: 'KIT-MG01',   category: 'Kitchen',     qty: 60, threshold: 15, price: 12.99, supplier: 'HomeGoods',  notes: '' },
+    { name: 'USB-C Hub (7-in-1)',      sku: 'ELEC-UH01',  category: 'Electronics', qty: 9,  threshold: 10, price: 39.99, supplier: 'TechSupply', notes: '' },
+  ];
+
+  if (items.length === 0) {
+    items = SEED.map((s, i) => ({ ...s, id: Date.now() + i }));
+    save();
+  }
+
+  function save() { localStorage.setItem(KEY, JSON.stringify(items)); }
+
+  function stockStatus(item) {
+    if (item.qty === 0) return 'out';
+    if (item.qty <= (item.threshold || 0)) return 'low';
+    return 'ok';
+  }
+
+  function updateStats() {
+    const total = items.length;
+    const units = items.reduce((s, i) => s + i.qty, 0);
+    const value = items.reduce((s, i) => s + (i.qty * (i.price || 0)), 0);
+    const low   = items.filter(i => stockStatus(i) === 'low').length;
+    const out   = items.filter(i => stockStatus(i) === 'out').length;
+
+    document.getElementById('stat-total').textContent = total;
+    document.getElementById('stat-units').textContent = units.toLocaleString();
+    document.getElementById('stat-value').textContent = '$' + value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    document.getElementById('stat-low').textContent   = low;
+    document.getElementById('stat-out').textContent   = out;
+
+    const alerts = items.filter(i => stockStatus(i) !== 'ok');
+    const banner = document.getElementById('alert-banner');
+    if (alerts.length > 0) {
+      const names = alerts.map(i => `<strong>${i.name}</strong> (${i.qty} left)`).join(', ');
+      banner.innerHTML = `⚠️ Low/out of stock: ${names}`;
+      banner.style.display = 'block';
+    } else {
+      banner.style.display = 'none';
+    }
+
+    const cats = [...new Set(items.map(i => i.category).filter(Boolean))].sort();
+    const sel = document.getElementById('filter-cat');
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">All Categories</option>' + cats.map(c => `<option value="${c}" ${c===cur?'selected':''}>${c}</option>`).join('');
+    document.getElementById('cat-list').innerHTML = cats.map(c => `<option value="${c}">`).join('');
+  }
+
+  function render() {
+    const q     = document.getElementById('search').value.toLowerCase();
+    const catF  = document.getElementById('filter-cat').value;
+    const statF = document.getElementById('filter-status').value;
+
+    const filtered = items.filter(item => {
+      const matchQ = !q || [item.name, item.sku, item.supplier, item.category, item.notes].some(f => (f||'').toLowerCase().includes(q));
+      const matchCat  = !catF  || item.category === catF;
+      const matchStat = !statF || stockStatus(item) === statF;
+      return matchQ && matchCat && matchStat;
+    });
+
+    const tbody = document.getElementById('tbody');
+    const empty = document.getElementById('empty');
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = '';
+      empty.style.display = 'block';
+    } else {
+      empty.style.display = 'none';
+      tbody.innerHTML = filtered.map(item => {
+        const st = stockStatus(item);
+        const label = st === 'out' ? 'Out of Stock' : st === 'low' ? 'Low Stock' : 'In Stock';
+        const price = item.price ? '$' + Number(item.price).toFixed(2) : '—';
+        return `
+          <tr>
+            <td>
+              <div class="item-name">${esc(item.name)}</div>
+              ${item.sku ? `<div class="item-sku">${esc(item.sku)}</div>` : ''}
+            </td>
+            <td>${item.category ? `<span class="category-tag">${esc(item.category)}</span>` : '<span style="color:var(--muted)">—</span>'}</td>
+            <td>
+              <div class="qty-wrap">
+                <button class="qty-btn" onclick="adjustQty(${item.id}, -1)">−</button>
+                <span class="qty-num">${item.qty}</span>
+                <button class="qty-btn" onclick="adjustQty(${item.id}, 1)">+</button>
+              </div>
+            </td>
+            <td>${price}</td>
+            <td>${item.supplier ? esc(item.supplier) : '<span style="color:var(--muted)">—</span>'}</td>
+            <td><span class="stock-badge ${st}"><span class="stock-dot"></span>${label}</span></td>
+            <td>
+              <div style="display:flex;gap:.4rem">
+                <button class="btn btn-ghost btn-sm" onclick="openModal(${item.id})">Edit</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteItem(${item.id})">Delete</button>
+              </div>
+            </td>
+          </tr>`;
+      }).join('');
+    }
+
+    updateStats();
+  }
+
+  function adjustQty(id, delta) {
+    const item = items.find(i => i.id === id);
+    if (!item) return;
+    item.qty = Math.max(0, item.qty + delta);
+    save(); render();
+  }
+
+  function openModal(id = null) {
+    editId = id;
+    document.getElementById('modal-title').textContent = id ? 'Edit Item' : 'Add Item';
+    if (id) {
+      const item = items.find(i => i.id === id);
+      document.getElementById('f-name').value      = item.name || '';
+      document.getElementById('f-sku').value       = item.sku || '';
+      document.getElementById('f-cat').value       = item.category || '';
+      document.getElementById('f-qty').value       = item.qty;
+      document.getElementById('f-threshold').value = item.threshold || '';
+      document.getElementById('f-price').value     = item.price || '';
+      document.getElementById('f-supplier').value  = item.supplier || '';
+      document.getElementById('f-notes').value     = item.notes || '';
+    } else {
+      ['f-name','f-sku','f-cat','f-qty','f-threshold','f-price','f-supplier','f-notes'].forEach(id => document.getElementById(id).value = '');
+    }
+    document.getElementById('modal').classList.add('open');
+    document.getElementById('f-name').focus();
+  }
+
+  function closeModal() {
+    document.getElementById('modal').classList.remove('open');
+    editId = null;
+  }
+
+  function closeModalOutside(e) {
+    if (e.target === document.getElementById('modal')) closeModal();
+  }
+
+  function saveItem() {
+    const name = document.getElementById('f-name').value.trim();
+    const qty  = parseInt(document.getElementById('f-qty').value);
+    if (!name) { alert('Item name is required.'); return; }
+    if (isNaN(qty) || qty < 0) { alert('Please enter a valid quantity.'); return; }
+
+    const data = {
+      name,
+      sku:       document.getElementById('f-sku').value.trim(),
+      category:  document.getElementById('f-cat').value.trim(),
+      qty,
+      threshold: parseInt(document.getElementById('f-threshold').value) || 0,
+      price:     parseFloat(document.getElementById('f-price').value) || 0,
+      supplier:  document.getElementById('f-supplier').value.trim(),
+      notes:     document.getElementById('f-notes').value.trim(),
+    };
+
+    if (editId) {
+      const idx = items.findIndex(i => i.id === editId);
+      items[idx] = { ...items[idx], ...data };
+    } else {
+      items.push({ id: Date.now(), ...data });
+    }
+
+    save(); closeModal(); render();
+  }
+
+  function deleteItem(id) {
+    const item = items.find(i => i.id === id);
+    if (!confirm(`Delete "${item.name}"? This cannot be undone.`)) return;
+    items = items.filter(i => i.id !== id);
+    save(); render();
+  }
+
+  function exportCSV() {
+    const headers = ['Name','SKU','Category','Quantity','Threshold','Unit Price','Supplier','Status','Notes'];
+    const rows = items.map(i => [
+      i.name, i.sku, i.category, i.qty, i.threshold,
+      i.price ? i.price.toFixed(2) : '',
+      i.supplier, stockStatus(i) === 'out' ? 'Out of Stock' : stockStatus(i) === 'low' ? 'Low Stock' : 'In Stock',
+      i.notes
+    ].map(v => `"${String(v||'').replace(/"/g,'""')}"`));
+
+    const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'vela-inventory.csv';
+    a.click();
+  }
+
+  function esc(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  render();
+</script>
+</body>
+</html>
