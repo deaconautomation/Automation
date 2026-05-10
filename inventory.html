@@ -184,6 +184,7 @@
     <a href="sales.html">Scripts</a>
     <a href="app.html">Demo</a>
     <a href="inventory.html" class="active btn-nav">Inventory</a>
+    <button class="btn-nav" id="signout-btn" onclick="signOut()" style="background:none;border:1px solid var(--border);color:var(--muted);font-size:.8rem;padding:.35rem .85rem;border-radius:8px;cursor:pointer;font-family:inherit;">Sign Out</button>
   </div>
 </nav>
 
@@ -269,6 +270,10 @@
       <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
       <p>No items found. Add your first item above.</p>
     </div>
+    <div class="empty-state" id="loading-state">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="animation:spin .8s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+      <p style="margin-top:.75rem">Loading inventory…</p>
+    </div>
   </div>
 </div>
 
@@ -322,28 +327,44 @@
   <p>© 2025 Vela · <a href="index.html">Back to home</a></p>
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  const KEY = 'vela_inventory';
-  let items = JSON.parse(localStorage.getItem(KEY) || '[]');
+  const sb = supabase.createClient(
+    'https://ndbvmtuzmzbaaoxudmbk.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kYnZtdHV6bXpiYWFveHVkbWJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyNjUyODcsImV4cCI6MjA5Mzg0MTI4N30.CRqNEXZlUf4pRCjbVghCZg2p4rLh2Y-cKQpqSwkUw2k'
+  );
+
+  let items = [];
   let editId = null;
+  let currentUser = null;
 
-  const SEED = [
-    { name: 'Blue T-Shirt (M)',      sku: 'TS-BLU-M',   category: 'Apparel',     qty: 42, threshold: 10, price: 18.99, supplier: 'ThreadCo',   notes: '' },
-    { name: 'Black Hoodie (L)',       sku: 'HD-BLK-L',   category: 'Apparel',     qty: 7,  threshold: 10, price: 45.00, supplier: 'ThreadCo',   notes: 'Reorder soon' },
-    { name: 'Wireless Mouse',         sku: 'ELEC-WM01',  category: 'Electronics', qty: 0,  threshold: 5,  price: 29.99, supplier: 'TechSupply', notes: 'Backordered' },
-    { name: 'Desk Lamp (LED)',         sku: 'HOME-DL01',  category: 'Home Office', qty: 15, threshold: 5,  price: 34.50, supplier: 'LightHouse', notes: '' },
-    { name: 'Protein Powder (Vanilla)',sku: 'SUPP-PP-V',  category: 'Supplements', qty: 3,  threshold: 8,  price: 54.99, supplier: 'NutriWorld', notes: 'Low — order by Friday' },
-    { name: 'Yoga Mat',               sku: 'FIT-YM01',   category: 'Fitness',     qty: 22, threshold: 6,  price: 28.00, supplier: 'FitGear',    notes: '' },
-    { name: 'Ceramic Coffee Mug',     sku: 'KIT-MG01',   category: 'Kitchen',     qty: 60, threshold: 15, price: 12.99, supplier: 'HomeGoods',  notes: '' },
-    { name: 'USB-C Hub (7-in-1)',      sku: 'ELEC-UH01',  category: 'Electronics', qty: 9,  threshold: 10, price: 39.99, supplier: 'TechSupply', notes: '' },
-  ];
-
-  if (items.length === 0) {
-    items = SEED.map((s, i) => ({ ...s, id: Date.now() + i }));
-    save();
+  async function init() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { window.location.href = 'login.html'; return; }
+    currentUser = session.user;
+    await loadItems();
   }
 
-  function save() { localStorage.setItem(KEY, JSON.stringify(items)); }
+  async function loadItems() {
+    document.getElementById('loading-state').style.display = 'block';
+    document.getElementById('empty').style.display = 'none';
+
+    const { data, error } = await sb
+      .from('inventory_items')
+      .select('*')
+      .order('created_at', { ascending: true });
+
+    document.getElementById('loading-state').style.display = 'none';
+
+    if (error) { console.error('Load error:', error.message); return; }
+    items = data || [];
+    render();
+  }
+
+  async function signOut() {
+    await sb.auth.signOut();
+    window.location.href = 'login.html';
+  }
 
   function stockStatus(item) {
     if (item.qty === 0) return 'out';
@@ -367,7 +388,7 @@
     const alerts = items.filter(i => stockStatus(i) !== 'ok');
     const banner = document.getElementById('alert-banner');
     if (alerts.length > 0) {
-      const names = alerts.map(i => `<strong>${i.name}</strong> (${i.qty} left)`).join(', ');
+      const names = alerts.map(i => `<strong>${esc(i.name)}</strong> (${i.qty} left)`).join(', ');
       banner.innerHTML = `⚠️ Low/out of stock: ${names}`;
       banner.style.display = 'block';
     } else {
@@ -405,6 +426,7 @@
         const st = stockStatus(item);
         const label = st === 'out' ? 'Out of Stock' : st === 'low' ? 'Low Stock' : 'In Stock';
         const price = item.price ? '$' + Number(item.price).toFixed(2) : '—';
+        const id = esc(item.id);
         return `
           <tr>
             <td>
@@ -414,9 +436,9 @@
             <td>${item.category ? `<span class="category-tag">${esc(item.category)}</span>` : '<span style="color:var(--muted)">—</span>'}</td>
             <td>
               <div class="qty-wrap">
-                <button class="qty-btn" onclick="adjustQty(${item.id}, -1)">−</button>
+                <button class="qty-btn" onclick="adjustQty('${id}', -1)">−</button>
                 <span class="qty-num">${item.qty}</span>
-                <button class="qty-btn" onclick="adjustQty(${item.id}, 1)">+</button>
+                <button class="qty-btn" onclick="adjustQty('${id}', 1)">+</button>
               </div>
             </td>
             <td>${price}</td>
@@ -424,8 +446,8 @@
             <td><span class="stock-badge ${st}"><span class="stock-dot"></span>${label}</span></td>
             <td>
               <div style="display:flex;gap:.4rem">
-                <button class="btn btn-ghost btn-sm" onclick="openModal(${item.id})">Edit</button>
-                <button class="btn btn-danger btn-sm" onclick="deleteItem(${item.id})">Delete</button>
+                <button class="btn btn-ghost btn-sm" onclick="openModal('${id}')">Edit</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteItem('${id}')">Delete</button>
               </div>
             </td>
           </tr>`;
@@ -435,11 +457,14 @@
     updateStats();
   }
 
-  function adjustQty(id, delta) {
+  async function adjustQty(id, delta) {
     const item = items.find(i => i.id === id);
     if (!item) return;
-    item.qty = Math.max(0, item.qty + delta);
-    save(); render();
+    const newQty = Math.max(0, item.qty + delta);
+    const { error } = await sb.from('inventory_items').update({ qty: newQty }).eq('id', id);
+    if (error) { console.error('Update qty error:', error.message); return; }
+    item.qty = newQty;
+    render();
   }
 
   function openModal(id = null) {
@@ -456,7 +481,7 @@
       document.getElementById('f-supplier').value  = item.supplier || '';
       document.getElementById('f-notes').value     = item.notes || '';
     } else {
-      ['f-name','f-sku','f-cat','f-qty','f-threshold','f-price','f-supplier','f-notes'].forEach(id => document.getElementById(id).value = '');
+      ['f-name','f-sku','f-cat','f-qty','f-threshold','f-price','f-supplier','f-notes'].forEach(fid => document.getElementById(fid).value = '');
     }
     document.getElementById('modal').classList.add('open');
     document.getElementById('f-name').focus();
@@ -471,13 +496,13 @@
     if (e.target === document.getElementById('modal')) closeModal();
   }
 
-  function saveItem() {
+  async function saveItem() {
     const name = document.getElementById('f-name').value.trim();
     const qty  = parseInt(document.getElementById('f-qty').value);
     if (!name) { alert('Item name is required.'); return; }
     if (isNaN(qty) || qty < 0) { alert('Please enter a valid quantity.'); return; }
 
-    const data = {
+    const payload = {
       name,
       sku:       document.getElementById('f-sku').value.trim(),
       category:  document.getElementById('f-cat').value.trim(),
@@ -488,28 +513,39 @@
       notes:     document.getElementById('f-notes').value.trim(),
     };
 
+    const saveBtn = document.querySelector('.modal-footer .btn-primary');
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving…';
+
+    let error;
     if (editId) {
-      const idx = items.findIndex(i => i.id === editId);
-      items[idx] = { ...items[idx], ...data };
+      ({ error } = await sb.from('inventory_items').update(payload).eq('id', editId));
     } else {
-      items.push({ id: Date.now(), ...data });
+      ({ error } = await sb.from('inventory_items').insert({ ...payload, client_id: currentUser.id }));
     }
 
-    save(); closeModal(); render();
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Save Item';
+
+    if (error) { alert('Error saving item: ' + error.message); return; }
+    closeModal();
+    await loadItems();
   }
 
-  function deleteItem(id) {
+  async function deleteItem(id) {
     const item = items.find(i => i.id === id);
     if (!confirm(`Delete "${item.name}"? This cannot be undone.`)) return;
+    const { error } = await sb.from('inventory_items').delete().eq('id', id);
+    if (error) { alert('Error deleting item: ' + error.message); return; }
     items = items.filter(i => i.id !== id);
-    save(); render();
+    render();
   }
 
   function exportCSV() {
     const headers = ['Name','SKU','Category','Quantity','Threshold','Unit Price','Supplier','Status','Notes'];
     const rows = items.map(i => [
       i.name, i.sku, i.category, i.qty, i.threshold,
-      i.price ? i.price.toFixed(2) : '',
+      i.price ? Number(i.price).toFixed(2) : '',
       i.supplier, stockStatus(i) === 'out' ? 'Out of Stock' : stockStatus(i) === 'low' ? 'Low Stock' : 'In Stock',
       i.notes
     ].map(v => `"${String(v||'').replace(/"/g,'""')}"`));
@@ -526,7 +562,7 @@
     return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
-  render();
+  init();
 </script>
 </body>
 </html>
