@@ -563,9 +563,27 @@
     <a href="#how" class="nav-link">How it works</a>
     <a href="#features" class="nav-link">Features</a>
     <a href="app.html" class="nav-link">Demo</a>
+    <a href="login.html" id="signin-btn" class="nav-link" style="font-weight:600;color:var(--text)">Sign In</a>
     <a href="#waitlist" class="btn-nav">Join Waitlist</a>
   </div>
 </nav>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  (async () => {
+    const sb = supabase.createClient(
+      'https://ndbvmtuzmzbaaoxudmbk.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kYnZtdHV6bXpiYWFveHVkbWJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyNjUyODcsImV4cCI6MjA5Mzg0MTI4N30.CRqNEXZlUf4pRCjbVghCZg2p4rLh2Y-cKQpqSwkUw2k'
+    );
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) {
+      const btn = document.getElementById('signin-btn');
+      btn.textContent = 'Go to App →';
+      btn.href = 'inventory.html';
+      btn.style.color = 'var(--indigo)';
+    }
+  })();
+</script>
 
 <!-- HERO -->
 <section class="hero">
