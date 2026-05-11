@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vela — Clients</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #06070d; --surface: #0e1017; --surface2: #161820;
+      --border: rgba(129,140,248,.13); --indigo: #818cf8; --cyan: #06b6d4;
+      --text: #e8eaf6; --muted: #8b90b8; --red: #f87171; --green: #4ade80;
+      --grad: linear-gradient(135deg, var(--indigo), var(--cyan));
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; }
+    body::before {
+      content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background-image: radial-gradient(circle, rgba(129,140,248,.07) 1px, transparent 1px);
+      background-size: 28px 28px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    nav {
+      position: sticky; top: 0; z-index: 50;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 2rem; height: 64px;
+      background: rgba(6,7,13,.88); backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo { display: flex; align-items: center; gap: .6rem; text-decoration: none; }
+    .nav-logo svg { width: 28px; height: 28px; }
+    .nav-logo span { font-family: 'Syne', sans-serif; font-size: 1.25rem; font-weight: 800;
+      background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .nav-links { display: flex; gap: 1.5rem; align-items: center; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-size: .875rem; font-weight: 500; transition: color .2s; }
+    .nav-links a:hover, .nav-links a.active { color: var(--text); }
+    .nav-links .btn-nav { padding: .45rem 1.1rem; border-radius: 8px; background: var(--grad);
+      color: #fff; font-weight: 600; font-size: .875rem; border: none; cursor: pointer; }
+
+    .page { position: relative; z-index: 1; max-width: 1000px; margin: 0 auto; padding: 2rem 1.5rem 5rem; }
+
+    .page-header { display: flex; align-items: flex-start; justify-content: space-between;
+      flex-wrap: wrap; gap: 1rem; margin-bottom: 1.75rem; }
+    .page-header h1 { font-family: 'Syne', sans-serif; font-size: 1.75rem; font-weight: 800;
+      background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .page-header p { color: var(--muted); font-size: .875rem; margin-top: .2rem; }
+
+    .btn { display: inline-flex; align-items: center; gap: .4rem; padding: .55rem 1.1rem;
+      border-radius: 8px; font-size: .875rem; font-weight: 600; cursor: pointer;
+      border: none; transition: all .2s; font-family: 'Inter', sans-serif; }
+    .btn-primary { background: var(--grad); color: #fff; }
+    .btn-primary:hover { opacity: .88; }
+    .btn-ghost { background: var(--surface); border: 1px solid var(--border); color: var(--muted); }
+    .btn-ghost:hover { border-color: var(--indigo); color: var(--text); }
+    .btn-danger { background: rgba(248,113,113,.12); border: 1px solid rgba(248,113,113,.25); color: var(--red); }
+    .btn-danger:hover { background: rgba(248,113,113,.2); }
+    .btn-sm { padding: .35rem .7rem; font-size: .78rem; }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+    .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; }
+    thead tr { border-bottom: 1px solid var(--border); }
+    th { padding: .85rem 1rem; text-align: left; font-size: .72rem; font-weight: 600;
+      letter-spacing: .06em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+    td { padding: .8rem 1rem; font-size: .875rem; border-bottom: 1px solid rgba(129,140,248,.06); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(129,140,248,.03); }
+
+    .badge-admin { display: inline-block; padding: .2rem .6rem; border-radius: 6px;
+      font-size: .72rem; font-weight: 600; background: rgba(129,140,248,.15); color: var(--indigo); }
+
+    .empty-state { text-align: center; padding: 4rem 1rem; color: var(--muted); }
+    .empty-state svg { margin-bottom: 1rem; opacity: .4; }
+    .empty-state p { font-size: .9rem; }
+
+    .error-banner { background: rgba(248,113,113,.08); border: 1px solid rgba(248,113,113,.25);
+      border-radius: 12px; padding: .85rem 1.1rem; margin-bottom: 1.25rem;
+      font-size: .875rem; color: var(--red); display: none; }
+
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.65);
+      backdrop-filter: blur(4px); z-index: 100; display: none; align-items: center; justify-content: center; }
+    .modal-backdrop.open { display: flex; }
+    .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+      padding: 1.75rem; width: 100%; max-width: 420px; }
+    .modal h2 { font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 800; margin-bottom: 1.25rem; }
+    .form-group { display: flex; flex-direction: column; gap: .35rem; margin-bottom: .85rem; }
+    label { font-size: .78rem; font-weight: 600; color: var(--muted); }
+    input {
+      background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+      padding: .6rem .85rem; color: var(--text); font-family: 'Inter', sans-serif;
+      font-size: .875rem; outline: none; transition: border-color .2s; width: 100%;
+    }
+    input:focus { border-color: var(--indigo); }
+    input::placeholder { color: var(--muted); }
+    .modal-error { color: var(--red); font-size: .8rem; margin-bottom: .75rem; display: none; }
+    .modal-footer { display: flex; gap: .6rem; justify-content: flex-end; margin-top: 1.25rem; }
+
+    footer { position: relative; z-index: 1; border-top: 1px solid var(--border);
+      text-align: center; padding: 1.5rem; color: var(--muted); font-size: .8rem; }
+    footer a { color: var(--indigo); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="index.html">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+      <defs><linearGradient id="ng" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#818cf8"/><stop offset="100%" stop-color="#06b6d4"/>
+      </linearGradient></defs>
+      <path d="M 6 4 Q 16 26 23 46 L 23 4 Z" fill="url(#ng)"/>
+      <path d="M 42 4 Q 32 26 25 46 L 25 4 Z" fill="url(#ng)" opacity="0.72"/>
+      <path d="M 12 44 Q 24 48 36 44" stroke="url(#ng)" stroke-width="2.2" stroke-linecap="round" fill="none" opacity="0.55"/>
+    </svg>
+    <span>Vela</span>
+  </a>
+  <div class="nav-links">
+    <a href="inventory.html">Inventory</a>
+    <a href="clients.html" class="active btn-nav">Clients</a>
+    <button onclick="signOut()" style="background:none;border:1px solid var(--border);color:var(--muted);font-size:.8rem;padding:.35rem .85rem;border-radius:8px;cursor:pointer;font-family:inherit;">Sign Out</button>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1>Clients</h1>
+      <p>Manage client accounts and access.</p>
+    </div>
+    <button class="btn btn-primary" onclick="openModal()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Add Client
+    </button>
+  </div>
+
+  <div class="error-banner" id="error-banner"></div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Business</th>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Created</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div class="empty-state" id="empty" style="display:none">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <p>No clients yet. Add your first client above.</p>
+    </div>
+    <div class="empty-state" id="loading-state">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="animation:spin .8s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+      <p style="margin-top:.75rem">Loading clients…</p>
+    </div>
+  </div>
+</div>
+
+<!-- ADD CLIENT MODAL -->
+<div class="modal-backdrop" id="modal" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <h2>Add Client</h2>
+    <div class="form-group">
+      <label>Business Name</label>
+      <input type="text" id="f-business" placeholder="e.g. Acme Corp" />
+    </div>
+    <div class="form-group">
+      <label>Email *</label>
+      <input type="email" id="f-email" placeholder="client@business.com" />
+    </div>
+    <div class="form-group">
+      <label>Password *</label>
+      <input type="password" id="f-password" placeholder="Min 6 characters" />
+    </div>
+    <div class="modal-error" id="modal-error"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="save-btn" onclick="createClient()">Create Client</button>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <p>© 2025 Vela · <a href="index.html">Back to home</a></p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const sb = supabase.createClient(
+    'https://ndbvmtuzmzbaaoxudmbk.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kYnZtdHV6bXpiYWFveHVkbWJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyNjUyODcsImV4cCI6MjA5Mzg0MTI4N30.CRqNEXZlUf4pRCjbVghCZg2p4rLh2Y-cKQpqSwkUw2k'
+  );
+
+  let clients = [];
+
+  async function init() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { window.location.href = 'login.html'; return; }
+
+    const { data: profile } = await sb.from('profiles').select('is_admin').eq('id', session.user.id).single();
+    if (!profile?.is_admin) { window.location.href = 'inventory.html'; return; }
+
+    await loadClients();
+  }
+
+  async function loadClients() {
+    document.getElementById('loading-state').style.display = 'block';
+    document.getElementById('empty').style.display = 'none';
+
+    const res = await fetch('/api/list-clients');
+    const data = await res.json();
+
+    document.getElementById('loading-state').style.display = 'none';
+
+    if (!res.ok) { showBannerError(data.error || 'Failed to load clients.'); return; }
+
+    clients = data.users || [];
+    render();
+  }
+
+  async function signOut() {
+    await sb.auth.signOut();
+    window.location.href = 'login.html';
+  }
+
+  function render() {
+    const tbody = document.getElementById('tbody');
+    const empty = document.getElementById('empty');
+
+    if (clients.length === 0) {
+      tbody.innerHTML = '';
+      empty.style.display = 'block';
+      return;
+    }
+
+    empty.style.display = 'none';
+    tbody.innerHTML = clients.map(c => {
+      const date = new Date(c.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      return `
+        <tr>
+          <td style="font-weight:600">${esc(c.business_name || '—')}</td>
+          <td style="color:var(--muted)">${esc(c.email)}</td>
+          <td>${c.is_admin ? '<span class="badge-admin">Admin</span>' : '<span style="color:var(--muted);font-size:.8rem">Client</span>'}</td>
+          <td style="color:var(--muted);font-size:.82rem">${date}</td>
+          <td>
+            <button class="btn btn-danger btn-sm" onclick="deleteClient('${esc(c.id)}', '${esc(c.email)}')">Delete</button>
+          </td>
+        </tr>`;
+    }).join('');
+  }
+
+  function openModal() {
+    ['f-business','f-email','f-password'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('modal-error').style.display = 'none';
+    document.getElementById('modal').classList.add('open');
+    document.getElementById('f-business').focus();
+  }
+
+  function closeModal() {
+    document.getElementById('modal').classList.remove('open');
+  }
+
+  function closeModalOutside(e) {
+    if (e.target === document.getElementById('modal')) closeModal();
+  }
+
+  async function createClient() {
+    const email       = document.getElementById('f-email').value.trim();
+    const password    = document.getElementById('f-password').value;
+    const businessName = document.getElementById('f-business').value.trim();
+
+    if (!email || !password) { showModalError('Email and password are required.'); return; }
+    if (password.length < 6) { showModalError('Password must be at least 6 characters.'); return; }
+
+    const btn = document.getElementById('save-btn');
+    btn.disabled = true;
+    btn.textContent = 'Creating…';
+    document.getElementById('modal-error').style.display = 'none';
+
+    const res = await fetch('/api/create-client', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, businessName }),
+    });
+    const data = await res.json();
+
+    btn.disabled = false;
+    btn.textContent = 'Create Client';
+
+    if (!res.ok) { showModalError(data.error || 'Failed to create client.'); return; }
+
+    closeModal();
+    await loadClients();
+  }
+
+  async function deleteClient(id, email) {
+    if (!confirm(`Delete client "${email}"? Their inventory data will also be deleted. This cannot be undone.`)) return;
+
+    const res = await fetch('/api/delete-client', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: id }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) { showBannerError(data.error || 'Failed to delete client.'); return; }
+
+    clients = clients.filter(c => c.id !== id);
+    render();
+  }
+
+  function showModalError(msg) {
+    const el = document.getElementById('modal-error');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  function showBannerError(msg) {
+    const el = document.getElementById('error-banner');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  function esc(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  init();
+</script>
+</body>
+</html>

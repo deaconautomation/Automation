@@ -184,6 +184,7 @@
     <a href="sales.html">Scripts</a>
     <a href="app.html">Demo</a>
     <a href="inventory.html" class="active btn-nav">Inventory</a>
+    <a href="clients.html" id="clients-link" style="display:none">Clients</a>
     <button class="btn-nav" id="signout-btn" onclick="signOut()" style="background:none;border:1px solid var(--border);color:var(--muted);font-size:.8rem;padding:.35rem .85rem;border-radius:8px;cursor:pointer;font-family:inherit;">Sign Out</button>
   </div>
 </nav>
@@ -342,6 +343,8 @@
     const { data: { session } } = await sb.auth.getSession();
     if (!session) { window.location.href = 'login.html'; return; }
     currentUser = session.user;
+    const { data: profile } = await sb.from('profiles').select('is_admin').eq('id', session.user.id).single();
+    if (profile?.is_admin) document.getElementById('clients-link').style.display = 'inline';
     await loadItems();
   }
 
