@@ -9,10 +9,11 @@ module.exports = async function handler(req, res) {
   const { email, password, businessName } = req.body || {};
   if (!email || !password) return res.status(400).json({ error: 'Email and password are required.' });
 
-  const SUPABASE_URL           = process.env.SUPABASE_URL;
-  const SERVICE_KEY            = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const ZAPIER_WELCOME_WEBHOOK = process.env.ZAPIER_WELCOME_WEBHOOK_URL;
-  const APP_URL                = process.env.APP_URL || 'https://your-app.vercel.app';
+  const SUPABASE_URL   = process.env.SUPABASE_URL;
+  const SERVICE_KEY    = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const RESEND_API_KEY = process.env.RESEND_API_KEY;
+  const FROM_EMAIL     = process.env.ALERT_FROM_EMAIL || 'onboarding@resend.dev';
+  const APP_URL        = process.env.APP_URL || 'https://your-app.vercel.app';
 
   if (!SUPABASE_URL || !SERVICE_KEY) {
     return res.status(500).json({ error: 'Server misconfiguration: missing Supabase env vars.' });
@@ -40,10 +41,10 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: data.msg || data.message || 'Failed to create client.' });
     }
 
-    // Send welcome email via Zapier webhook if configured
-    if (ZAPIER_WELCOME_WEBHOOK) {
+    // Send welcome email via Resend if configured
+    if (RESEND_API_KEY) {
       const greeting = businessName ? `Hi ${businessName}` : 'Hi there';
-      const htmlBody = `
+      const html = `
 <!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"></head>
@@ -80,18 +81,14 @@ module.exports = async function handler(req, res) {
 </body>
 </html>`;
 
-      await fetch(ZAPIER_WELCOME_WEBHOOK, {
+      await fetch('https://api.resend.com/emails', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          to:            email,
-          subject:       'Your Vela inventory account is ready',
-          body:          htmlBody,
-          body_plain:    `${greeting},\n\nYour inventory account is ready.\n\nEmail: ${email}\nPassword: ${password}\n\nSign in: ${APP_URL}/login.html\n\nWe recommend changing your password after your first sign-in via Settings.`,
-          business_name: businessName || email,
-          login_url:     `${APP_URL}/login.html`,
-          client_email:  email,
-          temp_password: password,
+          from:    FROM_EMAIL,
+          to:      email,
+          subject: 'Your Vela inventory account is ready',
+          html,
         }),
       });
     }
