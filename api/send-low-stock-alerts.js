@@ -8,16 +8,16 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const SUPABASE_URL     = process.env.SUPABASE_URL;
-  const SERVICE_KEY      = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const RESEND_API_KEY   = process.env.RESEND_API_KEY;
-  const FROM_EMAIL       = process.env.ALERT_FROM_EMAIL || 'alerts@vela.app';
+  const SUPABASE_URL      = process.env.SUPABASE_URL;
+  const SERVICE_KEY       = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const ZAPIER_WEBHOOK    = process.env.ZAPIER_WEBHOOK_URL;
+  const APP_URL           = process.env.APP_URL || 'https://your-app.vercel.app';
 
   if (!SUPABASE_URL || !SERVICE_KEY) {
     return res.status(500).json({ error: 'Missing Supabase env vars.' });
   }
-  if (!RESEND_API_KEY) {
-    return res.status(500).json({ error: 'Missing RESEND_API_KEY env var.' });
+  if (!ZAPIER_WEBHOOK) {
+    return res.status(500).json({ error: 'Missing ZAPIER_WEBHOOK_URL env var.' });
   }
 
   const sb = createClient(SUPABASE_URL, SERVICE_KEY);
@@ -43,15 +43,20 @@ module.exports = async function handler(req, res) {
   const results = [];
 
   for (const clientId of clientIds) {
-    const email      = userMap[clientId];
+    const email        = userMap[clientId];
     if (!email) continue;
 
-    const clientItems = items.filter(i => i.client_id === clientId);
-    const businessName = clientItems[0]?.profiles?.business_name || email;
+    const clientItems  = items.filter(i => i.client_id === clientId);
+    const businessName = clientItems[0]?.profiles?.business_name || '';
+    const outOfStock   = clientItems.filter(i => i.qty === 0);
+    const lowStock     = clientItems.filter(i => i.qty > 0 && i.qty <= (i.threshold || 0));
 
-    const outOfStock = clientItems.filter(i => i.qty === 0);
-    const lowStock   = clientItems.filter(i => i.qty > 0 && i.qty <= (i.threshold || 0));
+    // Plain-text item list for Zapier email body fallback
+    const itemLines = clientItems.map(item =>
+      `• ${item.name}${item.sku ? ` (${item.sku})` : ''} — Qty: ${item.qty}${item.threshold ? ` / Threshold: ${item.threshold}` : ''} — ${item.qty === 0 ? 'OUT OF STOCK' : 'LOW STOCK'}`
+    ).join('\n');
 
+    // HTML table for rich email body
     const rows = clientItems.map(item => {
       const status = item.qty === 0 ? '🔴 Out of Stock' : '🟡 Low Stock';
       return `<tr>
@@ -62,58 +67,54 @@ module.exports = async function handler(req, res) {
       </tr>`;
     }).join('');
 
-    const html = `
-<!DOCTYPE html>
-<html>
-<head><meta charset="UTF-8"></head>
+    const htmlBody = `
+<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
 <body style="margin:0;padding:0;background:#06070d;font-family:Inter,sans-serif">
 <div style="max-width:560px;margin:40px auto;background:#0e1017;border:1px solid rgba(129,140,248,.13);border-radius:16px;overflow:hidden">
   <div style="padding:28px 32px;border-bottom:1px solid rgba(129,140,248,.13);background:linear-gradient(135deg,rgba(129,140,248,.08),rgba(6,182,212,.08))">
-    <div style="font-family:sans-serif;font-size:20px;font-weight:800;background:linear-gradient(135deg,#818cf8,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Vela</div>
+    <div style="font-size:20px;font-weight:800;color:#818cf8">Vela</div>
     <div style="color:#e8eaf6;font-size:18px;font-weight:700;margin-top:8px">Low Stock Alert</div>
     <div style="color:#8b90b8;font-size:13px;margin-top:4px">
-      ${outOfStock.length} item${outOfStock.length !== 1 ? 's' : ''} out of stock · ${lowStock.length} item${lowStock.length !== 1 ? 's' : ''} running low
+      ${outOfStock.length} out of stock · ${lowStock.length} running low
     </div>
   </div>
   <div style="padding:24px 32px">
-    <p style="color:#8b90b8;font-size:14px;margin:0 0 20px">Hi${businessName !== email ? ` ${businessName}` : ''}, here are the inventory items that need your attention:</p>
+    <p style="color:#8b90b8;font-size:14px;margin:0 0 20px">Hi${businessName ? ` ${businessName}` : ''}, here are the items that need your attention:</p>
     <table style="width:100%;border-collapse:collapse;font-size:13px;color:#e8eaf6">
-      <thead>
-        <tr style="background:#161820">
-          <th style="padding:8px 12px;text-align:left;color:#8b90b8;font-size:11px;text-transform:uppercase;letter-spacing:.05em">Item</th>
-          <th style="padding:8px 12px;text-align:center;color:#8b90b8;font-size:11px;text-transform:uppercase;letter-spacing:.05em">Qty</th>
-          <th style="padding:8px 12px;text-align:center;color:#8b90b8;font-size:11px;text-transform:uppercase;letter-spacing:.05em">Threshold</th>
-          <th style="padding:8px 12px;color:#8b90b8;font-size:11px;text-transform:uppercase;letter-spacing:.05em">Status</th>
-        </tr>
-      </thead>
+      <thead><tr style="background:#161820">
+        <th style="padding:8px 12px;text-align:left;color:#8b90b8;font-size:11px;text-transform:uppercase">Item</th>
+        <th style="padding:8px 12px;text-align:center;color:#8b90b8;font-size:11px;text-transform:uppercase">Qty</th>
+        <th style="padding:8px 12px;text-align:center;color:#8b90b8;font-size:11px;text-transform:uppercase">Threshold</th>
+        <th style="padding:8px 12px;color:#8b90b8;font-size:11px;text-transform:uppercase">Status</th>
+      </tr></thead>
       <tbody>${rows}</tbody>
     </table>
     <div style="margin-top:24px">
-      <a href="${process.env.APP_URL || 'https://your-app.vercel.app'}/inventory.html"
-         style="display:inline-block;padding:10px 20px;background:linear-gradient(135deg,#818cf8,#06b6d4);color:#fff;text-decoration:none;border-radius:8px;font-weight:600;font-size:14px">
+      <a href="${APP_URL}/inventory.html" style="display:inline-block;padding:10px 20px;background:linear-gradient(135deg,#818cf8,#06b6d4);color:#fff;text-decoration:none;border-radius:8px;font-weight:600;font-size:14px">
         View Inventory →
       </a>
     </div>
   </div>
-  <div style="padding:16px 32px;border-top:1px solid rgba(129,140,248,.08);color:#4a4f6a;font-size:12px">
-    You're receiving this because you have a Vela inventory account.
-  </div>
 </div>
-</body>
-</html>`;
+</body></html>`;
 
-    const emailRes = await fetch('https://api.resend.com/emails', {
+    // POST to Zapier — one call per client
+    const zapRes = await fetch(ZAPIER_WEBHOOK, {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: FROM_EMAIL,
-        to:   email,
-        subject: `⚠️ Low Stock Alert — ${clientItems.length} item${clientItems.length !== 1 ? 's' : ''} need attention`,
-        html,
+        to:           email,
+        subject:      `⚠️ Low Stock Alert — ${clientItems.length} item${clientItems.length !== 1 ? 's' : ''} need attention`,
+        body:         htmlBody,
+        body_plain:   `Low Stock Alert\n\n${itemLines}\n\nView inventory: ${APP_URL}/inventory.html`,
+        business_name: businessName || email,
+        item_count:   clientItems.length,
+        out_of_stock: outOfStock.length,
+        low_stock:    lowStock.length,
       }),
     });
 
-    results.push({ email, status: emailRes.ok ? 'sent' : 'failed', items: clientItems.length });
+    results.push({ email, status: zapRes.ok ? 'sent' : 'failed', items: clientItems.length });
   }
 
   return res.status(200).json({ sent: results.filter(r => r.status === 'sent').length, results });
