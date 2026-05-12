@@ -8,16 +8,17 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const SUPABASE_URL      = process.env.SUPABASE_URL;
-  const SERVICE_KEY       = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const ZAPIER_WEBHOOK    = process.env.ZAPIER_WEBHOOK_URL;
-  const APP_URL           = process.env.APP_URL || 'https://your-app.vercel.app';
+  const SUPABASE_URL   = process.env.SUPABASE_URL;
+  const SERVICE_KEY    = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const RESEND_API_KEY = process.env.RESEND_API_KEY;
+  const FROM_EMAIL     = process.env.ALERT_FROM_EMAIL || 'onboarding@resend.dev';
+  const APP_URL        = process.env.APP_URL || 'https://your-app.vercel.app';
 
   if (!SUPABASE_URL || !SERVICE_KEY) {
     return res.status(500).json({ error: 'Missing Supabase env vars.' });
   }
-  if (!ZAPIER_WEBHOOK) {
-    return res.status(500).json({ error: 'Missing ZAPIER_WEBHOOK_URL env var.' });
+  if (!RESEND_API_KEY) {
+    return res.status(500).json({ error: 'Missing RESEND_API_KEY env var.' });
   }
 
   const sb = createClient(SUPABASE_URL, SERVICE_KEY);
@@ -43,7 +44,7 @@ module.exports = async function handler(req, res) {
   const results = [];
 
   for (const clientId of clientIds) {
-    const email        = userMap[clientId];
+    const email       = userMap[clientId];
     if (!email) continue;
 
     const clientItems  = items.filter(i => i.client_id === clientId);
@@ -51,12 +52,6 @@ module.exports = async function handler(req, res) {
     const outOfStock   = clientItems.filter(i => i.qty === 0);
     const lowStock     = clientItems.filter(i => i.qty > 0 && i.qty <= (i.threshold || 0));
 
-    // Plain-text item list for Zapier email body fallback
-    const itemLines = clientItems.map(item =>
-      `• ${item.name}${item.sku ? ` (${item.sku})` : ''} — Qty: ${item.qty}${item.threshold ? ` / Threshold: ${item.threshold}` : ''} — ${item.qty === 0 ? 'OUT OF STOCK' : 'LOW STOCK'}`
-    ).join('\n');
-
-    // HTML table for rich email body
     const rows = clientItems.map(item => {
       const status = item.qty === 0 ? '🔴 Out of Stock' : '🟡 Low Stock';
       return `<tr>
@@ -67,7 +62,7 @@ module.exports = async function handler(req, res) {
       </tr>`;
     }).join('');
 
-    const htmlBody = `
+    const html = `
 <!DOCTYPE html><html><head><meta charset="UTF-8"></head>
 <body style="margin:0;padding:0;background:#06070d;font-family:Inter,sans-serif">
 <div style="max-width:560px;margin:40px auto;background:#0e1017;border:1px solid rgba(129,140,248,.13);border-radius:16px;overflow:hidden">
@@ -98,23 +93,18 @@ module.exports = async function handler(req, res) {
 </div>
 </body></html>`;
 
-    // POST to Zapier — one call per client
-    const zapRes = await fetch(ZAPIER_WEBHOOK, {
+    const resendRes = await fetch('https://api.resend.com/emails', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        to:           email,
-        subject:      `⚠️ Low Stock Alert — ${clientItems.length} item${clientItems.length !== 1 ? 's' : ''} need attention`,
-        body:         htmlBody,
-        body_plain:   `Low Stock Alert\n\n${itemLines}\n\nView inventory: ${APP_URL}/inventory.html`,
-        business_name: businessName || email,
-        item_count:   clientItems.length,
-        out_of_stock: outOfStock.length,
-        low_stock:    lowStock.length,
+        from:    FROM_EMAIL,
+        to:      email,
+        subject: `⚠️ Low Stock Alert — ${clientItems.length} item${clientItems.length !== 1 ? 's' : ''} need attention`,
+        html,
       }),
     });
 
-    results.push({ email, status: zapRes.ok ? 'sent' : 'failed', items: clientItems.length });
+    results.push({ email, status: resendRes.ok ? 'sent' : 'failed', items: clientItems.length });
   }
 
   return res.status(200).json({ sent: results.filter(r => r.status === 'sent').length, results });
