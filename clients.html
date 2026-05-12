@@ -185,6 +185,37 @@
   </div>
 </div>
 
+<!-- VIEW CLIENT INVENTORY MODAL -->
+<div class="modal-backdrop" id="inv-modal" onclick="closeInvOutside(event)">
+  <div class="modal" style="max-width:780px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
+      <h2 id="inv-modal-title">Inventory</h2>
+      <div id="inv-stats" style="display:flex;gap:.75rem;font-size:.8rem;color:var(--muted)"></div>
+    </div>
+    <div id="inv-loading" style="text-align:center;padding:2rem;color:var(--muted)">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="animation:spin .8s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+    </div>
+    <div style="overflow-x:auto;max-height:400px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;display:none" id="inv-table-wrap">
+      <table style="width:100%;border-collapse:collapse;font-size:.83rem">
+        <thead style="position:sticky;top:0;background:var(--surface2)">
+          <tr>
+            <th style="padding:.7rem 1rem;text-align:left;font-size:.7rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)">Item</th>
+            <th style="padding:.7rem 1rem;text-align:left;font-size:.7rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)">Category</th>
+            <th style="padding:.7rem 1rem;text-align:left;font-size:.7rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)">Qty</th>
+            <th style="padding:.7rem 1rem;text-align:left;font-size:.7rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)">Price</th>
+            <th style="padding:.7rem 1rem;text-align:left;font-size:.7rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)">Status</th>
+          </tr>
+        </thead>
+        <tbody id="inv-tbody"></tbody>
+      </table>
+      <div id="inv-empty" style="display:none;text-align:center;padding:2.5rem;color:var(--muted);font-size:.875rem">No inventory items yet.</div>
+    </div>
+    <div class="modal-footer" style="margin-top:1.25rem">
+      <button class="btn btn-ghost" onclick="closeInvModal()">Close</button>
+    </div>
+  </div>
+</div>
+
 <footer>
   <p>© 2025 Vela · <a href="index.html">Back to home</a></p>
 </footer>
@@ -248,7 +279,10 @@
           <td>${c.is_admin ? '<span class="badge-admin">Admin</span>' : '<span style="color:var(--muted);font-size:.8rem">Client</span>'}</td>
           <td style="color:var(--muted);font-size:.82rem">${date}</td>
           <td>
-            <button class="btn btn-danger btn-sm" onclick="deleteClient('${esc(c.id)}', '${esc(c.email)}')">Delete</button>
+            <div style="display:flex;gap:.4rem">
+              <button class="btn btn-ghost btn-sm" onclick="viewInventory('${esc(c.id)}', '${esc(c.business_name || c.email)}')">View Inventory</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteClient('${esc(c.id)}', '${esc(c.email)}')">Delete</button>
+            </div>
           </td>
         </tr>`;
     }).join('');
@@ -325,6 +359,65 @@
     el.textContent = msg;
     el.style.display = 'block';
   }
+
+  async function viewInventory(clientId, clientName) {
+    document.getElementById('inv-modal-title').textContent = `${clientName} — Inventory`;
+    document.getElementById('inv-stats').innerHTML = '';
+    document.getElementById('inv-loading').style.display = 'block';
+    document.getElementById('inv-table-wrap').style.display = 'none';
+    document.getElementById('inv-modal').classList.add('open');
+
+    const { data: items, error } = await sb
+      .from('inventory_items')
+      .select('*')
+      .eq('client_id', clientId)
+      .order('name');
+
+    document.getElementById('inv-loading').style.display = 'none';
+    document.getElementById('inv-table-wrap').style.display = 'block';
+
+    if (error || !items) {
+      document.getElementById('inv-tbody').innerHTML = '';
+      document.getElementById('inv-empty').style.display = 'block';
+      return;
+    }
+
+    const out = items.filter(i => i.qty === 0).length;
+    const low = items.filter(i => i.qty > 0 && i.qty <= (i.threshold || 0)).length;
+    document.getElementById('inv-stats').innerHTML =
+      `<span>${items.length} items</span>` +
+      (low ? `<span style="color:var(--amber)">⚠ ${low} low</span>` : '') +
+      (out ? `<span style="color:var(--red)">✕ ${out} out</span>` : '');
+
+    if (items.length === 0) {
+      document.getElementById('inv-tbody').innerHTML = '';
+      document.getElementById('inv-empty').style.display = 'block';
+      return;
+    }
+
+    document.getElementById('inv-empty').style.display = 'none';
+    document.getElementById('inv-tbody').innerHTML = items.map(item => {
+      const st = item.qty === 0 ? 'out' : item.qty <= (item.threshold || 0) ? 'low' : 'ok';
+      const badge = st === 'out'
+        ? '<span style="background:rgba(248,113,113,.1);color:#f87171;padding:.2rem .6rem;border-radius:20px;font-size:.72rem;font-weight:600">Out of Stock</span>'
+        : st === 'low'
+        ? '<span style="background:rgba(251,191,36,.1);color:#fbbf24;padding:.2rem .6rem;border-radius:20px;font-size:.72rem;font-weight:600">Low Stock</span>'
+        : '<span style="background:rgba(74,222,128,.1);color:#4ade80;padding:.2rem .6rem;border-radius:20px;font-size:.72rem;font-weight:600">In Stock</span>';
+      return `<tr>
+        <td style="padding:.65rem 1rem;border-top:1px solid rgba(129,140,248,.06)">
+          <div style="font-weight:600;color:var(--text)">${esc(item.name)}</div>
+          ${item.sku ? `<div style="font-size:.72rem;color:var(--muted)">${esc(item.sku)}</div>` : ''}
+        </td>
+        <td style="padding:.65rem 1rem;border-top:1px solid rgba(129,140,248,.06);color:var(--muted)">${esc(item.category || '—')}</td>
+        <td style="padding:.65rem 1rem;border-top:1px solid rgba(129,140,248,.06);font-weight:600">${item.qty}</td>
+        <td style="padding:.65rem 1rem;border-top:1px solid rgba(129,140,248,.06);color:var(--muted)">${item.price ? '$' + Number(item.price).toFixed(2) : '—'}</td>
+        <td style="padding:.65rem 1rem;border-top:1px solid rgba(129,140,248,.06)">${badge}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  function closeInvModal() { document.getElementById('inv-modal').classList.remove('open'); }
+  function closeInvOutside(e) { if (e.target === document.getElementById('inv-modal')) closeInvModal(); }
 
   function esc(s) {
     return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
