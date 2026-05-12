@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vela — Settings</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #06070d; --surface: #0e1017; --surface2: #161820;
+      --border: rgba(129,140,248,.13); --indigo: #818cf8; --cyan: #06b6d4;
+      --text: #e8eaf6; --muted: #8b90b8; --red: #f87171; --green: #4ade80;
+      --grad: linear-gradient(135deg, var(--indigo), var(--cyan));
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; }
+    body::before {
+      content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background-image: radial-gradient(circle, rgba(129,140,248,.07) 1px, transparent 1px);
+      background-size: 28px 28px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    nav {
+      position: sticky; top: 0; z-index: 50;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 2rem; height: 64px;
+      background: rgba(6,7,13,.88); backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo { display: flex; align-items: center; gap: .6rem; text-decoration: none; }
+    .nav-logo svg { width: 28px; height: 28px; }
+    .nav-logo span { font-family: 'Syne', sans-serif; font-size: 1.25rem; font-weight: 800;
+      background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .nav-links { display: flex; gap: 1.5rem; align-items: center; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-size: .875rem; font-weight: 500; transition: color .2s; }
+    .nav-links a:hover, .nav-links a.active { color: var(--text); }
+    .nav-links .btn-nav { padding: .45rem 1.1rem; border-radius: 8px; background: var(--grad);
+      color: #fff; font-weight: 600; font-size: .875rem; border: none; cursor: pointer; }
+
+    .page { position: relative; z-index: 1; max-width: 600px; margin: 0 auto; padding: 2rem 1.5rem 5rem; }
+
+    .page-header { margin-bottom: 2rem; }
+    .page-header h1 { font-family: 'Syne', sans-serif; font-size: 1.75rem; font-weight: 800;
+      background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .page-header p { color: var(--muted); font-size: .875rem; margin-top: .2rem; }
+
+    .section-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+      padding: 1.5rem; margin-bottom: 1.25rem;
+    }
+    .section-title { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 800;
+      margin-bottom: 1.1rem; }
+
+    .form-group { display: flex; flex-direction: column; gap: .35rem; margin-bottom: 1rem; }
+    .form-group:last-of-type { margin-bottom: 0; }
+    label { font-size: .78rem; font-weight: 600; color: var(--muted); }
+    input {
+      background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+      padding: .65rem .85rem; color: var(--text); font-family: 'Inter', sans-serif;
+      font-size: .875rem; outline: none; transition: border-color .2s; width: 100%;
+    }
+    input:focus { border-color: var(--indigo); }
+    input::placeholder { color: var(--muted); }
+    input:disabled { opacity: .5; cursor: not-allowed; }
+
+    .btn { display: inline-flex; align-items: center; gap: .4rem; padding: .55rem 1.2rem;
+      border-radius: 8px; font-size: .875rem; font-weight: 600; cursor: pointer;
+      border: none; transition: all .2s; font-family: 'Inter', sans-serif; }
+    .btn-primary { background: var(--grad); color: #fff; }
+    .btn-primary:hover:not(:disabled) { opacity: .88; }
+    .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+
+    .msg { border-radius: 8px; padding: .6rem .9rem; font-size: .82rem; margin-top: .85rem; display: none; }
+    .msg.error   { background: rgba(248,113,113,.08); border: 1px solid rgba(248,113,113,.25); color: #fca5a5; }
+    .msg.success { background: rgba(74,222,128,.08);  border: 1px solid rgba(74,222,128,.25);  color: var(--green); }
+
+    .email-display { font-size: .875rem; color: var(--muted); padding: .65rem .85rem;
+      background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; }
+
+    footer { position: relative; z-index: 1; border-top: 1px solid var(--border);
+      text-align: center; padding: 1.5rem; color: var(--muted); font-size: .8rem; }
+    footer a { color: var(--indigo); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="index.html">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+      <defs><linearGradient id="ng" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#818cf8"/><stop offset="100%" stop-color="#06b6d4"/>
+      </linearGradient></defs>
+      <path d="M 6 4 Q 16 26 23 46 L 23 4 Z" fill="url(#ng)"/>
+      <path d="M 42 4 Q 32 26 25 46 L 25 4 Z" fill="url(#ng)" opacity="0.72"/>
+      <path d="M 12 44 Q 24 48 36 44" stroke="url(#ng)" stroke-width="2.2" stroke-linecap="round" fill="none" opacity="0.55"/>
+    </svg>
+    <span>Vela</span>
+  </a>
+  <div class="nav-links">
+    <a href="inventory.html">Inventory</a>
+    <a href="clients.html" id="clients-link" style="display:none">Clients</a>
+    <a href="settings.html" class="active">Settings</a>
+    <button onclick="signOut()" style="background:none;border:1px solid var(--border);color:var(--muted);font-size:.8rem;padding:.35rem .85rem;border-radius:8px;cursor:pointer;font-family:inherit;">Sign Out</button>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="page-header">
+    <h1>Settings</h1>
+    <p>Manage your account details.</p>
+  </div>
+
+  <!-- PROFILE -->
+  <div class="section-card">
+    <div class="section-title">Profile</div>
+    <div class="form-group">
+      <label>Email</label>
+      <div class="email-display" id="display-email">—</div>
+    </div>
+    <div class="form-group">
+      <label>Business Name</label>
+      <input type="text" id="business-name" placeholder="Your business name" />
+    </div>
+    <button class="btn btn-primary" id="profile-btn" onclick="saveProfile()">Save Changes</button>
+    <div class="msg error"   id="profile-error"></div>
+    <div class="msg success" id="profile-success"></div>
+  </div>
+
+  <!-- CHANGE PASSWORD -->
+  <div class="section-card">
+    <div class="section-title">Change Password</div>
+    <div class="form-group">
+      <label>New Password</label>
+      <input type="password" id="new-password" placeholder="Min 6 characters" autocomplete="new-password" />
+    </div>
+    <div class="form-group">
+      <label>Confirm New Password</label>
+      <input type="password" id="confirm-password" placeholder="Repeat new password" autocomplete="new-password"
+        onkeydown="if(event.key==='Enter')savePassword()" />
+    </div>
+    <button class="btn btn-primary" id="password-btn" onclick="savePassword()">Update Password</button>
+    <div class="msg error"   id="password-error"></div>
+    <div class="msg success" id="password-success"></div>
+  </div>
+</div>
+
+<footer>
+  <p>© 2025 Vela · <a href="inventory.html">Back to inventory</a></p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const sb = supabase.createClient(
+    'https://ndbvmtuzmzbaaoxudmbk.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kYnZtdHV6bXpiYWFveHVkbWJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyNjUyODcsImV4cCI6MjA5Mzg0MTI4N30.CRqNEXZlUf4pRCjbVghCZg2p4rLh2Y-cKQpqSwkUw2k'
+  );
+
+  let currentUser = null;
+
+  async function init() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { window.location.href = 'login.html'; return; }
+    currentUser = session.user;
+
+    document.getElementById('display-email').textContent = currentUser.email;
+
+    const { data: profile } = await sb.from('profiles').select('business_name, is_admin').eq('id', currentUser.id).single();
+    if (profile?.business_name) document.getElementById('business-name').value = profile.business_name;
+    if (profile?.is_admin) document.getElementById('clients-link').style.display = 'inline';
+  }
+
+  async function signOut() {
+    await sb.auth.signOut();
+    window.location.href = 'login.html';
+  }
+
+  async function saveProfile() {
+    const businessName = document.getElementById('business-name').value.trim();
+    const btn = document.getElementById('profile-btn');
+    hide('profile-error'); hide('profile-success');
+
+    btn.disabled = true; btn.textContent = 'Saving…';
+
+    const { error } = await sb.from('profiles')
+      .update({ business_name: businessName })
+      .eq('id', currentUser.id);
+
+    btn.disabled = false; btn.textContent = 'Save Changes';
+
+    if (error) { showMsg('profile-error', error.message); return; }
+    showMsg('profile-success', 'Profile updated successfully.');
+  }
+
+  async function savePassword() {
+    const newPwd     = document.getElementById('new-password').value;
+    const confirmPwd = document.getElementById('confirm-password').value;
+    const btn = document.getElementById('password-btn');
+    hide('password-error'); hide('password-success');
+
+    if (!newPwd || newPwd.length < 6) { showMsg('password-error', 'Password must be at least 6 characters.'); return; }
+    if (newPwd !== confirmPwd)        { showMsg('password-error', 'Passwords do not match.'); return; }
+
+    btn.disabled = true; btn.textContent = 'Updating…';
+
+    const { error } = await sb.auth.updateUser({ password: newPwd });
+
+    btn.disabled = false; btn.textContent = 'Update Password';
+
+    if (error) { showMsg('password-error', error.message); return; }
+    document.getElementById('new-password').value     = '';
+    document.getElementById('confirm-password').value = '';
+    showMsg('password-success', 'Password updated successfully.');
+  }
+
+  function showMsg(id, msg) { const el = document.getElementById(id); el.textContent = msg; el.style.display = 'block'; }
+  function hide(id) { document.getElementById(id).style.display = 'none'; }
+
+  init();
+</script>
+</body>
+</html>
