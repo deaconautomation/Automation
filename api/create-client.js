@@ -9,18 +9,16 @@ module.exports = async function handler(req, res) {
   const { email, password, businessName } = req.body || {};
   if (!email || !password) return res.status(400).json({ error: 'Email and password are required.' });
 
-  const SUPABASE_URL   = process.env.SUPABASE_URL;
-  const SERVICE_KEY    = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const RESEND_API_KEY = process.env.RESEND_API_KEY;
-  const FROM_EMAIL     = process.env.ALERT_FROM_EMAIL || 'noreply@vela.app';
-  const APP_URL        = process.env.APP_URL || 'https://your-app.vercel.app';
+  const SUPABASE_URL           = process.env.SUPABASE_URL;
+  const SERVICE_KEY            = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const ZAPIER_WELCOME_WEBHOOK = process.env.ZAPIER_WELCOME_WEBHOOK_URL;
+  const APP_URL                = process.env.APP_URL || 'https://your-app.vercel.app';
 
   if (!SUPABASE_URL || !SERVICE_KEY) {
     return res.status(500).json({ error: 'Server misconfiguration: missing Supabase env vars.' });
   }
 
   try {
-    // Create the user
     const response = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
       method: 'POST',
       headers: {
@@ -42,10 +40,10 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: data.msg || data.message || 'Failed to create client.' });
     }
 
-    // Send welcome email if Resend is configured
-    if (RESEND_API_KEY) {
+    // Send welcome email via Zapier webhook if configured
+    if (ZAPIER_WELCOME_WEBHOOK) {
       const greeting = businessName ? `Hi ${businessName}` : 'Hi there';
-      const html = `
+      const htmlBody = `
 <!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"></head>
@@ -53,7 +51,7 @@ module.exports = async function handler(req, res) {
 <div style="max-width:520px;margin:40px auto;background:#0e1017;border:1px solid rgba(129,140,248,.13);border-radius:16px;overflow:hidden">
   <div style="padding:28px 32px;border-bottom:1px solid rgba(129,140,248,.13);background:linear-gradient(135deg,rgba(129,140,248,.08),rgba(6,182,212,.08))">
     <div style="font-size:20px;font-weight:800;background:linear-gradient(135deg,#818cf8,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Vela</div>
-    <div style="color:#e8eaf6;font-size:18px;font-weight:700;margin-top:8px">Welcome to Vela 👋</div>
+    <div style="color:#e8eaf6;font-size:18px;font-weight:700;margin-top:8px">Welcome to Vela</div>
   </div>
   <div style="padding:28px 32px">
     <p style="color:#e8eaf6;font-size:15px;margin:0 0 16px">${greeting},</p>
@@ -72,7 +70,7 @@ module.exports = async function handler(req, res) {
     </div>
     <a href="${APP_URL}/login.html"
        style="display:inline-block;padding:11px 22px;background:linear-gradient(135deg,#818cf8,#06b6d4);color:#fff;text-decoration:none;border-radius:8px;font-weight:600;font-size:14px">
-      Sign In to Vela →
+      Sign In to Vela
     </a>
     <p style="color:#4a4f6a;font-size:12px;margin-top:24px">
       We recommend changing your password after your first sign-in via Settings.
@@ -82,14 +80,18 @@ module.exports = async function handler(req, res) {
 </body>
 </html>`;
 
-      await fetch('https://api.resend.com/emails', {
+      await fetch(ZAPIER_WELCOME_WEBHOOK, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          from: FROM_EMAIL,
-          to:   email,
-          subject: `Your Vela inventory account is ready`,
-          html,
+          to:            email,
+          subject:       'Your Vela inventory account is ready',
+          body:          htmlBody,
+          body_plain:    `${greeting},\n\nYour inventory account is ready.\n\nEmail: ${email}\nPassword: ${password}\n\nSign in: ${APP_URL}/login.html\n\nWe recommend changing your password after your first sign-in via Settings.`,
+          business_name: businessName || email,
+          login_url:     `${APP_URL}/login.html`,
+          client_email:  email,
+          temp_password: password,
         }),
       });
     }
