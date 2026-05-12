@@ -76,7 +76,9 @@ create trigger inventory_updated_at
   before update on public.inventory_items
   for each row execute function public.update_updated_at();
 
--- Grant admin flag (run once, safe to re-run)
-update public.profiles
-set is_admin = true
-where id = (select id from auth.users where email = 'deacon.automation@gmail.com');
+-- Grant admin flag (safe to re-run — inserts profile if missing, then sets is_admin)
+insert into public.profiles (id, business_name, is_admin)
+select id, '', true
+from auth.users
+where email = 'deacon.automation@gmail.com'
+on conflict (id) do update set is_admin = true;
