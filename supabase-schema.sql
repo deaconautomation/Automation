@@ -76,6 +76,25 @@ create trigger inventory_updated_at
   before update on public.inventory_items
   for each row execute function public.update_updated_at();
 
+-- Inventory activity log
+create table if not exists public.inventory_logs (
+  id uuid default gen_random_uuid() primary key,
+  item_id uuid references public.inventory_items on delete cascade not null,
+  client_id uuid references auth.users on delete cascade not null,
+  item_name text not null,
+  action text not null,        -- 'add', 'edit', 'delete', 'adjust'
+  qty_before integer,
+  qty_after integer,
+  note text default '',
+  created_at timestamptz default now()
+);
+alter table public.inventory_logs enable row level security;
+
+drop policy if exists "logs_all" on public.inventory_logs;
+create policy "logs_all" on public.inventory_logs for all
+  using (auth.uid() = client_id or public.is_admin())
+  with check (auth.uid() = client_id or public.is_admin());
+
 -- Grant admin flag (safe to re-run — inserts profile if missing, then sets is_admin)
 insert into public.profiles (id, business_name, is_admin)
 select id, '', true
