@@ -200,6 +200,11 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         Export CSV
       </button>
+      <button class="btn btn-ghost" onclick="document.getElementById('csv-file-input').click()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Import CSV
+      </button>
+      <input type="file" id="csv-file-input" accept=".csv" style="display:none" onchange="handleCSVFile(event)" />
       <button class="btn btn-primary" onclick="openModal()">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         Add Item
@@ -320,6 +325,29 @@
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
       <button class="btn btn-primary" onclick="saveItem()">Save Item</button>
+    </div>
+  </div>
+</div>
+
+<!-- IMPORT CSV MODAL -->
+<div class="modal-backdrop" id="import-modal" onclick="closeImportOutside(event)">
+  <div class="modal" style="max-width:700px">
+    <h2>Import CSV</h2>
+    <p style="color:var(--muted);font-size:.82rem;margin-bottom:1rem">
+      Columns auto-detected. Required: <strong style="color:var(--text)">Name</strong> and <strong style="color:var(--text)">Quantity</strong>.
+      Optional: SKU, Category, Threshold, Price, Supplier, Notes.
+    </p>
+    <div id="import-error" style="display:none;background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.25);color:#fca5a5;border-radius:8px;padding:.75rem 1rem;font-size:.83rem;margin-bottom:1rem"></div>
+    <div style="overflow-x:auto;max-height:340px;overflow-y:auto;border:1px solid var(--border);border-radius:10px">
+      <table style="width:100%;border-collapse:collapse;font-size:.82rem">
+        <thead id="import-thead" style="position:sticky;top:0;background:var(--surface2)"></thead>
+        <tbody id="import-tbody"></tbody>
+      </table>
+    </div>
+    <p id="import-count" style="color:var(--muted);font-size:.8rem;margin-top:.75rem"></p>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeImportModal()">Cancel</button>
+      <button class="btn btn-primary" id="import-btn" onclick="commitImport()">Import Items</button>
     </div>
   </div>
 </div>
@@ -560,6 +588,117 @@
     a.download = 'vela-inventory.csv';
     a.click();
   }
+
+  // ── CSV IMPORT ────────────────────────────────────────────────
+  const COL_MAP = {
+    name:      ['name','item','product','item name','product name'],
+    sku:       ['sku','code','item code','product code','sku/code'],
+    category:  ['category','cat','type','dept','department'],
+    qty:       ['qty','quantity','stock','count','on hand','in stock','units'],
+    threshold: ['threshold','min','minimum','reorder','reorder point','low stock','alert'],
+    price:     ['price','unit price','cost','unit cost','retail price','sale price'],
+    supplier:  ['supplier','vendor','source','manufacturer'],
+    notes:     ['notes','note','comments','comment','description','details'],
+  };
+
+  let importRows = [];
+
+  function normalise(s) { return String(s||'').trim().toLowerCase().replace(/[^a-z0-9]/g,' ').replace(/\s+/g,' ').trim(); }
+
+  function detectColumns(headers) {
+    const map = {};
+    headers.forEach((h, i) => {
+      const n = normalise(h);
+      for (const [field, aliases] of Object.entries(COL_MAP)) {
+        if (!map[field] && aliases.includes(n)) map[field] = i;
+      }
+    });
+    return map;
+  }
+
+  function parseCSV(text) {
+    const lines = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n').filter(l => l.trim());
+    if (lines.length < 2) return null;
+    const parse = line => {
+      const cols = []; let cur = ''; let inQ = false;
+      for (let i = 0; i < line.length; i++) {
+        const c = line[i];
+        if (c === '"') { inQ = !inQ; }
+        else if (c === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+        else { cur += c; }
+      }
+      cols.push(cur.trim());
+      return cols;
+    };
+    const headers = parse(lines[0]);
+    const colMap  = detectColumns(headers);
+    if (colMap.name === undefined || colMap.qty === undefined) return { error: 'Could not find "Name" and "Quantity" columns. Please check your CSV headers.' };
+    const rows = lines.slice(1).map(line => {
+      const cols = parse(line);
+      const get  = f => colMap[f] !== undefined ? (cols[colMap[f]] || '').replace(/^"|"$/g,'').trim() : '';
+      const qty  = parseInt(get('qty'))       || 0;
+      const thr  = parseInt(get('threshold')) || 0;
+      const price = parseFloat(get('price'))  || 0;
+      return { name: get('name'), sku: get('sku'), category: get('category'), qty, threshold: thr, price, supplier: get('supplier'), notes: get('notes') };
+    }).filter(r => r.name);
+    return { rows, colMap, headers };
+  }
+
+  function handleCSVFile(e) {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const result = parseCSV(ev.target.result);
+      if (!result) { alert('File appears to be empty.'); return; }
+      if (result.error) { alert(result.error); return; }
+      importRows = result.rows;
+      renderImportPreview(result.rows);
+      document.getElementById('import-modal').classList.add('open');
+    };
+    reader.readAsText(file);
+  }
+
+  function renderImportPreview(rows) {
+    const fields = ['name','sku','category','qty','threshold','price','supplier','notes'];
+    const labels = ['Name','SKU','Category','Qty','Threshold','Price','Supplier','Notes'];
+    document.getElementById('import-thead').innerHTML =
+      '<tr>' + labels.map(l => `<th style="padding:.6rem .75rem;text-align:left;font-size:.7rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);white-space:nowrap">${l}</th>`).join('') + '</tr>';
+    document.getElementById('import-tbody').innerHTML = rows.map(r =>
+      '<tr>' + fields.map(f => `<td style="padding:.5rem .75rem;border-top:1px solid rgba(129,140,248,.06);white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis">${esc(String(r[f]||'—'))}</td>`).join('') + '</tr>'
+    ).join('');
+    document.getElementById('import-count').textContent = `${rows.length} item${rows.length !== 1 ? 's' : ''} ready to import`;
+    document.getElementById('import-error').style.display = 'none';
+    document.getElementById('import-btn').disabled = false;
+    document.getElementById('import-btn').textContent = 'Import Items';
+  }
+
+  function closeImportModal() { document.getElementById('import-modal').classList.remove('open'); importRows = []; }
+  function closeImportOutside(e) { if (e.target === document.getElementById('import-modal')) closeImportModal(); }
+
+  async function commitImport() {
+    if (!importRows.length) return;
+    const btn = document.getElementById('import-btn');
+    btn.disabled = true;
+    btn.textContent = 'Importing…';
+
+    const payload = importRows.map(r => ({ ...r, client_id: currentUser.id }));
+    const CHUNK = 100;
+    for (let i = 0; i < payload.length; i += CHUNK) {
+      const { error } = await sb.from('inventory_items').insert(payload.slice(i, i + CHUNK));
+      if (error) {
+        document.getElementById('import-error').textContent = 'Import failed: ' + error.message;
+        document.getElementById('import-error').style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Import Items';
+        return;
+      }
+    }
+    closeImportModal();
+    await loadItems();
+  }
+  // ── END CSV IMPORT ─────────────────────────────────────────────
 
   function esc(s) {
     return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
