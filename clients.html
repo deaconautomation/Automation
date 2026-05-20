@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Vela — Clients</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
       --bg: #06070d; --surface: #0e1017; --surface2: #161820;
       --border: rgba(129,140,248,.13); --indigo: #818cf8; --cyan: #06b6d4;
-      --text: #f1f2ff; --muted: #a8aed6; --red: #f87171; --green: #4ade80;
+      --text: #f1f2ff; --muted: #a8aed6; --red: #f87171; --amber: #fbbf24; --green: #4ade80;
       --grad: linear-gradient(135deg, var(--indigo), var(--cyan));
     }
     body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; font-size: 16px; line-height: 1.5; }
@@ -51,19 +51,40 @@
       .nav-links a, .nav-links button { width: 100%; padding: .65rem 0; font-size: .9rem; border-radius: 0; }
     }
 
-    .page { position: relative; z-index: 1; max-width: 1000px; margin: 0 auto; padding: 2rem 1.5rem 5rem; }
+    .page { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem 5rem; }
 
     .page-header { display: flex; align-items: flex-start; justify-content: space-between;
       flex-wrap: wrap; gap: 1rem; margin-bottom: 1.75rem; }
     .page-header h1 { font-family: 'Inter', sans-serif; font-size: 1.75rem; font-weight: 800;
       background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: inline-block; padding-bottom: 2px; }
     .page-header p { color: var(--muted); font-size: .875rem; margin-top: .2rem; }
+    .header-actions { display: flex; gap: .6rem; flex-wrap: wrap; }
+
+    .stats-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: .75rem; margin-bottom: 1.5rem; }
+    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+      padding: 1rem 1.1rem; }
+    .stat-label { font-size: .75rem; font-weight: 600; letter-spacing: .06em;
+      text-transform: uppercase; color: var(--muted); margin-bottom: .3rem; }
+    .stat-value { font-family: 'Inter', sans-serif; font-size: 1.75rem; font-weight: 700; letter-spacing: -.02em; }
+    .stat-value.indigo { color: var(--indigo); }
+    .stat-value.green  { color: var(--green); }
+
+    .toolbar { display: flex; gap: .75rem; flex-wrap: wrap; margin-bottom: 1.25rem; align-items: center; }
+    .search-wrap { position: relative; flex: 1; min-width: 200px; }
+    .search-wrap svg { position: absolute; left: .75rem; top: 50%; transform: translateY(-50%);
+      color: var(--muted); pointer-events: none; }
+    #search { width: 100%; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: .55rem .75rem .55rem 2.25rem; color: var(--text);
+      font-family: 'Inter', sans-serif; font-size: .875rem; outline: none; transition: border-color .2s; }
+    #search:focus { border-color: var(--indigo); }
+    #search::placeholder { color: var(--muted); }
 
     .btn { display: inline-flex; align-items: center; gap: .4rem; padding: .55rem 1.1rem;
       border-radius: 8px; font-size: .875rem; font-weight: 600; cursor: pointer;
       border: none; transition: all .2s; font-family: 'Inter', sans-serif; }
     .btn-primary { background: var(--grad); color: #fff; }
-    .btn-primary:hover { opacity: .88; }
+    .btn-primary:hover:not(:disabled) { opacity: .88; }
     .btn-ghost { background: var(--surface); border: 1px solid var(--border); color: var(--muted); }
     .btn-ghost:hover { border-color: var(--indigo); color: var(--text); }
     .btn-danger { background: rgba(248,113,113,.12); border: 1px solid rgba(248,113,113,.25); color: var(--red); }
@@ -80,8 +101,13 @@
     tr:last-child td { border-bottom: none; }
     tr:hover td { background: rgba(129,140,248,.03); }
 
+    .client-name { font-weight: 600; color: var(--text); }
+    .client-email { font-size: .78rem; color: var(--muted); margin-top: .1rem; }
+
     .badge-admin { display: inline-block; padding: .2rem .6rem; border-radius: 6px;
       font-size: .75rem; font-weight: 600; background: rgba(129,140,248,.15); color: var(--indigo); }
+    .badge-client { display: inline-block; padding: .2rem .6rem; border-radius: 6px;
+      font-size: .75rem; font-weight: 600; background: rgba(74,222,128,.1); color: var(--green); }
 
     .empty-state { text-align: center; padding: 4rem 1rem; color: var(--muted); }
     .empty-state svg { margin-bottom: 1rem; opacity: .4; }
@@ -95,7 +121,7 @@
       backdrop-filter: blur(4px); z-index: 100; display: none; align-items: center; justify-content: center; }
     .modal-backdrop.open { display: flex; }
     .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
-      padding: 1.75rem; width: 100%; max-width: 420px; }
+      padding: 1.75rem; width: 100%; max-width: 460px; max-height: 90vh; overflow-y: auto; }
     .modal h2 { font-family: 'Inter', sans-serif; font-size: 1.2rem; font-weight: 800; margin-bottom: 1.25rem; }
     .form-group { display: flex; flex-direction: column; gap: .35rem; margin-bottom: .85rem; }
     label { font-size: .82rem; font-weight: 600; color: var(--muted); }
@@ -106,12 +132,17 @@
     }
     input:focus { border-color: var(--indigo); }
     input::placeholder { color: var(--muted); }
-    .modal-error { color: var(--red); font-size: .8rem; margin-bottom: .75rem; display: none; }
+    .modal-error { color: var(--red); font-size: .82rem; margin-bottom: .75rem; display: none; }
     .modal-footer { display: flex; gap: .6rem; justify-content: flex-end; margin-top: 1.25rem; }
 
     footer { position: relative; z-index: 1; border-top: 1px solid var(--border);
       text-align: center; padding: 1.5rem; color: var(--muted); font-size: .8rem; }
     footer a { color: var(--indigo); text-decoration: none; }
+
+    @media (max-width: 640px) {
+      th:nth-child(3), td:nth-child(3),
+      th:nth-child(4), td:nth-child(4) { display: none; }
+    }
   </style>
 </head>
 <body>
@@ -134,7 +165,6 @@
     </button>
   </div>
   <div class="nav-links" id="nav-links">
-    <a href="inventory.html">Inventory</a>
     <a href="clients.html" class="active btn-nav">Clients</a>
     <a href="leads.html">Leads</a>
     <a href="sales.html">Scripts</a>
@@ -146,25 +176,48 @@
 <div class="page">
   <div class="page-header">
     <div>
-      <h1>Clients</h1>
-      <p>Manage client accounts and access.</p>
+      <h1>Client Manager</h1>
+      <p>Manage client accounts and view their inventory.</p>
     </div>
-    <button class="btn btn-primary" onclick="openModal()">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      Add Client
-    </button>
+    <div class="header-actions">
+      <button class="btn btn-primary" onclick="openModal()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Client
+      </button>
+    </div>
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat-card">
+      <div class="stat-label">Total Clients</div>
+      <div class="stat-value indigo" id="stat-total">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Active Today</div>
+      <div class="stat-value green" id="stat-active">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Newest</div>
+      <div class="stat-value" id="stat-newest" style="font-size:1rem;padding-top:.3rem;color:var(--muted)">—</div>
+    </div>
   </div>
 
   <div class="error-banner" id="error-banner"></div>
+
+  <div class="toolbar">
+    <div class="search-wrap">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="search" placeholder="Search clients by name or email…" oninput="renderFiltered()" />
+    </div>
+  </div>
 
   <div class="table-wrap">
     <table>
       <thead>
         <tr>
-          <th>Business</th>
-          <th>Email</th>
+          <th>Client</th>
           <th>Role</th>
-          <th>Created</th>
+          <th>Joined</th>
           <th></th>
         </tr>
       </thead>
@@ -205,25 +258,25 @@
   </div>
 </div>
 
-<!-- VIEW CLIENT INVENTORY MODAL -->
+<!-- VIEW INVENTORY MODAL -->
 <div class="modal-backdrop" id="inv-modal" onclick="closeInvOutside(event)">
   <div class="modal" style="max-width:780px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
       <h2 id="inv-modal-title">Inventory</h2>
-      <div id="inv-stats" style="display:flex;gap:.75rem;font-size:.8rem;color:var(--muted)"></div>
+      <div id="inv-stats" style="display:flex;gap:.75rem;font-size:.82rem;color:var(--muted)"></div>
     </div>
     <div id="inv-loading" style="text-align:center;padding:2rem;color:var(--muted)">
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="animation:spin .8s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
     </div>
     <div style="overflow-x:auto;max-height:400px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;display:none" id="inv-table-wrap">
-      <table style="width:100%;border-collapse:collapse;font-size:.83rem">
+      <table style="width:100%;border-collapse:collapse;font-size:.875rem">
         <thead style="position:sticky;top:0;background:var(--surface2)">
           <tr>
-            <th style="padding:.7rem 1rem;text-align:left;font-size:.7rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)">Item</th>
-            <th style="padding:.7rem 1rem;text-align:left;font-size:.7rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)">Category</th>
-            <th style="padding:.7rem 1rem;text-align:left;font-size:.7rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)">Qty</th>
-            <th style="padding:.7rem 1rem;text-align:left;font-size:.7rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)">Price</th>
-            <th style="padding:.7rem 1rem;text-align:left;font-size:.7rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)">Status</th>
+            <th style="padding:.75rem 1rem;text-align:left;font-size:.72rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)">Item</th>
+            <th style="padding:.75rem 1rem;text-align:left;font-size:.72rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)">Category</th>
+            <th style="padding:.75rem 1rem;text-align:left;font-size:.72rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)">Qty</th>
+            <th style="padding:.75rem 1rem;text-align:left;font-size:.72rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)">Price</th>
+            <th style="padding:.75rem 1rem;text-align:left;font-size:.72rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)">Status</th>
           </tr>
         </thead>
         <tbody id="inv-tbody"></tbody>
@@ -263,7 +316,7 @@
     document.getElementById('loading-state').style.display = 'block';
     document.getElementById('empty').style.display = 'none';
 
-    const res = await fetch('/api/list-clients');
+    const res  = await fetch('/api/list-clients');
     const data = await res.json();
 
     document.getElementById('loading-state').style.display = 'none';
@@ -271,7 +324,25 @@
     if (!res.ok) { showBannerError(data.error || 'Failed to load clients.'); return; }
 
     clients = data.users || [];
-    render();
+    updateStats();
+    renderFiltered();
+  }
+
+  function updateStats() {
+    document.getElementById('stat-total').textContent = clients.length;
+    const newest = clients.slice().sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+    document.getElementById('stat-newest').textContent = newest
+      ? (newest.business_name || newest.email.split('@')[0])
+      : '—';
+    document.getElementById('stat-active').textContent = clients.filter(c => !c.is_admin).length;
+  }
+
+  function renderFiltered() {
+    const q = document.getElementById('search').value.toLowerCase();
+    const filtered = q
+      ? clients.filter(c => (c.business_name || '').toLowerCase().includes(q) || c.email.toLowerCase().includes(q))
+      : clients;
+    render(filtered);
   }
 
   async function signOut() {
@@ -279,25 +350,27 @@
     window.location.href = 'login.html';
   }
 
-  function render() {
+  function render(list) {
     const tbody = document.getElementById('tbody');
     const empty = document.getElementById('empty');
 
-    if (clients.length === 0) {
+    if (!list || list.length === 0) {
       tbody.innerHTML = '';
       empty.style.display = 'block';
       return;
     }
 
     empty.style.display = 'none';
-    tbody.innerHTML = clients.map(c => {
+    tbody.innerHTML = list.map(c => {
       const date = new Date(c.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
       return `
         <tr>
-          <td style="font-weight:600">${esc(c.business_name || '—')}</td>
-          <td style="color:var(--muted)">${esc(c.email)}</td>
-          <td>${c.is_admin ? '<span class="badge-admin">Admin</span>' : '<span style="color:var(--muted);font-size:.8rem">Client</span>'}</td>
-          <td style="color:var(--muted);font-size:.82rem">${date}</td>
+          <td>
+            <div class="client-name">${esc(c.business_name || '—')}</div>
+            <div class="client-email">${esc(c.email)}</div>
+          </td>
+          <td>${c.is_admin ? '<span class="badge-admin">Admin</span>' : '<span class="badge-client">Client</span>'}</td>
+          <td style="color:var(--muted);font-size:.875rem">${date}</td>
           <td>
             <div style="display:flex;gap:.4rem">
               <button class="btn btn-ghost btn-sm" onclick="viewInventory('${esc(c.id)}', '${esc(c.business_name || c.email)}')">View Inventory</button>
@@ -315,39 +388,31 @@
     document.getElementById('f-business').focus();
   }
 
-  function closeModal() {
-    document.getElementById('modal').classList.remove('open');
-  }
-
-  function closeModalOutside(e) {
-    if (e.target === document.getElementById('modal')) closeModal();
-  }
+  function closeModal() { document.getElementById('modal').classList.remove('open'); }
+  function closeModalOutside(e) { if (e.target === document.getElementById('modal')) closeModal(); }
 
   async function createClient() {
-    const email       = document.getElementById('f-email').value.trim();
-    const password    = document.getElementById('f-password').value;
+    const email        = document.getElementById('f-email').value.trim();
+    const password     = document.getElementById('f-password').value;
     const businessName = document.getElementById('f-business').value.trim();
 
     if (!email || !password) { showModalError('Email and password are required.'); return; }
     if (password.length < 6) { showModalError('Password must be at least 6 characters.'); return; }
 
     const btn = document.getElementById('save-btn');
-    btn.disabled = true;
-    btn.textContent = 'Creating…';
+    btn.disabled = true; btn.textContent = 'Creating…';
     document.getElementById('modal-error').style.display = 'none';
 
-    const res = await fetch('/api/create-client', {
+    const res  = await fetch('/api/create-client', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password, businessName }),
     });
     const data = await res.json();
 
-    btn.disabled = false;
-    btn.textContent = 'Create Client';
+    btn.disabled = false; btn.textContent = 'Create Client';
 
     if (!res.ok) { showModalError(data.error || 'Failed to create client.'); return; }
-
     closeModal();
     await loadClients();
   }
@@ -355,7 +420,7 @@
   async function deleteClient(id, email) {
     if (!confirm(`Delete client "${email}"? Their inventory data will also be deleted. This cannot be undone.`)) return;
 
-    const res = await fetch('/api/delete-client', {
+    const res  = await fetch('/api/delete-client', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId: id }),
@@ -363,21 +428,19 @@
     const data = await res.json();
 
     if (!res.ok) { showBannerError(data.error || 'Failed to delete client.'); return; }
-
     clients = clients.filter(c => c.id !== id);
-    render();
+    updateStats();
+    renderFiltered();
   }
 
   function showModalError(msg) {
     const el = document.getElementById('modal-error');
-    el.textContent = msg;
-    el.style.display = 'block';
+    el.textContent = msg; el.style.display = 'block';
   }
 
   function showBannerError(msg) {
     const el = document.getElementById('error-banner');
-    el.textContent = msg;
-    el.style.display = 'block';
+    el.textContent = msg; el.style.display = 'block';
   }
 
   async function viewInventory(clientId, clientName) {
@@ -419,19 +482,19 @@
     document.getElementById('inv-tbody').innerHTML = items.map(item => {
       const st = item.qty === 0 ? 'out' : item.qty <= (item.threshold || 0) ? 'low' : 'ok';
       const badge = st === 'out'
-        ? '<span style="background:rgba(248,113,113,.1);color:#f87171;padding:.2rem .6rem;border-radius:20px;font-size:.72rem;font-weight:600">Out of Stock</span>'
+        ? '<span style="background:rgba(248,113,113,.1);color:#f87171;padding:.2rem .6rem;border-radius:20px;font-size:.75rem;font-weight:600">Out of Stock</span>'
         : st === 'low'
-        ? '<span style="background:rgba(251,191,36,.1);color:#fbbf24;padding:.2rem .6rem;border-radius:20px;font-size:.72rem;font-weight:600">Low Stock</span>'
-        : '<span style="background:rgba(74,222,128,.1);color:#4ade80;padding:.2rem .6rem;border-radius:20px;font-size:.72rem;font-weight:600">In Stock</span>';
+        ? '<span style="background:rgba(251,191,36,.1);color:#fbbf24;padding:.2rem .6rem;border-radius:20px;font-size:.75rem;font-weight:600">Low Stock</span>'
+        : '<span style="background:rgba(74,222,128,.1);color:#4ade80;padding:.2rem .6rem;border-radius:20px;font-size:.75rem;font-weight:600">In Stock</span>';
       return `<tr>
-        <td style="padding:.65rem 1rem;border-top:1px solid rgba(129,140,248,.06)">
+        <td style="padding:.75rem 1rem;border-top:1px solid rgba(129,140,248,.06)">
           <div style="font-weight:600;color:var(--text)">${esc(item.name)}</div>
-          ${item.sku ? `<div style="font-size:.72rem;color:var(--muted)">${esc(item.sku)}</div>` : ''}
+          ${item.sku ? `<div style="font-size:.75rem;color:var(--muted)">${esc(item.sku)}</div>` : ''}
         </td>
-        <td style="padding:.65rem 1rem;border-top:1px solid rgba(129,140,248,.06);color:var(--muted)">${esc(item.category || '—')}</td>
-        <td style="padding:.65rem 1rem;border-top:1px solid rgba(129,140,248,.06);font-weight:600">${item.qty}</td>
-        <td style="padding:.65rem 1rem;border-top:1px solid rgba(129,140,248,.06);color:var(--muted)">${item.price ? '$' + Number(item.price).toFixed(2) : '—'}</td>
-        <td style="padding:.65rem 1rem;border-top:1px solid rgba(129,140,248,.06)">${badge}</td>
+        <td style="padding:.75rem 1rem;border-top:1px solid rgba(129,140,248,.06);color:var(--muted)">${esc(item.category || '—')}</td>
+        <td style="padding:.75rem 1rem;border-top:1px solid rgba(129,140,248,.06);font-weight:600">${item.qty}</td>
+        <td style="padding:.75rem 1rem;border-top:1px solid rgba(129,140,248,.06);color:var(--muted)">${item.price ? '$' + Number(item.price).toFixed(2) : '—'}</td>
+        <td style="padding:.75rem 1rem;border-top:1px solid rgba(129,140,248,.06)">${badge}</td>
       </tr>`;
     }).join('');
   }
