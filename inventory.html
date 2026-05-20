@@ -416,10 +416,8 @@
     currentUser = session.user;
     const { data: profile } = await sb.from('profiles').select('is_admin').eq('id', session.user.id).single();
     if (profile?.is_admin) {
-      document.getElementById('clients-link').style.display = 'inline';
-      document.getElementById('leads-link').style.display = 'inline';
-      document.getElementById('scripts-link').style.display = 'inline';
-      document.getElementById('alert-btn').style.display = 'inline-flex';
+      window.location.href = 'clients.html';
+      return;
     }
     await loadItems();
   }

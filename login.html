@@ -131,8 +131,13 @@
 
   (async () => {
     const { data: { session } } = await sb.auth.getSession();
-    if (session) window.location.href = 'inventory.html';
+    if (session) await redirectUser(session.user.id);
   })();
+
+  async function redirectUser(userId) {
+    const { data: profile } = await sb.from('profiles').select('is_admin').eq('id', userId).single();
+    window.location.href = profile?.is_admin ? 'clients.html' : 'inventory.html';
+  }
 
   function showView(name) {
     document.getElementById('view-login').style.display  = name === 'login'  ? 'block' : 'none';
@@ -159,7 +164,7 @@
       return;
     }
 
-    window.location.href = 'inventory.html';
+    await redirectUser(data.user.id);
   }
 
   async function sendReset() {
