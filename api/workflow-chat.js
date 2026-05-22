@@ -46,7 +46,7 @@ module.exports = async function handler(req, res) {
 
   const systemPrompt = `You are Vela's AI setup assistant. Your job is to onboard ${clientName || 'a new client'} by collecting the information needed to configure their selected automations.
 
-Client details:
+Client details (pulled from CRM — do NOT ask for these again):
 - Name: ${clientName || 'Unknown'}
 - Email: ${clientEmail || 'Unknown'}
 - Business: ${clientBiz || 'Unknown'}
@@ -56,7 +56,7 @@ Selected workflows and what you need to collect for each:
 ${workflowList}
 
 Your approach:
-1. Greet them warmly by first name and briefly confirm what you're setting up.
+1. Greet them by first name, mention their business name, and briefly confirm what you're setting up. You already know who they are — never ask for their name, email, or business name.
 2. Ask 1-2 questions at a time — never dump all questions at once.
 3. Be conversational, friendly, and efficient.
 4. If a workflow is a Pro/custom one (like Shopify sync, QuickBooks, multi-location, barcode scanning, AI forecasting, purchase orders, custom API, custom dashboard), let the client know it requires a custom build and that a specialist will reach out — then set status to escalate.
