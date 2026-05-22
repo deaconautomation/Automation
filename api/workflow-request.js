@@ -1,3 +1,5 @@
+const { sendEmail } = require('./_mailer');
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -11,10 +13,8 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'Missing required fields.' });
   }
 
-  const RESEND_API_KEY = process.env.RESEND_API_KEY;
-  const FROM_EMAIL     = process.env.ALERT_FROM_EMAIL || 'onboarding@resend.dev';
-  const ADMIN_EMAIL    = process.env.ADMIN_EMAIL       || 'vela.automate@gmail.com';
-  const APP_URL        = process.env.APP_URL           || 'https://your-app.vercel.app';
+  const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'vela.automate@gmail.com';
+  const APP_URL     = process.env.APP_URL     || 'https://your-app.vercel.app';
 
   const isPro          = tier === 'pro';
   const workflowNames  = workflows.join(', ');
@@ -97,26 +97,11 @@ module.exports = async function handler(req, res) {
 </div>
 </body></html>`;
 
-  if (!RESEND_API_KEY) {
-    // No email configured — still return success so the UI works
-    console.log('workflow-request: no RESEND_API_KEY, skipping emails');
-    return res.status(200).json({ ok: true });
-  }
-
   try {
     await Promise.all([
-      fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ from: FROM_EMAIL, to: email, subject: clientSubject, html: clientHtml }),
-      }),
-      fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ from: FROM_EMAIL, to: ADMIN_EMAIL, subject: adminSubject, html: adminHtml }),
-      }),
+      sendEmail({ to: email,       subject: clientSubject, html: clientHtml }),
+      sendEmail({ to: ADMIN_EMAIL, subject: adminSubject,  html: adminHtml  }),
     ]);
-
     return res.status(200).json({ ok: true });
   } catch (err) {
     console.error('workflow-request error:', err.message);

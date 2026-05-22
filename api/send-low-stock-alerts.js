@@ -1,4 +1,5 @@
 const { createClient } = require('@supabase/supabase-js');
+const { sendEmail } = require('./_mailer');
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -8,22 +9,16 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const SUPABASE_URL   = process.env.SUPABASE_URL;
-  const SERVICE_KEY    = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const RESEND_API_KEY = process.env.RESEND_API_KEY;
-  const FROM_EMAIL     = process.env.ALERT_FROM_EMAIL || 'onboarding@resend.dev';
-  const APP_URL        = process.env.APP_URL || 'https://your-app.vercel.app';
+  const SUPABASE_URL = process.env.SUPABASE_URL;
+  const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const APP_URL      = process.env.APP_URL || 'https://your-app.vercel.app';
 
   if (!SUPABASE_URL || !SERVICE_KEY) {
     return res.status(500).json({ error: 'Missing Supabase env vars.' });
   }
-  if (!RESEND_API_KEY) {
-    return res.status(500).json({ error: 'Missing RESEND_API_KEY env var.' });
-  }
 
   const sb = createClient(SUPABASE_URL, SERVICE_KEY);
 
-  // Get all inventory items that are low or out of stock
   const { data: items, error: itemsErr } = await sb
     .from('inventory_items')
     .select('*, profiles!inner(business_name)')
@@ -33,7 +28,6 @@ module.exports = async function handler(req, res) {
   if (itemsErr) return res.status(500).json({ error: itemsErr.message });
   if (!items || items.length === 0) return res.status(200).json({ message: 'No low stock items found.' });
 
-  // Get emails for affected clients
   const clientIds = [...new Set(items.map(i => i.client_id))];
   const usersRes  = await fetch(`${SUPABASE_URL}/auth/v1/admin/users?per_page=1000`, {
     headers: { 'Authorization': `Bearer ${SERVICE_KEY}`, 'apikey': SERVICE_KEY },
@@ -44,7 +38,7 @@ module.exports = async function handler(req, res) {
   const results = [];
 
   for (const clientId of clientIds) {
-    const email       = userMap[clientId];
+    const email = userMap[clientId];
     if (!email) continue;
 
     const clientItems  = items.filter(i => i.client_id === clientId);
@@ -55,7 +49,7 @@ module.exports = async function handler(req, res) {
     const rows = clientItems.map(item => {
       const status = item.qty === 0 ? '🔴 Out of Stock' : '🟡 Low Stock';
       return `<tr>
-        <td style="padding:8px 12px;border-bottom:1px solid #1e293b">${item.name}${item.sku ? ` <span style="color:#64748b;font-size:12px">(${item.sku})</span>` : ''}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #1e293b">${item.name}${item.sku ? ` <span style="color:#a8aed6;font-size:12px">(${item.sku})</span>` : ''}</td>
         <td style="padding:8px 12px;border-bottom:1px solid #1e293b;text-align:center">${item.qty}</td>
         <td style="padding:8px 12px;border-bottom:1px solid #1e293b;text-align:center">${item.threshold || '—'}</td>
         <td style="padding:8px 12px;border-bottom:1px solid #1e293b">${status}</td>
@@ -68,43 +62,37 @@ module.exports = async function handler(req, res) {
 <div style="max-width:560px;margin:40px auto;background:#0e1017;border:1px solid rgba(129,140,248,.13);border-radius:16px;overflow:hidden">
   <div style="padding:28px 32px;border-bottom:1px solid rgba(129,140,248,.13);background:linear-gradient(135deg,rgba(129,140,248,.08),rgba(6,182,212,.08))">
     <div style="font-size:20px;font-weight:800;color:#818cf8">Vela</div>
-    <div style="color:#e8eaf6;font-size:18px;font-weight:700;margin-top:8px">Low Stock Alert</div>
-    <div style="color:#8b90b8;font-size:13px;margin-top:4px">
-      ${outOfStock.length} out of stock · ${lowStock.length} running low
-    </div>
+    <div style="color:#f1f2ff;font-size:18px;font-weight:700;margin-top:8px">Low Stock Alert</div>
+    <div style="color:#a8aed6;font-size:13px;margin-top:4px">${outOfStock.length} out of stock · ${lowStock.length} running low</div>
   </div>
   <div style="padding:24px 32px">
-    <p style="color:#8b90b8;font-size:14px;margin:0 0 20px">Hi${businessName ? ` ${businessName}` : ''}, here are the items that need your attention:</p>
-    <table style="width:100%;border-collapse:collapse;font-size:13px;color:#e8eaf6">
+    <p style="color:#a8aed6;font-size:14px;margin:0 0 20px">Hi${businessName ? ` ${businessName}` : ''}, here are the items that need your attention:</p>
+    <table style="width:100%;border-collapse:collapse;font-size:13px;color:#f1f2ff">
       <thead><tr style="background:#161820">
-        <th style="padding:8px 12px;text-align:left;color:#8b90b8;font-size:11px;text-transform:uppercase">Item</th>
-        <th style="padding:8px 12px;text-align:center;color:#8b90b8;font-size:11px;text-transform:uppercase">Qty</th>
-        <th style="padding:8px 12px;text-align:center;color:#8b90b8;font-size:11px;text-transform:uppercase">Threshold</th>
-        <th style="padding:8px 12px;color:#8b90b8;font-size:11px;text-transform:uppercase">Status</th>
+        <th style="padding:8px 12px;text-align:left;color:#a8aed6;font-size:11px;text-transform:uppercase">Item</th>
+        <th style="padding:8px 12px;text-align:center;color:#a8aed6;font-size:11px;text-transform:uppercase">Qty</th>
+        <th style="padding:8px 12px;text-align:center;color:#a8aed6;font-size:11px;text-transform:uppercase">Threshold</th>
+        <th style="padding:8px 12px;color:#a8aed6;font-size:11px;text-transform:uppercase">Status</th>
       </tr></thead>
       <tbody>${rows}</tbody>
     </table>
     <div style="margin-top:24px">
-      <a href="${APP_URL}/inventory.html" style="display:inline-block;padding:10px 20px;background:linear-gradient(135deg,#818cf8,#06b6d4);color:#fff;text-decoration:none;border-radius:8px;font-weight:600;font-size:14px">
-        View Inventory →
-      </a>
+      <a href="${APP_URL}/inventory.html" style="display:inline-block;padding:10px 20px;background:linear-gradient(135deg,#818cf8,#06b6d4);color:#fff;text-decoration:none;border-radius:8px;font-weight:600;font-size:14px">View Inventory →</a>
     </div>
   </div>
 </div>
 </body></html>`;
 
-    const resendRes = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        from:    FROM_EMAIL,
-        to:      email,
+    try {
+      await sendEmail({
+        to: email,
         subject: `⚠️ Low Stock Alert — ${clientItems.length} item${clientItems.length !== 1 ? 's' : ''} need attention`,
         html,
-      }),
-    });
-
-    results.push({ email, status: resendRes.ok ? 'sent' : 'failed', items: clientItems.length });
+      });
+      results.push({ email, status: 'sent', items: clientItems.length });
+    } catch (e) {
+      results.push({ email, status: 'failed', items: clientItems.length });
+    }
   }
 
   return res.status(200).json({ sent: results.filter(r => r.status === 'sent').length, results });
