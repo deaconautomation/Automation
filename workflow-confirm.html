@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vela — Confirm Your Workflows</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #06070d; --surface: #0e1017; --surface2: #161820;
+      --border: rgba(129,140,248,.13); --indigo: #818cf8; --cyan: #06b6d4;
+      --text: #f1f2ff; --muted: #a8aed6; --red: #f87171; --amber: #fbbf24; --green: #4ade80;
+      --grad: linear-gradient(135deg, var(--indigo), var(--cyan));
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; font-size: 16px; line-height: 1.5; }
+    body::before {
+      content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background-image: radial-gradient(circle, rgba(129,140,248,.07) 1px, transparent 1px);
+      background-size: 28px 28px;
+    }
+
+    nav {
+      position: sticky; top: 0; z-index: 50;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 2rem; height: 64px;
+      background: rgba(6,7,13,.88); backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo { display: flex; align-items: center; gap: .6rem; text-decoration: none; }
+    .nav-logo svg { width: 28px; height: 28px; }
+    .nav-logo span { font-size: 1.25rem; font-weight: 800;
+      background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: inline-block; padding-bottom: 2px; }
+    .back-link { color: var(--muted); text-decoration: none; font-size: .875rem; font-weight: 500;
+      display: flex; align-items: center; gap: .4rem; transition: color .2s; }
+    .back-link:hover { color: var(--text); }
+
+    .page { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding: 3rem 1.5rem 6rem; }
+
+    .page-header { margin-bottom: 2.5rem; }
+    .page-header h1 { font-size: 1.75rem; font-weight: 800;
+      background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: inline-block; padding-bottom: 2px; }
+    .page-header p { color: var(--muted); font-size: .95rem; margin-top: .4rem; }
+
+    .layout { display: grid; grid-template-columns: 1fr 380px; gap: 1.5rem; align-items: start; }
+    @media (max-width: 720px) { .layout { grid-template-columns: 1fr; } }
+
+    /* SELECTED WORKFLOWS SUMMARY */
+    .summary-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 1.5rem; }
+    .summary-title { font-weight: 700; font-size: .95rem; margin-bottom: 1rem; color: var(--text); }
+    .workflow-item { display: flex; align-items: flex-start; gap: .75rem;
+      padding: .75rem 0; border-bottom: 1px solid rgba(129,140,248,.06); }
+    .workflow-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .wf-icon { font-size: 1.3rem; flex-shrink: 0; line-height: 1.4; }
+    .wf-name { font-weight: 600; font-size: .9rem; }
+    .wf-tier { font-size: .75rem; font-weight: 600; padding: .15rem .55rem; border-radius: 6px; margin-top: .2rem; display: inline-block; }
+    .wf-tier.starter { background: rgba(129,140,248,.1); color: var(--indigo); }
+    .wf-tier.pro { background: rgba(6,182,212,.1); color: var(--cyan); }
+
+    /* FORM CARD */
+    .form-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 1.5rem; position: sticky; top: 80px; }
+    .form-title { font-weight: 700; font-size: 1rem; margin-bottom: 1.25rem; }
+
+    /* BILLING TOGGLE */
+    .billing-toggle { display: flex; background: var(--surface2); border-radius: 10px; padding: 4px; margin-bottom: 1.25rem; gap: 4px; }
+    .billing-opt { flex: 1; text-align: center; padding: .5rem; border-radius: 7px; cursor: pointer;
+      font-size: .82rem; font-weight: 600; color: var(--muted); transition: all .2s; }
+    .billing-opt.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,.3); }
+    .price-display { text-align: center; margin-bottom: 1.25rem; padding: 1rem;
+      background: rgba(129,140,248,.05); border: 1px solid var(--border); border-radius: 10px; }
+    .price-display .amount { font-size: 1.8rem; font-weight: 800; color: var(--text); }
+    .price-display .period { font-size: .85rem; color: var(--muted); margin-top: .1rem; }
+    .price-display .savings { font-size: .78rem; color: var(--green); margin-top: .25rem; font-weight: 600; }
+
+    /* PRO PRICE */
+    .pro-price { text-align: center; margin-bottom: 1.25rem; padding: 1rem;
+      background: rgba(6,182,212,.05); border: 1px solid rgba(6,182,212,.2); border-radius: 10px; }
+    .pro-price .amount { font-size: 1.4rem; font-weight: 800; color: var(--cyan); }
+    .pro-price .note { font-size: .82rem; color: var(--muted); margin-top: .3rem; }
+
+    .form-group { display: flex; flex-direction: column; gap: .35rem; margin-bottom: .85rem; }
+    label { font-size: .82rem; font-weight: 600; color: var(--muted); }
+    input, textarea {
+      background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+      padding: .65rem .85rem; color: var(--text); font-family: 'Inter', sans-serif;
+      font-size: .875rem; outline: none; transition: border-color .2s; width: 100%;
+    }
+    input:focus, textarea:focus { border-color: var(--indigo); }
+    input::placeholder, textarea::placeholder { color: var(--muted); }
+    textarea { resize: vertical; min-height: 90px; }
+
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
+      padding: .75rem 1.3rem; border-radius: 8px; font-size: .95rem; font-weight: 700;
+      cursor: pointer; border: none; transition: all .2s; font-family: 'Inter', sans-serif; width: 100%; }
+    .btn-primary { background: var(--grad); color: #fff; }
+    .btn-primary:hover:not(:disabled) { opacity: .88; }
+    .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+
+    .msg { border-radius: 8px; padding: .65rem .9rem; font-size: .82rem; margin-top: .85rem; display: none; }
+    .msg.error   { background: rgba(248,113,113,.08); border: 1px solid rgba(248,113,113,.25); color: #fca5a5; }
+    .msg.success { background: rgba(74,222,128,.08); border: 1px solid rgba(74,222,128,.25); color: var(--green); }
+
+    .trust-line { display: flex; align-items: center; justify-content: center; gap: .4rem;
+      font-size: .78rem; color: var(--muted); margin-top: .85rem; }
+
+    /* SUCCESS STATE */
+    #success-view { display: none; text-align: center; padding: 3rem 1rem; }
+    #success-view .success-icon { font-size: 3rem; margin-bottom: 1rem; }
+    #success-view h2 { font-size: 1.5rem; font-weight: 800; margin-bottom: .75rem; }
+    #success-view p { color: var(--muted); max-width: 420px; margin: 0 auto .5rem; }
+
+    footer { position: relative; z-index: 1; border-top: 1px solid var(--border);
+      text-align: center; padding: 1.5rem; color: var(--muted); font-size: .8rem; }
+    footer a { color: var(--indigo); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="index.html">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+      <defs><linearGradient id="ng" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#818cf8"/><stop offset="100%" stop-color="#06b6d4"/>
+      </linearGradient></defs>
+      <path d="M 6 4 Q 16 26 23 46 L 23 4 Z" fill="url(#ng)"/>
+      <path d="M 42 4 Q 32 26 25 46 L 25 4 Z" fill="url(#ng)" opacity="0.72"/>
+      <path d="M 12 44 Q 24 48 36 44" stroke="url(#ng)" stroke-width="2.2" stroke-linecap="round" fill="none" opacity="0.55"/>
+    </svg>
+    <span>Vela</span>
+  </a>
+  <a class="back-link" href="workflows.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    Back to Workflows
+  </a>
+</nav>
+
+<div class="page">
+  <!-- SUCCESS VIEW -->
+  <div id="success-view">
+    <div class="success-icon">🎉</div>
+    <h2 id="success-title">You're all set!</h2>
+    <p id="success-msg"></p>
+    <p style="color:var(--muted);margin-top:.5rem;font-size:.875rem">Check your email for next steps.</p>
+    <a href="inventory.html" style="display:inline-flex;align-items:center;gap:.4rem;margin-top:1.5rem;padding:.65rem 1.4rem;background:var(--grad);color:#fff;text-decoration:none;border-radius:8px;font-weight:700;font-size:.95rem">
+      Go to Inventory →
+    </a>
+  </div>
+
+  <!-- MAIN VIEW -->
+  <div id="main-view">
+    <div class="page-header">
+      <h1 id="page-title">Confirm Your Workflows</h1>
+      <p id="page-subtitle"></p>
+    </div>
+
+    <div class="layout">
+      <!-- LEFT: WORKFLOW SUMMARY -->
+      <div class="summary-card">
+        <div class="summary-title">Selected Workflows</div>
+        <div id="workflow-list"></div>
+      </div>
+
+      <!-- RIGHT: FORM -->
+      <div class="form-card">
+        <div class="form-title" id="form-title">Your Details</div>
+
+        <!-- STARTER BILLING TOGGLE -->
+        <div id="billing-section">
+          <div class="billing-toggle">
+            <div class="billing-opt active" id="opt-onetime" onclick="setBilling('onetime')">One-time</div>
+            <div class="billing-opt" id="opt-monthly" onclick="setBilling('monthly')">Monthly</div>
+          </div>
+          <div class="price-display" id="price-display">
+            <div class="amount" id="price-amount">$147</div>
+            <div class="period" id="price-period">one-time payment</div>
+            <div class="savings" id="price-savings">Save $97 vs monthly</div>
+          </div>
+        </div>
+
+        <!-- PRO PRICE -->
+        <div class="pro-price" id="pro-price-display" style="display:none">
+          <div class="amount">$1,000 – $2,000</div>
+          <div class="note">+ $100/mo · Custom build · We'll send you a detailed quote</div>
+        </div>
+
+        <div class="form-group">
+          <label>Full Name *</label>
+          <input type="text" id="f-name" placeholder="Jane Smith" />
+        </div>
+        <div class="form-group">
+          <label>Email *</label>
+          <input type="email" id="f-email" placeholder="you@business.com" />
+        </div>
+        <div class="form-group">
+          <label>Business Name</label>
+          <input type="text" id="f-business" placeholder="Acme Corp" />
+        </div>
+
+        <!-- PRO SCOPE FIELD -->
+        <div class="form-group" id="scope-group" style="display:none">
+          <label>Describe what you need *</label>
+          <textarea id="f-scope" placeholder="Tell us about your business, what you're tracking, any tools you use, and what you want automated…"></textarea>
+        </div>
+
+        <div class="msg error" id="form-error"></div>
+
+        <button class="btn btn-primary" id="submit-btn" onclick="submit()">
+          <span id="btn-text">Get Started →</span>
+        </button>
+
+        <div class="trust-line" id="trust-starter">
+          🔒 Secure checkout · AI setup begins immediately
+        </div>
+        <div class="trust-line" id="trust-pro" style="display:none">
+          📋 No payment now · We'll send a quote within 24 hours
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <p>© 2025 Vela · <a href="workflows.html">Back to Workflows</a></p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const sb = supabase.createClient(
+    'https://ndbvmtuzmzbaaoxudmbk.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kYnZtdHV6bXpiYWFveHVkbWJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyNjUyODcsImV4cCI6MjA5Mzg0MTI4N30.CRqNEXZlUf4pRCjbVghCZg2p4rLh2Y-cKQpqSwkUw2k'
+  );
+
+  const ALL_WORKFLOWS = {
+    'low-stock-alerts':    { icon: '🔔', title: 'Low Stock Alerts',           tier: 'starter' },
+    'out-of-stock-alerts': { icon: '🚨', title: 'Out of Stock Alerts',         tier: 'starter' },
+    'weekly-report':       { icon: '📊', title: 'Weekly Inventory Report',     tier: 'starter' },
+    'supplier-auto-email': { icon: '📦', title: 'Supplier Auto-Email',         tier: 'starter' },
+    'reorder-reminders':   { icon: '🔄', title: 'Reorder Reminders',           tier: 'starter' },
+    'csv-auto-import':     { icon: '📥', title: 'CSV Scheduled Import',        tier: 'starter' },
+    'inventory-value-report': { icon: '💰', title: 'Inventory Value Report',   tier: 'starter' },
+    'custom-email-alerts': { icon: '✉️', title: 'Custom Email Alerts',         tier: 'starter' },
+    'shopify-sync':        { icon: '🛍️', title: 'Shopify / WooCommerce Sync', tier: 'pro' },
+    'quickbooks-sync':     { icon: '📒', title: 'QuickBooks / Xero Integration', tier: 'pro' },
+    'multi-location':      { icon: '🏭', title: 'Multi-Location Inventory',    tier: 'pro' },
+    'barcode-scanning':    { icon: '📷', title: 'Barcode / QR Scanning',       tier: 'pro' },
+    'ai-forecasting':      { icon: '🤖', title: 'AI Demand Forecasting',       tier: 'pro' },
+    'purchase-orders':     { icon: '🧾', title: 'Purchase Order Automation',   tier: 'pro' },
+    'custom-api':          { icon: '🔌', title: 'Custom API Integration',      tier: 'pro' },
+    'custom-dashboard':    { icon: '📈', title: 'Custom Reporting Dashboard',  tier: 'pro' },
+  };
+
+  const params    = new URLSearchParams(window.location.search);
+  const selected  = (params.get('workflows') || '').split(',').filter(Boolean);
+  const tier      = params.get('tier') || 'starter';
+  const isPro     = tier === 'pro';
+  let billing     = 'onetime';
+
+  function init() {
+    if (selected.length === 0) { window.location.href = 'workflows.html'; return; }
+
+    // Render workflow list
+    document.getElementById('workflow-list').innerHTML = selected.map(id => {
+      const w = ALL_WORKFLOWS[id];
+      if (!w) return '';
+      return `<div class="workflow-item">
+        <div class="wf-icon">${w.icon}</div>
+        <div>
+          <div class="wf-name">${w.title}</div>
+          <span class="wf-tier ${w.tier}">${w.tier === 'pro' ? 'Pro / Custom' : 'Starter'}</span>
+        </div>
+      </div>`;
+    }).join('');
+
+    if (isPro) {
+      document.getElementById('page-title').textContent = 'Request a Custom Build';
+      document.getElementById('page-subtitle').textContent = 'Tell us what you need — we\'ll review and send you a quote within 24 hours. No payment required now.';
+      document.getElementById('form-title').textContent = 'Your Details';
+      document.getElementById('billing-section').style.display = 'none';
+      document.getElementById('pro-price-display').style.display = 'block';
+      document.getElementById('scope-group').style.display = 'flex';
+      document.getElementById('btn-text').textContent = 'Request a Quote →';
+      document.getElementById('trust-starter').style.display = 'none';
+      document.getElementById('trust-pro').style.display = 'flex';
+    } else {
+      document.getElementById('page-subtitle').textContent = 'AI will configure your automations right after checkout. You\'ll receive an onboarding email with next steps.';
+    }
+  }
+
+  function setBilling(type) {
+    billing = type;
+    document.getElementById('opt-onetime').classList.toggle('active', type === 'onetime');
+    document.getElementById('opt-monthly').classList.toggle('active', type === 'monthly');
+    if (type === 'onetime') {
+      document.getElementById('price-amount').textContent = '$147';
+      document.getElementById('price-period').textContent = 'one-time payment';
+      document.getElementById('price-savings').textContent = 'Save $97 vs monthly';
+      document.getElementById('price-savings').style.display = 'block';
+    } else {
+      document.getElementById('price-amount').textContent = '$37';
+      document.getElementById('price-period').textContent = 'per month';
+      document.getElementById('price-savings').style.display = 'none';
+    }
+  }
+
+  async function submit() {
+    const name     = document.getElementById('f-name').value.trim();
+    const email    = document.getElementById('f-email').value.trim();
+    const business = document.getElementById('f-business').value.trim();
+    const scope    = document.getElementById('f-scope').value.trim();
+    const errEl    = document.getElementById('form-error');
+    errEl.style.display = 'none';
+
+    if (!name)  { showError('Please enter your name.'); return; }
+    if (!email) { showError('Please enter your email.'); return; }
+    if (isPro && !scope) { showError('Please describe what you need.'); return; }
+
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    document.getElementById('btn-text').textContent = 'Submitting…';
+
+    const res = await fetch('/api/workflow-request', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, business, tier, billing, workflows: selected, scope }),
+    });
+    const data = await res.json();
+
+    btn.disabled = false;
+    document.getElementById('btn-text').textContent = isPro ? 'Request a Quote →' : 'Get Started →';
+
+    if (!res.ok) { showError(data.error || 'Something went wrong. Please try again.'); return; }
+
+    // Show success
+    document.getElementById('main-view').style.display = 'none';
+    document.getElementById('success-view').style.display = 'block';
+    if (isPro) {
+      document.getElementById('success-title').textContent = 'Request received!';
+      document.getElementById('success-msg').textContent = `Thanks ${name} — we've received your request and will send a detailed quote to ${email} within 24 hours.`;
+    } else {
+      document.getElementById('success-title').textContent = 'You\'re all set!';
+      document.getElementById('success-msg').textContent = `Thanks ${name}! We've sent your onboarding details to ${email}. AI setup will begin shortly.`;
+    }
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('form-error');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  init();
+</script>
+</body>
+</html>
