@@ -331,15 +331,19 @@
 
     if (!res.ok) { showError(data.error || 'Something went wrong. Please try again.'); return; }
 
-    // Show success
-    document.getElementById('main-view').style.display = 'none';
-    document.getElementById('success-view').style.display = 'block';
     if (isPro) {
+      // Pro: show success message
+      document.getElementById('main-view').style.display = 'none';
+      document.getElementById('success-view').style.display = 'block';
       document.getElementById('success-title').textContent = 'Request received!';
       document.getElementById('success-msg').textContent = `Thanks ${name} — we've received your request and will send a detailed quote to ${email} within 24 hours.`;
     } else {
-      document.getElementById('success-title').textContent = 'You\'re all set!';
-      document.getElementById('success-msg').textContent = `Thanks ${name}! We've sent your onboarding details to ${email}. AI setup will begin shortly.`;
+      // Starter: launch AI onboarding chat
+      const p = new URLSearchParams({
+        workflows: selected.join(','),
+        name, email, business, tier,
+      });
+      window.location.href = `workflow-onboarding.html?${p}`;
     }
   }
 
