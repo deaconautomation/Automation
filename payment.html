@@ -133,6 +133,14 @@
       text-align: center; font-size: .78rem; color: var(--muted); margin-top: .75rem;
     }
 
+    .wire-request-btn {
+      padding: .6rem 1.4rem; background: rgba(129,140,248,.1); border: 1px solid rgba(129,140,248,.3);
+      border-radius: 8px; color: var(--indigo); font-family: 'Inter', sans-serif;
+      font-size: .875rem; font-weight: 600; cursor: pointer; transition: all .2s;
+    }
+    .wire-request-btn:hover { background: rgba(129,140,248,.2); }
+    .wire-request-btn:disabled { opacity: .5; cursor: not-allowed; }
+
     /* SUCCESS / PENDING */
     #pending-view { display: none; text-align: center; padding: 3rem 1.5rem; }
     .pending-icon { font-size: 3rem; margin-bottom: 1rem; }
@@ -192,7 +200,7 @@
         <div class="method-tab active" onclick="setMethod('zelle')">Zelle</div>
         <div class="method-tab" onclick="setMethod('venmo')">Venmo</div>
         <div class="method-tab" onclick="setMethod('cashapp')">Cash App</div>
-        <div class="method-tab" onclick="setMethod('bank')">Bank Transfer</div>
+        <div class="method-tab" onclick="setMethod('wire')">Wire Transfer</div>
       </div>
 
       <div class="method-panel active" id="panel-zelle">
@@ -228,35 +236,21 @@
         <div class="method-note"><strong>Note:</strong> Include your name and "workflow setup" in the note field.</div>
       </div>
 
-      <div class="method-panel" id="panel-bank">
-        <div class="bank-detail">
-          <div>
-            <div class="field-label">Bank Name</div>
-            <div class="field-value">YOUR BANK NAME</div>
+      <div class="method-panel" id="panel-wire">
+        <div style="text-align:center;padding:1.5rem 1rem">
+          <div style="font-size:2rem;margin-bottom:.75rem">🏦</div>
+          <div style="color:var(--text);font-weight:600;margin-bottom:.5rem">Wire / ACH Transfer</div>
+          <p style="color:var(--muted);font-size:.875rem;line-height:1.6;margin-bottom:1.25rem">
+            We'll send our banking details directly to your email so they stay private.
+          </p>
+          <button class="wire-request-btn" id="wire-request-btn" onclick="requestWireDetails()">
+            Email Me Wire Details
+          </button>
+          <div id="wire-sent-msg" style="display:none;margin-top:.75rem;font-size:.82rem;color:var(--green)">
+            ✓ Banking details sent to <span id="wire-email-display"></span>
           </div>
         </div>
-        <div class="bank-detail">
-          <div>
-            <div class="field-label">Account Holder</div>
-            <div class="field-value">YOUR FULL NAME</div>
-          </div>
-          <button class="copy-btn" onclick="copyText('YOUR FULL NAME', this)">Copy</button>
-        </div>
-        <div class="bank-detail">
-          <div>
-            <div class="field-label">Routing Number</div>
-            <div class="field-value">XXXXXXXXX</div>
-          </div>
-          <button class="copy-btn" onclick="copyText('XXXXXXXXX', this)">Copy</button>
-        </div>
-        <div class="bank-detail">
-          <div>
-            <div class="field-label">Account Number</div>
-            <div class="field-value">XXXXXXXXXXXX</div>
-          </div>
-          <button class="copy-btn" onclick="copyText('XXXXXXXXXXXX', this)">Copy</button>
-        </div>
-        <div class="method-note"><strong>Note:</strong> ACH transfers typically take 1–2 business days. Include your business name in the memo.</div>
+        <div class="method-note"><strong>Note:</strong> Wire/ACH transfers typically take 1–2 business days to clear.</div>
       </div>
     </div>
 
@@ -270,7 +264,7 @@
           <option value="Zelle">Zelle</option>
           <option value="Venmo">Venmo</option>
           <option value="Cash App">Cash App</option>
-          <option value="Bank Transfer">Bank Transfer (ACH)</option>
+          <option value="Wire / ACH">Wire / ACH Transfer</option>
         </select>
       </div>
       <div class="form-group">
@@ -388,15 +382,38 @@
 
   function setMethod(method) {
     document.querySelectorAll('.method-tab').forEach((t, i) => {
-      const methods = ['zelle', 'venmo', 'cashapp', 'bank'];
+      const methods = ['zelle', 'venmo', 'cashapp', 'wire'];
       t.classList.toggle('active', methods[i] === method);
     });
     document.querySelectorAll('.method-panel').forEach(p => p.classList.remove('active'));
     document.getElementById('panel-' + method).classList.add('active');
 
     const select = document.getElementById('f-method');
-    const map = { zelle: 'Zelle', venmo: 'Venmo', cashapp: 'Cash App', bank: 'Bank Transfer' };
+    const map = { zelle: 'Zelle', venmo: 'Venmo', cashapp: 'Cash App', wire: 'Wire / ACH' };
     select.value = map[method] || '';
+  }
+
+  async function requestWireDetails() {
+    if (!email) { showError('No email address found. Please go back and fill in your details.'); return; }
+    const btn = document.getElementById('wire-request-btn');
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+
+    try {
+      await fetch('/api/wire-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, business, workflows, billing }),
+      });
+      btn.style.display = 'none';
+      document.getElementById('wire-sent-msg').style.display = 'block';
+      document.getElementById('wire-email-display').textContent = email;
+      document.getElementById('f-method').value = 'Wire / ACH';
+    } catch {
+      btn.disabled = false;
+      btn.textContent = 'Email Me Wire Details';
+      showError('Could not send. Please try again.');
+    }
   }
 
   function copyText(text, btn) {
