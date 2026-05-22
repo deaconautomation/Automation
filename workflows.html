@@ -131,6 +131,28 @@
     footer { position: relative; z-index: 1; border-top: 1px solid var(--border);
       text-align: center; padding: 1.5rem; color: var(--muted); font-size: .8rem; }
     footer a { color: var(--indigo); text-decoration: none; }
+
+    /* CUSTOM REQUEST BOX */
+    .custom-box {
+      border: 1.5px dashed rgba(129,140,248,.3); border-radius: 16px;
+      padding: 1.75rem 2rem; margin-bottom: 4rem;
+      background: rgba(129,140,248,.03); transition: border-color .2s;
+    }
+    .custom-box:focus-within { border-color: rgba(129,140,248,.6); }
+    .custom-box.has-text { border-style: solid; border-color: var(--indigo); background: rgba(129,140,248,.06); }
+    .custom-box-header { display: flex; align-items: center; gap: .75rem; margin-bottom: 1rem; }
+    .custom-box-icon { font-size: 1.5rem; }
+    .custom-box-title { font-size: 1rem; font-weight: 700; color: var(--text); }
+    .custom-box-sub { font-size: .875rem; color: var(--muted); margin-top: .15rem; }
+    .custom-textarea {
+      width: 100%; background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 10px; padding: .85rem 1rem; color: var(--text);
+      font-family: 'Inter', sans-serif; font-size: .9rem; line-height: 1.6;
+      resize: vertical; min-height: 90px; outline: none; transition: border-color .2s;
+    }
+    .custom-textarea:focus { border-color: var(--indigo); }
+    .custom-textarea::placeholder { color: rgba(168,174,214,.5); }
+    .custom-char-hint { font-size: .75rem; color: var(--muted); margin-top: .4rem; }
   </style>
 </head>
 <body>
@@ -199,6 +221,25 @@
   <!-- PRO WORKFLOWS -->
   <div class="section-label">Pro / Custom Automations — Built With You</div>
   <div class="grid" id="pro-grid"></div>
+
+  <!-- CUSTOM REQUEST -->
+  <div class="section-label">Something Else?</div>
+  <div class="custom-box" id="custom-box">
+    <div class="custom-box-header">
+      <div class="custom-box-icon">✏️</div>
+      <div>
+        <div class="custom-box-title">Describe your own automation</div>
+        <div class="custom-box-sub">Don't see exactly what you need? Tell us — we'll build it.</div>
+      </div>
+    </div>
+    <textarea
+      class="custom-textarea"
+      id="custom-input"
+      placeholder="e.g. When a new order comes in from my website, update my inventory and email me a daily summary…"
+      oninput="onCustomInput(this)"
+    ></textarea>
+    <div class="custom-char-hint" id="custom-hint">Type your idea above — it'll be added to your request automatically.</div>
+  </div>
 </div>
 
 <!-- CTA BAR -->
@@ -370,14 +411,30 @@
     updateCTA();
   }
 
+  let customText = '';
+
+  function onCustomInput(el) {
+    customText = el.value.trim();
+    const box = document.getElementById('custom-box');
+    const hint = document.getElementById('custom-hint');
+    if (customText) {
+      box.classList.add('has-text');
+      hint.textContent = '✓ Custom request added to your selection.';
+    } else {
+      box.classList.remove('has-text');
+      hint.textContent = 'Type your idea above — it\'ll be added to your request automatically.';
+    }
+    updateCTA();
+  }
+
   function updateCTA() {
     const bar = document.getElementById('cta-bar');
-    const count = selected.size;
+    const count = selected.size + (customText ? 1 : 0);
     if (count === 0) { bar.classList.remove('visible'); return; }
     bar.classList.add('visible');
 
     const proIds = PRO_WORKFLOWS.map(w => w.id);
-    const hasPro = [...selected].some(id => proIds.includes(id));
+    const hasPro = [...selected].some(id => proIds.includes(id)) || !!customText;
     const hasStarter = [...selected].some(id => !proIds.includes(id));
 
     document.getElementById('cta-count').textContent = `${count} workflow${count !== 1 ? 's' : ''} selected`;
@@ -393,11 +450,16 @@
   }
 
   function proceed() {
-    if (selected.size === 0) return;
     const proIds = PRO_WORKFLOWS.map(w => w.id);
     const selectedList = [...selected];
-    const hasPro = selectedList.some(id => proIds.includes(id));
-    const params = new URLSearchParams({ workflows: selectedList.join(','), tier: hasPro ? 'pro' : 'starter' });
+    const hasPro = selectedList.some(id => proIds.includes(id)) || !!customText;
+    if (selectedList.length === 0 && !customText) return;
+
+    const params = new URLSearchParams({
+      workflows: selectedList.join(','),
+      tier: hasPro ? 'pro' : 'starter',
+    });
+    if (customText) params.set('custom', customText);
     window.location.href = `workflow-confirm.html?${params}`;
   }
 

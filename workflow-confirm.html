@@ -252,15 +252,16 @@
 
   const params    = new URLSearchParams(window.location.search);
   const selected  = (params.get('workflows') || '').split(',').filter(Boolean);
+  const customReq = params.get('custom') || '';
   const tier      = params.get('tier') || 'starter';
   const isPro     = tier === 'pro';
   let billing     = 'onetime';
 
   function init() {
-    if (selected.length === 0) { window.location.href = 'workflows.html'; return; }
+    if (selected.length === 0 && !customReq) { window.location.href = 'workflows.html'; return; }
 
     // Render workflow list
-    document.getElementById('workflow-list').innerHTML = selected.map(id => {
+    const workflowItems = selected.map(id => {
       const w = ALL_WORKFLOWS[id];
       if (!w) return '';
       return `<div class="workflow-item">
@@ -270,7 +271,19 @@
           <span class="wf-tier ${w.tier}">${w.tier === 'pro' ? 'Pro / Custom' : 'Starter'}</span>
         </div>
       </div>`;
-    }).join('');
+    });
+
+    if (customReq) {
+      workflowItems.push(`<div class="workflow-item">
+        <div class="wf-icon">✏️</div>
+        <div>
+          <div class="wf-name" style="font-size:.85rem;line-height:1.4">${customReq.length > 80 ? customReq.slice(0, 80) + '…' : customReq}</div>
+          <span class="wf-tier pro">Custom Request</span>
+        </div>
+      </div>`);
+    }
+
+    document.getElementById('workflow-list').innerHTML = workflowItems.join('');
 
     if (isPro) {
       document.getElementById('page-title').textContent = 'Request a Custom Build';
@@ -322,7 +335,7 @@
     const res = await fetch('/api/workflow-request', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, business, tier, billing, workflows: selected, scope }),
+      body: JSON.stringify({ name, email, business, tier, billing, workflows: selected, scope, custom: customReq }),
     });
     const data = await res.json();
 
@@ -343,6 +356,7 @@
         workflows: selected.join(','),
         name, email, business, tier, billing,
       });
+      if (customReq) p.set('custom', customReq);
       window.location.href = `payment.html?${p}`;
     }
   }
