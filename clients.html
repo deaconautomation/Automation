@@ -328,10 +328,13 @@
   );
 
   let clients = [];
+  let adminEmail = '';
 
   async function init() {
     const { data: { session } } = await sb.auth.getSession();
     if (!session) { window.location.href = 'login.html'; return; }
+
+    adminEmail = session.user.email;
 
     const { data: profile } = await sb.from('profiles').select('is_admin').eq('id', session.user.id).single();
     if (!profile?.is_admin) { window.location.href = 'inventory.html'; return; }
@@ -350,7 +353,7 @@
 
     if (!res.ok) { showBannerError(data.error || 'Failed to load clients.'); return; }
 
-    clients = data.users || [];
+    clients = (data.users || []).filter(u => u.email !== adminEmail);
     updateStats();
     renderFiltered();
   }
