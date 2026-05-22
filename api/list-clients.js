@@ -26,14 +26,15 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: data.msg || data.message || 'Failed to list clients.' });
     }
 
-    const users = (data.users || []).map(u => ({
-      id: u.id,
-      email: u.email,
-      full_name:     u.user_metadata?.full_name     || '',
-      business_name: u.user_metadata?.business_name || '',
-      is_admin:      u.user_metadata?.is_admin      || false,
-      created_at: u.created_at,
-    }));
+    const users = (data.users || [])
+      .filter(u => !u.user_metadata?.is_admin)
+      .map(u => ({
+        id: u.id,
+        email: u.email,
+        full_name:     u.user_metadata?.full_name     || '',
+        business_name: u.user_metadata?.business_name || '',
+        created_at: u.created_at,
+      }));
 
     return res.status(200).json({ users });
   } catch (err) {
