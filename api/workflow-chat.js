@@ -71,12 +71,17 @@ Response format:
 
 Important: be warm, clear, and efficient. Don't be robotic. Make the client feel taken care of.`;
 
+  // Anthropic requires at least one message; seed one when the chat is starting
+  const apiMessages = (messages && messages.length > 0)
+    ? messages
+    : [{ role: 'user', content: 'Please start my onboarding.' }];
+
   try {
     const response = await client.messages.create({
       model:      'claude-sonnet-4-6',
       max_tokens: 1024,
       system:     systemPrompt,
-      messages:   messages || [],
+      messages:   apiMessages,
     });
 
     const rawReply = response.content[0]?.text || '';
