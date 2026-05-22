@@ -210,7 +210,7 @@
         </button>
 
         <div class="trust-line" id="trust-starter">
-          🔒 Secure checkout · AI setup begins immediately
+          🔒 Pay by Zelle, Venmo, Cash App, or bank transfer
         </div>
         <div class="trust-line" id="trust-pro" style="display:none">
           📋 No payment now · We'll send a quote within 24 hours
@@ -338,12 +338,12 @@
       document.getElementById('success-title').textContent = 'Request received!';
       document.getElementById('success-msg').textContent = `Thanks ${name} — we've received your request and will send a detailed quote to ${email} within 24 hours.`;
     } else {
-      // Starter: launch AI onboarding chat
+      // Starter: go to payment page
       const p = new URLSearchParams({
         workflows: selected.join(','),
-        name, email, business, tier,
+        name, email, business, tier, billing,
       });
-      window.location.href = `workflow-onboarding.html?${p}`;
+      window.location.href = `payment.html?${p}`;
     }
   }
 

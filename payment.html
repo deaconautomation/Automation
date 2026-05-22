@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vela — Complete Your Payment</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #06070d; --surface: #0e1017; --surface2: #161820;
+      --border: rgba(129,140,248,.13); --indigo: #818cf8; --cyan: #06b6d4;
+      --text: #f1f2ff; --muted: #a8aed6; --red: #f87171; --amber: #fbbf24; --green: #4ade80;
+      --grad: linear-gradient(135deg, var(--indigo), var(--cyan));
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; font-size: 16px; line-height: 1.5; }
+    body::before {
+      content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background-image: radial-gradient(circle, rgba(129,140,248,.07) 1px, transparent 1px);
+      background-size: 28px 28px;
+    }
+
+    nav {
+      position: sticky; top: 0; z-index: 50;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 2rem; height: 64px;
+      background: rgba(6,7,13,.88); backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo { display: flex; align-items: center; gap: .6rem; text-decoration: none; }
+    .nav-logo svg { width: 28px; height: 28px; }
+    .nav-logo span { font-size: 1.25rem; font-weight: 800;
+      background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: inline-block; padding-bottom: 2px; }
+    .back-link { color: var(--muted); text-decoration: none; font-size: .875rem; font-weight: 500;
+      display: flex; align-items: center; gap: .4rem; transition: color .2s; }
+    .back-link:hover { color: var(--text); }
+
+    .page { position: relative; z-index: 1; max-width: 680px; margin: 0 auto; padding: 3rem 1.5rem 6rem; }
+
+    .page-header { margin-bottom: 2rem; text-align: center; }
+    .page-header h1 { font-size: 1.75rem; font-weight: 800;
+      background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: inline-block; padding-bottom: 2px; }
+    .page-header p { color: var(--muted); font-size: .95rem; margin-top: .5rem; }
+
+    /* ORDER SUMMARY */
+    .order-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 1.5rem; margin-bottom: 1.5rem;
+    }
+    .order-card h2 { font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 1rem; }
+    .order-row { display: flex; justify-content: space-between; align-items: center; padding: .5rem 0; border-bottom: 1px solid var(--border); font-size: .9rem; }
+    .order-row:last-child { border-bottom: none; }
+    .order-row .label { color: var(--muted); }
+    .order-row .value { font-weight: 600; color: var(--text); }
+    .order-total { display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+    .order-total .label { font-size: 1rem; font-weight: 600; }
+    .order-total .amount { font-size: 1.5rem; font-weight: 800;
+      background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: inline-block; padding-bottom: 2px; }
+
+    /* PAYMENT METHODS */
+    .payment-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 1.5rem; margin-bottom: 1.5rem;
+    }
+    .payment-card h2 { font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 1.25rem; }
+
+    .method-tabs { display: flex; gap: .5rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+    .method-tab {
+      padding: .45rem 1rem; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--surface2); color: var(--muted); font-size: .82rem; font-weight: 600;
+      cursor: pointer; transition: all .2s;
+    }
+    .method-tab.active { background: rgba(129,140,248,.12); border-color: var(--indigo); color: var(--indigo); }
+
+    .method-panel { display: none; }
+    .method-panel.active { display: block; }
+
+    .bank-detail {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: .75rem 1rem; background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 10px; margin-bottom: .6rem;
+    }
+    .bank-detail .field-label { font-size: .78rem; color: var(--muted); margin-bottom: .15rem; }
+    .bank-detail .field-value { font-size: .95rem; font-weight: 600; color: var(--text); font-family: 'Inter', monospace; }
+    .copy-btn {
+      padding: .3rem .7rem; background: rgba(129,140,248,.1); border: 1px solid rgba(129,140,248,.2);
+      border-radius: 6px; color: var(--indigo); font-size: .78rem; font-weight: 600;
+      cursor: pointer; transition: all .2s; white-space: nowrap;
+    }
+    .copy-btn:hover { background: rgba(129,140,248,.2); }
+    .copy-btn.copied { color: var(--green); border-color: rgba(74,222,128,.3); background: rgba(74,222,128,.08); }
+
+    .method-note {
+      font-size: .82rem; color: var(--muted); margin-top: .75rem; padding: .75rem 1rem;
+      background: rgba(251,191,36,.06); border: 1px solid rgba(251,191,36,.15);
+      border-radius: 8px; line-height: 1.5;
+    }
+    .method-note strong { color: var(--amber); }
+
+    /* CONFIRM FORM */
+    .confirm-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 1.5rem; margin-bottom: 1.5rem;
+    }
+    .confirm-card h2 { font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 1.25rem; }
+
+    .form-group { display: flex; flex-direction: column; gap: .4rem; margin-bottom: 1rem; }
+    label { font-size: .82rem; font-weight: 500; color: var(--muted); }
+    input, textarea {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 8px; padding: .65rem .9rem;
+      color: var(--text); font-family: 'Inter', sans-serif; font-size: .9rem;
+      transition: border-color .2s; outline: none; width: 100%;
+    }
+    input:focus, textarea:focus { border-color: var(--indigo); }
+    textarea { resize: vertical; min-height: 80px; }
+
+    .msg { display: none; font-size: .82rem; padding: .6rem .9rem; border-radius: 8px; margin-top: .5rem; }
+    .msg.error { display: block; background: rgba(248,113,113,.08); border: 1px solid rgba(248,113,113,.25); color: var(--red); }
+
+    .btn-primary {
+      display: flex; align-items: center; justify-content: center; gap: .5rem;
+      width: 100%; padding: .85rem 1.5rem;
+      background: var(--grad); border: none; border-radius: 10px;
+      color: #fff; font-family: 'Inter', sans-serif; font-size: 1rem; font-weight: 700;
+      cursor: pointer; transition: opacity .2s;
+    }
+    .btn-primary:hover { opacity: .9; }
+    .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+
+    .trust-line {
+      text-align: center; font-size: .78rem; color: var(--muted); margin-top: .75rem;
+    }
+
+    /* SUCCESS / PENDING */
+    #pending-view { display: none; text-align: center; padding: 3rem 1.5rem; }
+    .pending-icon { font-size: 3rem; margin-bottom: 1rem; }
+    .pending-title { font-size: 1.5rem; font-weight: 800; color: var(--text); margin-bottom: .75rem; }
+    .pending-msg { color: var(--muted); font-size: .95rem; line-height: 1.6; max-width: 400px; margin: 0 auto 1.5rem; }
+    .pending-box {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 1.25rem 1.5rem; margin: 1.5rem auto;
+      max-width: 400px; text-align: left;
+    }
+    .pending-box-label { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: .5rem; }
+    .pending-step { display: flex; align-items: flex-start; gap: .75rem; padding: .5rem 0; font-size: .88rem; color: var(--text); }
+    .pending-step-num { width: 22px; height: 22px; border-radius: 50%; background: rgba(129,140,248,.15); border: 1px solid rgba(129,140,248,.3); color: var(--indigo); font-size: .72rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+
+    footer { position: relative; z-index: 1; text-align: center; padding: 2rem; color: var(--muted); font-size: .8rem; border-top: 1px solid var(--border); }
+    footer a { color: var(--muted); text-decoration: none; }
+    footer a:hover { color: var(--text); }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="inventory.html">
+    <svg viewBox="0 0 32 32" fill="none">
+      <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32"><stop stop-color="#818cf8"/><stop offset="1" stop-color="#06b6d4"/></linearGradient></defs>
+      <rect width="32" height="32" rx="8" fill="url(#lg)"/>
+      <path d="M8 12h16M8 16h10M8 20h13" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+    <span>Vela</span>
+  </a>
+  <a class="back-link" href="javascript:history.back()">
+    ← Back
+  </a>
+</nav>
+
+<div class="page">
+  <div id="main-view">
+    <div class="page-header">
+      <h1>Complete Your Payment</h1>
+      <p>Send payment using any method below, then confirm below so we can activate your account.</p>
+    </div>
+
+    <!-- Order Summary -->
+    <div class="order-card">
+      <h2>Order Summary</h2>
+      <div id="workflow-rows"></div>
+      <div class="order-total">
+        <span class="label">Total Due</span>
+        <span class="amount" id="total-amount">$147</span>
+      </div>
+    </div>
+
+    <!-- Payment Methods -->
+    <div class="payment-card">
+      <h2>Send Payment To</h2>
+      <div class="method-tabs">
+        <div class="method-tab active" onclick="setMethod('zelle')">Zelle</div>
+        <div class="method-tab" onclick="setMethod('venmo')">Venmo</div>
+        <div class="method-tab" onclick="setMethod('cashapp')">Cash App</div>
+        <div class="method-tab" onclick="setMethod('bank')">Bank Transfer</div>
+      </div>
+
+      <div class="method-panel active" id="panel-zelle">
+        <div class="bank-detail">
+          <div>
+            <div class="field-label">Zelle Email</div>
+            <div class="field-value">vela.automate@gmail.com</div>
+          </div>
+          <button class="copy-btn" onclick="copyText('vela.automate@gmail.com', this)">Copy</button>
+        </div>
+        <div class="method-note"><strong>Note:</strong> Send using the Zelle app or your bank's Zelle feature. Include your name in the memo.</div>
+      </div>
+
+      <div class="method-panel" id="panel-venmo">
+        <div class="bank-detail">
+          <div>
+            <div class="field-label">Venmo Handle</div>
+            <div class="field-value">@VelaAutomate</div>
+          </div>
+          <button class="copy-btn" onclick="copyText('@VelaAutomate', this)">Copy</button>
+        </div>
+        <div class="method-note"><strong>Note:</strong> Send as "For a purchase" (not personal) and include your name in the note.</div>
+      </div>
+
+      <div class="method-panel" id="panel-cashapp">
+        <div class="bank-detail">
+          <div>
+            <div class="field-label">Cash App Tag</div>
+            <div class="field-value">$VelaAutomate</div>
+          </div>
+          <button class="copy-btn" onclick="copyText('$VelaAutomate', this)">Copy</button>
+        </div>
+        <div class="method-note"><strong>Note:</strong> Include your name and "workflow setup" in the note field.</div>
+      </div>
+
+      <div class="method-panel" id="panel-bank">
+        <div class="bank-detail">
+          <div>
+            <div class="field-label">Bank Name</div>
+            <div class="field-value">YOUR BANK NAME</div>
+          </div>
+        </div>
+        <div class="bank-detail">
+          <div>
+            <div class="field-label">Account Holder</div>
+            <div class="field-value">YOUR FULL NAME</div>
+          </div>
+          <button class="copy-btn" onclick="copyText('YOUR FULL NAME', this)">Copy</button>
+        </div>
+        <div class="bank-detail">
+          <div>
+            <div class="field-label">Routing Number</div>
+            <div class="field-value">XXXXXXXXX</div>
+          </div>
+          <button class="copy-btn" onclick="copyText('XXXXXXXXX', this)">Copy</button>
+        </div>
+        <div class="bank-detail">
+          <div>
+            <div class="field-label">Account Number</div>
+            <div class="field-value">XXXXXXXXXXXX</div>
+          </div>
+          <button class="copy-btn" onclick="copyText('XXXXXXXXXXXX', this)">Copy</button>
+        </div>
+        <div class="method-note"><strong>Note:</strong> ACH transfers typically take 1–2 business days. Include your business name in the memo.</div>
+      </div>
+    </div>
+
+    <!-- Confirm Payment Sent -->
+    <div class="confirm-card">
+      <h2>Confirm Payment Sent</h2>
+      <div class="form-group">
+        <label>Payment method used *</label>
+        <select id="f-method" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.65rem .9rem;color:var(--text);font-family:'Inter',sans-serif;font-size:.9rem;outline:none;width:100%">
+          <option value="">Select method…</option>
+          <option value="Zelle">Zelle</option>
+          <option value="Venmo">Venmo</option>
+          <option value="Cash App">Cash App</option>
+          <option value="Bank Transfer">Bank Transfer (ACH)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Amount sent *</label>
+        <input type="text" id="f-amount" placeholder="e.g. $147" />
+      </div>
+      <div class="form-group">
+        <label>Transaction ID or confirmation # (optional)</label>
+        <input type="text" id="f-txn" placeholder="e.g. 1A2B3C4D or last 4 digits" />
+      </div>
+      <div class="form-group">
+        <label>Any notes for us?</label>
+        <textarea id="f-notes" placeholder="Anything we should know about your payment…"></textarea>
+      </div>
+
+      <div class="msg error" id="form-error"></div>
+
+      <button class="btn-primary" id="submit-btn" onclick="confirmPayment()">
+        <span id="btn-text">I've Sent Payment →</span>
+      </button>
+      <div class="trust-line">We'll verify and activate your account within a few hours.</div>
+    </div>
+  </div>
+
+  <!-- Pending Screen -->
+  <div id="pending-view">
+    <div class="pending-icon">⏳</div>
+    <div class="pending-title">Payment submitted!</div>
+    <div class="pending-msg">
+      We've received your payment confirmation and will verify it shortly.
+      You'll get an email at <strong id="pending-email"></strong> once your account is activated.
+    </div>
+
+    <div class="pending-box">
+      <div class="pending-box-label">What happens next</div>
+      <div class="pending-step">
+        <div class="pending-step-num">1</div>
+        <div>We verify your payment (usually within a few hours)</div>
+      </div>
+      <div class="pending-step">
+        <div class="pending-step-num">2</div>
+        <div>You receive an email with your onboarding link</div>
+      </div>
+      <div class="pending-step">
+        <div class="pending-step-num">3</div>
+        <div>AI configures your selected workflows</div>
+      </div>
+      <div class="pending-step">
+        <div class="pending-step-num">4</div>
+        <div>Your automations go live</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <p>© 2025 Vela · <a href="workflows.html">Back to Workflows</a></p>
+</footer>
+
+<script>
+  const params    = new URLSearchParams(window.location.search);
+  const name      = params.get('name')      || '';
+  const email     = params.get('email')     || '';
+  const business  = params.get('business')  || '';
+  const tier      = params.get('tier')      || 'starter';
+  const billing   = params.get('billing')   || 'onetime';
+  const workflows = (params.get('workflows') || '').split(',').filter(Boolean);
+
+  const ALL_WORKFLOWS = {
+    'low-stock-alerts':       { icon: '🔔', title: 'Low Stock Alerts' },
+    'out-of-stock-alerts':    { icon: '🚨', title: 'Out of Stock Alerts' },
+    'weekly-report':          { icon: '📊', title: 'Weekly Inventory Report' },
+    'supplier-auto-email':    { icon: '📦', title: 'Supplier Auto-Email' },
+    'reorder-reminders':      { icon: '🔄', title: 'Reorder Reminders' },
+    'csv-auto-import':        { icon: '📥', title: 'CSV Scheduled Import' },
+    'inventory-value-report': { icon: '💰', title: 'Inventory Value Report' },
+    'custom-email-alerts':    { icon: '✉️', title: 'Custom Email Alerts' },
+    'shopify-sync':           { icon: '🛍️', title: 'Shopify / WooCommerce Sync' },
+    'quickbooks-sync':        { icon: '📒', title: 'QuickBooks / Xero Integration' },
+    'multi-location':         { icon: '🏭', title: 'Multi-Location Inventory' },
+    'barcode-scanning':       { icon: '📷', title: 'Barcode / QR Scanning' },
+    'ai-forecasting':         { icon: '🤖', title: 'AI Demand Forecasting' },
+    'purchase-orders':        { icon: '🧾', title: 'Purchase Order Automation' },
+    'custom-api':             { icon: '🔌', title: 'Custom API Integration' },
+    'custom-dashboard':       { icon: '📈', title: 'Custom Reporting Dashboard' },
+  };
+
+  const price     = billing === 'monthly' ? '$37/mo' : '$147';
+  const priceNum  = billing === 'monthly' ? '$37' : '$147';
+
+  function init() {
+    if (!workflows.length || !name || !email) {
+      window.location.href = 'workflows.html';
+      return;
+    }
+
+    document.getElementById('f-amount').value = priceNum;
+    document.getElementById('total-amount').textContent = price;
+
+    const rows = workflows.map(id => {
+      const w = ALL_WORKFLOWS[id] || { icon: '⚙️', title: id.replace(/-/g, ' ') };
+      return `<div class="order-row">
+        <span class="label">${w.icon} ${w.title}</span>
+        <span class="value" style="color:var(--muted);font-size:.8rem;font-weight:500">included</span>
+      </div>`;
+    }).join('');
+
+    const billingRow = `<div class="order-row">
+      <span class="label">Billing</span>
+      <span class="value">${billing === 'monthly' ? 'Monthly subscription' : 'One-time payment'}</span>
+    </div>`;
+
+    document.getElementById('workflow-rows').innerHTML = rows + billingRow;
+  }
+
+  function setMethod(method) {
+    document.querySelectorAll('.method-tab').forEach((t, i) => {
+      const methods = ['zelle', 'venmo', 'cashapp', 'bank'];
+      t.classList.toggle('active', methods[i] === method);
+    });
+    document.querySelectorAll('.method-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-' + method).classList.add('active');
+
+    const select = document.getElementById('f-method');
+    const map = { zelle: 'Zelle', venmo: 'Venmo', cashapp: 'Cash App', bank: 'Bank Transfer' };
+    select.value = map[method] || '';
+  }
+
+  function copyText(text, btn) {
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = 'Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+    });
+  }
+
+  async function confirmPayment() {
+    const method = document.getElementById('f-method').value;
+    const amount = document.getElementById('f-amount').value.trim();
+    const txn    = document.getElementById('f-txn').value.trim();
+    const notes  = document.getElementById('f-notes').value.trim();
+    const errEl  = document.getElementById('form-error');
+    errEl.style.display = 'none';
+
+    if (!method) { showError('Please select the payment method you used.'); return; }
+    if (!amount) { showError('Please enter the amount you sent.'); return; }
+
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    document.getElementById('btn-text').textContent = 'Submitting…';
+
+    try {
+      const res = await fetch('/api/payment-notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, business, tier, billing, workflows, method, amount, txn, notes }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        showError(data.error || 'Something went wrong. Please try again.');
+        btn.disabled = false;
+        document.getElementById('btn-text').textContent = 'I\'ve Sent Payment →';
+        return;
+      }
+
+      // Show pending screen
+      document.getElementById('main-view').style.display = 'none';
+      document.getElementById('pending-view').style.display = 'block';
+      document.getElementById('pending-email').textContent = email;
+    } catch (e) {
+      showError('Network error. Please try again.');
+      btn.disabled = false;
+      document.getElementById('btn-text').textContent = 'I\'ve Sent Payment →';
+    }
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('form-error');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  init();
+</script>
+</body>
+</html>
