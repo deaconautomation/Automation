@@ -176,7 +176,7 @@
 
 <header>
   <div style="display:flex;align-items:center;gap:16px;">
-    <a href="index.html" class="logo-mark">
+    <a href="clients.html" class="logo-mark">
       <svg width="26" height="26" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
         <defs><linearGradient id="lg" x1="4" y1="4" x2="44" y2="44" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#818cf8"/><stop offset="100%" stop-color="#06b6d4"/></linearGradient></defs>
         <path d="M 6 4 Q 16 26 23 46 L 23 4 Z" fill="url(#lg)"/>
@@ -185,11 +185,17 @@
       </svg>
       Vela
     </a>
-    <span class="page-title">Leads Tracker</span>
+    <nav style="display:flex;gap:1.25rem;align-items:center;">
+      <a href="clients.html" style="color:var(--muted);text-decoration:none;font-size:.875rem;font-weight:500;transition:color .2s;" onmouseover="this.style.color='#f1f5f9'" onmouseout="this.style.color=''">Clients</a>
+      <a href="leads.html" style="color:#f1f5f9;text-decoration:none;font-size:.875rem;font-weight:600;">Leads</a>
+      <a href="sales.html" style="color:var(--muted);text-decoration:none;font-size:.875rem;font-weight:500;transition:color .2s;" onmouseover="this.style.color='#f1f5f9'" onmouseout="this.style.color=''">Scripts</a>
+      <a href="settings.html" style="color:var(--muted);text-decoration:none;font-size:.875rem;font-weight:500;transition:color .2s;" onmouseover="this.style.color='#f1f5f9'" onmouseout="this.style.color=''">Settings</a>
+    </nav>
   </div>
   <div class="header-actions">
     <button class="btn btn-outline" onclick="exportCSV()">↓ Export CSV</button>
     <button class="btn btn-primary" onclick="addRow()">+ Add Lead</button>
+    <button class="btn btn-outline" onclick="signOut()" style="font-size:.78rem;">Sign Out</button>
   </div>
 </header>
 
@@ -466,9 +472,27 @@
     document.querySelector('[onclick="toggleICP()"]').textContent = icpVisible ? 'Hide' : 'Show';
   }
 
+  async function signOut() {
+    await sb.auth.signOut();
+    window.location.href = 'login.html';
+  }
+
+  async function authCheck() {
+    const sb = supabase.createClient(
+      'https://ndbvmtuzmzbaaoxudmbk.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kYnZtdHV6bXpiYWFveHVkbWJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyNjUyODcsImV4cCI6MjA5Mzg0MTI4N30.CRqNEXZlUf4pRCjbVghCZg2p4rLh2Y-cKQpqSwkUw2k'
+    );
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { window.location.href = 'login.html'; return; }
+    const { data: profile } = await sb.from('profiles').select('is_admin').eq('id', session.user.id).single();
+    if (!profile?.is_admin) { window.location.href = 'inventory.html'; return; }
+  }
+
   // init
   populateIndustries();
   render();
+  authCheck();
 </script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </body>
 </html>

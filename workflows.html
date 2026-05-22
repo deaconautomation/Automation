@@ -175,10 +175,11 @@
     </button>
   </div>
   <div class="nav-links" id="nav-links">
+    <a href="index.html">Home</a>
+    <a href="workflows.html" class="active">Pricing</a>
     <a href="inventory.html">Inventory</a>
-    <a href="workflows.html" class="active">Workflows</a>
-    <a href="settings.html">Settings</a>
-    <button onclick="signOut()" style="background:none;border:1px solid var(--border);color:var(--muted);font-size:.8rem;padding:.35rem .85rem;border-radius:8px;cursor:pointer;font-family:inherit;">Sign Out</button>
+    <a href="login.html" id="signin-link" style="font-weight:600;color:var(--text)">Sign In</a>
+    <button id="signout-btn" onclick="signOut()" style="display:none;background:none;border:1px solid var(--border);color:var(--muted);font-size:.8rem;padding:.35rem .85rem;border-radius:8px;cursor:pointer;font-family:inherit;">Sign Out</button>
   </div>
 </nav>
 
@@ -470,7 +471,15 @@
 
   async function init() {
     const { data: { session } } = await sb.auth.getSession();
-    if (!session) { window.location.href = 'login.html'; return; }
+    const signInLink = document.getElementById('signin-link');
+    const signOutBtn = document.getElementById('signout-btn');
+    if (session) {
+      if (signInLink) signInLink.style.display = 'none';
+      if (signOutBtn) signOutBtn.style.display = '';
+    } else {
+      if (signInLink) signInLink.style.display = '';
+      if (signOutBtn) signOutBtn.style.display = 'none';
+    }
   }
 
   renderGrid(STARTER_WORKFLOWS, 'starter-grid', false);

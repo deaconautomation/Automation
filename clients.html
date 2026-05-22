@@ -289,6 +289,33 @@
   </div>
 </div>
 
+<!-- SEND ONBOARDING MODAL -->
+<div class="modal-backdrop" id="onboard-modal" onclick="closeOnboardOutside(event)">
+  <div class="modal">
+    <h2>Send Onboarding Link</h2>
+    <p style="color:var(--muted);font-size:.82rem;margin-bottom:1.25rem;line-height:1.5">
+      Select the workflows you've verified payment for. The client will receive an email with their AI setup link.
+    </p>
+    <div class="form-group">
+      <label>Client Email</label>
+      <input type="text" id="ob-email" readonly style="opacity:.6;cursor:default" />
+    </div>
+    <div class="form-group">
+      <label>Workflows (select all that apply)</label>
+      <div id="ob-workflow-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem;margin-top:.25rem"></div>
+    </div>
+    <div class="form-group" style="margin-top:.5rem">
+      <label>Custom request (if any)</label>
+      <input type="text" id="ob-custom" placeholder="e.g. Custom order sync automation" />
+    </div>
+    <div class="modal-error" id="onboard-error"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeOnboardModal()">Cancel</button>
+      <button class="btn btn-primary" id="ob-send-btn" onclick="sendOnboarding()">Send Link →</button>
+    </div>
+  </div>
+</div>
+
 <footer>
   <p>© 2025 Vela · <a href="index.html">Back to home</a></p>
 </footer>
@@ -374,6 +401,7 @@
           <td>
             <div style="display:flex;gap:.4rem">
               <button class="btn btn-ghost btn-sm" onclick="viewInventory('${esc(c.id)}', '${esc(c.business_name || c.email)}')">View Inventory</button>
+              ${!c.is_admin ? `<button class="btn btn-primary btn-sm" onclick="openOnboarding('${esc(c.email)}', '${esc(c.business_name || '')}')">Send Onboarding</button>` : ''}
               <button class="btn btn-danger btn-sm" onclick="deleteClient('${esc(c.id)}', '${esc(c.email)}')">Delete</button>
             </div>
           </td>
@@ -501,6 +529,84 @@
 
   function closeInvModal() { document.getElementById('inv-modal').classList.remove('open'); }
   function closeInvOutside(e) { if (e.target === document.getElementById('inv-modal')) closeInvModal(); }
+
+  const ALL_WORKFLOWS = [
+    { id: 'low-stock-alerts',       label: 'Low Stock Alerts' },
+    { id: 'out-of-stock-alerts',    label: 'Out of Stock Alerts' },
+    { id: 'weekly-report',          label: 'Weekly Report' },
+    { id: 'supplier-auto-email',    label: 'Supplier Auto-Email' },
+    { id: 'reorder-reminders',      label: 'Reorder Reminders' },
+    { id: 'csv-auto-import',        label: 'CSV Import' },
+    { id: 'inventory-value-report', label: 'Inventory Value Report' },
+    { id: 'custom-email-alerts',    label: 'Custom Email Alerts' },
+    { id: 'shopify-sync',           label: 'Shopify Sync' },
+    { id: 'quickbooks-sync',        label: 'QuickBooks Sync' },
+    { id: 'multi-location',         label: 'Multi-Location' },
+    { id: 'barcode-scanning',       label: 'Barcode Scanning' },
+    { id: 'ai-forecasting',         label: 'AI Forecasting' },
+    { id: 'purchase-orders',        label: 'Purchase Orders' },
+    { id: 'custom-api',             label: 'Custom API' },
+    { id: 'custom-dashboard',       label: 'Custom Dashboard' },
+  ];
+
+  let obEmail = '';
+
+  function openOnboarding(email, business) {
+    obEmail = email;
+    document.getElementById('ob-email').value = email;
+    document.getElementById('ob-custom').value = '';
+    document.getElementById('onboard-error').style.display = 'none';
+    document.getElementById('ob-send-btn').disabled = false;
+    document.getElementById('ob-send-btn').textContent = 'Send Link →';
+
+    document.getElementById('ob-workflow-grid').innerHTML = ALL_WORKFLOWS.map(w =>
+      `<label style="display:flex;align-items:center;gap:.4rem;font-size:.82rem;color:var(--muted);cursor:pointer;padding:.3rem .5rem;border-radius:6px;border:1px solid var(--border);background:var(--surface2)">
+        <input type="checkbox" value="${w.id}" style="accent-color:var(--indigo);cursor:pointer" />
+        ${w.label}
+      </label>`
+    ).join('');
+
+    document.getElementById('onboard-modal').classList.add('open');
+  }
+
+  function closeOnboardModal() { document.getElementById('onboard-modal').classList.remove('open'); }
+  function closeOnboardOutside(e) { if (e.target === document.getElementById('onboard-modal')) closeOnboardModal(); }
+
+  async function sendOnboarding() {
+    const workflows = [...document.querySelectorAll('#ob-workflow-grid input:checked')].map(c => c.value);
+    const custom    = document.getElementById('ob-custom').value.trim();
+    const errEl     = document.getElementById('onboard-error');
+    errEl.style.display = 'none';
+
+    if (workflows.length === 0 && !custom) {
+      errEl.textContent = 'Select at least one workflow or enter a custom request.';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    const btn = document.getElementById('ob-send-btn');
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+
+    const res  = await fetch('/api/send-onboarding', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: obEmail, workflows, custom }),
+    });
+    const data = await res.json();
+
+    btn.disabled = false;
+    btn.textContent = 'Send Link →';
+
+    if (!res.ok) {
+      errEl.textContent = data.error || 'Failed to send. Please try again.';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    closeOnboardModal();
+    alert(`✓ Onboarding link sent to ${obEmail}`);
+  }
 
   function esc(s) {
     return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
