@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vela — Workflows</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #06070d; --surface: #0e1017; --surface2: #161820;
+      --border: rgba(129,140,248,.13); --indigo: #818cf8; --cyan: #06b6d4;
+      --text: #f1f2ff; --muted: #a8aed6; --red: #f87171; --amber: #fbbf24; --green: #4ade80;
+      --grad: linear-gradient(135deg, var(--indigo), var(--cyan));
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; font-size: 16px; line-height: 1.5; }
+    body::before {
+      content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background-image: radial-gradient(circle, rgba(129,140,248,.07) 1px, transparent 1px);
+      background-size: 28px 28px;
+    }
+
+    nav {
+      position: sticky; top: 0; z-index: 50;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 2rem; height: 64px;
+      background: rgba(6,7,13,.88); backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border); flex-wrap: wrap;
+    }
+    .nav-logo { display: flex; align-items: center; gap: .6rem; text-decoration: none; }
+    .nav-logo svg { width: 28px; height: 28px; }
+    .nav-logo span { font-size: 1.25rem; font-weight: 800;
+      background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: inline-block; padding-bottom: 2px; }
+    .nav-links { display: flex; gap: 1.5rem; align-items: center; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-size: .875rem; font-weight: 500; transition: color .2s; }
+    .nav-links a:hover, .nav-links a.active { color: var(--text); }
+    .btn-nav { padding: .45rem 1.1rem; border-radius: 8px; background: var(--grad);
+      color: #fff !important; font-weight: 600; font-size: .875rem; }
+    .hamburger { display: none; background: none; border: none; cursor: pointer; padding: .4rem; color: var(--muted); }
+    @media (max-width: 700px) {
+      nav { height: auto; padding: 0 1.25rem; position: relative; }
+      .nav-top { display: flex; align-items: center; justify-content: space-between; width: 100%; height: 64px; }
+      .hamburger { display: block; }
+      .nav-links { display: none; flex-direction: column; align-items: flex-start; gap: 0;
+        width: 100%; padding: .5rem 0 1rem; border-top: 1px solid var(--border); }
+      .nav-links.open { display: flex; }
+      .nav-links a, .nav-links button { width: 100%; padding: .65rem 0; font-size: .9rem; }
+    }
+
+    .page { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 3rem 1.5rem 6rem; }
+
+    .page-header { text-align: center; margin-bottom: 3rem; }
+    .page-header h1 { font-size: 2.2rem; font-weight: 800;
+      background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: inline-block; padding-bottom: 4px; }
+    .page-header p { color: var(--muted); font-size: 1.05rem; margin-top: .6rem; max-width: 520px; margin-left: auto; margin-right: auto; }
+
+    /* TIER TABS */
+    .tier-tabs { display: flex; gap: .5rem; justify-content: center; margin-bottom: 2.5rem; }
+    .tier-tab { padding: .55rem 1.5rem; border-radius: 10px; font-size: .9rem; font-weight: 600;
+      cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--muted); transition: all .2s; }
+    .tier-tab.active { background: var(--grad); color: #fff; border-color: transparent; }
+
+    /* PRICING BANNER */
+    .pricing-banner { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2.5rem; }
+    .price-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+      padding: 1.5rem; text-align: center; transition: border-color .2s; }
+    .price-card.featured { border-color: var(--indigo); background: rgba(129,140,248,.05); }
+    .price-tier { font-size: .75rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: .5rem; }
+    .price-amount { font-size: 2rem; font-weight: 800; color: var(--text); }
+    .price-amount span { font-size: 1rem; font-weight: 500; color: var(--muted); }
+    .price-note { font-size: .8rem; color: var(--muted); margin-top: .3rem; }
+    .price-features { text-align: left; margin-top: 1rem; display: flex; flex-direction: column; gap: .4rem; }
+    .price-features li { font-size: .85rem; color: var(--muted); list-style: none; display: flex; align-items: center; gap: .5rem; }
+    .price-features li::before { content: '✓'; color: var(--green); font-weight: 700; flex-shrink: 0; }
+    @media (max-width: 600px) { .pricing-banner { grid-template-columns: 1fr; } }
+
+    /* WORKFLOW GRID */
+    .section-label { font-size: .75rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 1rem; display: flex; align-items: center; gap: .75rem; }
+    .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 1rem; margin-bottom: 2.5rem; }
+
+    .workflow-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+      padding: 1.4rem; cursor: pointer; transition: all .2s; position: relative;
+      display: flex; flex-direction: column; gap: .75rem;
+    }
+    .workflow-card:hover { border-color: rgba(129,140,248,.4); background: rgba(129,140,248,.03); }
+    .workflow-card.selected { border-color: var(--indigo); background: rgba(129,140,248,.07); }
+    .workflow-card.pro-card.selected { border-color: var(--cyan); background: rgba(6,182,212,.07); }
+
+    .card-check {
+      position: absolute; top: 1rem; right: 1rem; width: 22px; height: 22px;
+      border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center;
+      justify-content: center; transition: all .2s;
+    }
+    .workflow-card.selected .card-check { background: var(--indigo); border-color: var(--indigo); }
+    .workflow-card.pro-card.selected .card-check { background: var(--cyan); border-color: var(--cyan); }
+    .card-check svg { display: none; }
+    .workflow-card.selected .card-check svg { display: block; }
+
+    .card-icon { font-size: 1.6rem; line-height: 1; }
+    .card-title { font-weight: 700; font-size: 1rem; color: var(--text); padding-right: 2rem; }
+    .card-desc { font-size: .875rem; color: var(--muted); line-height: 1.5; }
+    .card-tags { display: flex; gap: .4rem; flex-wrap: wrap; margin-top: .25rem; }
+    .tag { font-size: .72rem; font-weight: 600; padding: .15rem .55rem; border-radius: 6px;
+      background: rgba(129,140,248,.1); color: var(--indigo); }
+    .tag.pro { background: rgba(6,182,212,.1); color: var(--cyan); }
+
+    /* CTA BAR */
+    .cta-bar {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 40;
+      background: rgba(14,16,23,.95); backdrop-filter: blur(16px);
+      border-top: 1px solid var(--border); padding: 1rem 2rem;
+      display: none; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+    }
+    .cta-bar.visible { display: flex; }
+    .cta-summary { font-size: .9rem; color: var(--muted); }
+    .cta-summary strong { color: var(--text); }
+    .cta-actions { display: flex; gap: .75rem; align-items: center; }
+    .btn { display: inline-flex; align-items: center; gap: .4rem; padding: .6rem 1.3rem;
+      border-radius: 8px; font-size: .9rem; font-weight: 600; cursor: pointer;
+      border: none; transition: all .2s; font-family: 'Inter', sans-serif; text-decoration: none; }
+    .btn-primary { background: var(--grad); color: #fff; }
+    .btn-primary:hover { opacity: .88; }
+    .btn-ghost { background: var(--surface); border: 1px solid var(--border); color: var(--muted); }
+    .btn-ghost:hover { border-color: var(--indigo); color: var(--text); }
+
+    footer { position: relative; z-index: 1; border-top: 1px solid var(--border);
+      text-align: center; padding: 1.5rem; color: var(--muted); font-size: .8rem; }
+    footer a { color: var(--indigo); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-top">
+    <a class="nav-logo" href="index.html">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+        <defs><linearGradient id="ng" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#818cf8"/><stop offset="100%" stop-color="#06b6d4"/>
+        </linearGradient></defs>
+        <path d="M 6 4 Q 16 26 23 46 L 23 4 Z" fill="url(#ng)"/>
+        <path d="M 42 4 Q 32 26 25 46 L 25 4 Z" fill="url(#ng)" opacity="0.72"/>
+        <path d="M 12 44 Q 24 48 36 44" stroke="url(#ng)" stroke-width="2.2" stroke-linecap="round" fill="none" opacity="0.55"/>
+      </svg>
+      <span>Vela</span>
+    </a>
+    <button class="hamburger" onclick="document.getElementById('nav-links').classList.toggle('open')" aria-label="Menu">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="nav-links" id="nav-links">
+    <a href="inventory.html">Inventory</a>
+    <a href="workflows.html" class="active">Workflows</a>
+    <a href="settings.html">Settings</a>
+    <button onclick="signOut()" style="background:none;border:1px solid var(--border);color:var(--muted);font-size:.8rem;padding:.35rem .85rem;border-radius:8px;cursor:pointer;font-family:inherit;">Sign Out</button>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="page-header">
+    <h1>Choose Your Automations</h1>
+    <p>Pick the workflows you want — AI sets them up instantly, or we build something custom for you.</p>
+  </div>
+
+  <!-- PRICING -->
+  <div class="pricing-banner">
+    <div class="price-card">
+      <div class="price-tier">Starter</div>
+      <div class="price-amount">$147 <span>one-time</span></div>
+      <div class="price-note">or $37/mo — AI instant setup</div>
+      <ul class="price-features">
+        <li>AI configures everything for you</li>
+        <li>Live in minutes</li>
+        <li>Pre-built automation templates</li>
+        <li>Email support</li>
+      </ul>
+    </div>
+    <div class="price-card featured">
+      <div class="price-tier">Pro / Custom</div>
+      <div class="price-amount">$1,000+ <span>one-time</span></div>
+      <div class="price-note">+ $100/mo — We build it with you</div>
+      <ul class="price-features">
+        <li>Custom-built to your exact needs</li>
+        <li>Complex integrations & APIs</li>
+        <li>Dedicated build sessions</li>
+        <li>Priority support</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- STARTER WORKFLOWS -->
+  <div class="section-label">Starter Automations — AI Instant Setup</div>
+  <div class="grid" id="starter-grid"></div>
+
+  <!-- PRO WORKFLOWS -->
+  <div class="section-label">Pro / Custom Automations — Built With You</div>
+  <div class="grid" id="pro-grid"></div>
+</div>
+
+<!-- CTA BAR -->
+<div class="cta-bar" id="cta-bar">
+  <div class="cta-summary">
+    <strong id="cta-count">0 workflows selected</strong>
+    <span id="cta-tier-note" style="margin-left:.75rem"></span>
+  </div>
+  <div class="cta-actions">
+    <button class="btn btn-ghost" onclick="clearAll()">Clear</button>
+    <button class="btn btn-primary" onclick="proceed()">Get Started →</button>
+  </div>
+</div>
+
+<footer>
+  <p>© 2025 Vela · <a href="index.html">Back to home</a></p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const sb = supabase.createClient(
+    'https://ndbvmtuzmzbaaoxudmbk.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kYnZtdHV6bXpiYWFveHVkbWJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyNjUyODcsImV4cCI6MjA5Mzg0MTI4N30.CRqNEXZlUf4pRCjbVghCZg2p4rLh2Y-cKQpqSwkUw2k'
+  );
+
+  const STARTER_WORKFLOWS = [
+    {
+      id: 'low-stock-alerts',
+      icon: '🔔',
+      title: 'Low Stock Alerts',
+      desc: 'Get emailed automatically when any item drops below your set threshold. Never run out unexpectedly again.',
+      tags: ['Email', 'Daily Check'],
+    },
+    {
+      id: 'out-of-stock-alerts',
+      icon: '🚨',
+      title: 'Out of Stock Alerts',
+      desc: 'Instant notification the moment any item hits zero. Catch stockouts before they impact your business.',
+      tags: ['Email', 'Instant'],
+    },
+    {
+      id: 'weekly-report',
+      icon: '📊',
+      title: 'Weekly Inventory Report',
+      desc: 'A full summary of your stock levels, total value, and changes emailed every week automatically.',
+      tags: ['Email', 'Weekly'],
+    },
+    {
+      id: 'supplier-auto-email',
+      icon: '📦',
+      title: 'Supplier Auto-Email',
+      desc: 'When stock hits your reorder point, automatically email your supplier with the items and quantities needed.',
+      tags: ['Email', 'Reorder'],
+    },
+    {
+      id: 'reorder-reminders',
+      icon: '🔄',
+      title: 'Reorder Reminders',
+      desc: 'Scheduled reminders to review and restock items based on your sales velocity and lead times.',
+      tags: ['Email', 'Scheduled'],
+    },
+    {
+      id: 'csv-auto-import',
+      icon: '📥',
+      title: 'CSV Scheduled Import',
+      desc: 'Automatically pull in inventory updates from a CSV file on a daily or weekly schedule.',
+      tags: ['Import', 'Scheduled'],
+    },
+    {
+      id: 'inventory-value-report',
+      icon: '💰',
+      title: 'Inventory Value Report',
+      desc: 'Track the total dollar value of your inventory over time with automated monthly reports.',
+      tags: ['Email', 'Monthly'],
+    },
+    {
+      id: 'custom-email-alerts',
+      icon: '✉️',
+      title: 'Custom Email Alerts',
+      desc: 'Set up custom alert rules — define exactly which items, thresholds, and conditions trigger a notification.',
+      tags: ['Email', 'Custom Rules'],
+    },
+  ];
+
+  const PRO_WORKFLOWS = [
+    {
+      id: 'shopify-sync',
+      icon: '🛍️',
+      title: 'Shopify / WooCommerce Sync',
+      desc: 'Real-time two-way sync between your online store and inventory. Sales automatically deduct stock.',
+      tags: ['Integration', 'Real-time'],
+    },
+    {
+      id: 'quickbooks-sync',
+      icon: '📒',
+      title: 'QuickBooks / Xero Integration',
+      desc: 'Sync inventory data with your accounting software. Automated purchase orders and expense tracking.',
+      tags: ['Integration', 'Accounting'],
+    },
+    {
+      id: 'multi-location',
+      icon: '🏭',
+      title: 'Multi-Location Inventory',
+      desc: 'Track stock across multiple warehouses, stores, or locations with unified reporting.',
+      tags: ['Custom Build', 'Enterprise'],
+    },
+    {
+      id: 'barcode-scanning',
+      icon: '📷',
+      title: 'Barcode / QR Scanning',
+      desc: 'Scan items in and out using a phone camera or barcode scanner. Real-time quantity updates.',
+      tags: ['Custom Build', 'Hardware'],
+    },
+    {
+      id: 'ai-forecasting',
+      icon: '🤖',
+      title: 'AI Demand Forecasting',
+      desc: 'AI predicts when items will run out based on your sales history and trends. Always stay ahead.',
+      tags: ['AI', 'Predictive'],
+    },
+    {
+      id: 'purchase-orders',
+      icon: '🧾',
+      title: 'Purchase Order Automation',
+      desc: 'Auto-generate and send professional purchase orders to suppliers when stock hits reorder levels.',
+      tags: ['Custom Build', 'Suppliers'],
+    },
+    {
+      id: 'custom-api',
+      icon: '🔌',
+      title: 'Custom API Integration',
+      desc: 'Connect Vela to any tool in your stack — ERP, CRM, marketplace, 3PL, or proprietary system.',
+      tags: ['Custom Build', 'API'],
+    },
+    {
+      id: 'custom-dashboard',
+      icon: '📈',
+      title: 'Custom Reporting Dashboard',
+      desc: 'Fully bespoke analytics and reporting built around your specific KPIs and business metrics.',
+      tags: ['Custom Build', 'Analytics'],
+    },
+  ];
+
+  let selected = new Set();
+
+  function renderGrid(workflows, containerId, isPro) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = workflows.map(w => `
+      <div class="workflow-card ${isPro ? 'pro-card' : ''}" id="card-${w.id}" onclick="toggle('${w.id}')">
+        <div class="card-check">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="card-icon">${w.icon}</div>
+        <div class="card-title">${w.title}</div>
+        <div class="card-desc">${w.desc}</div>
+        <div class="card-tags">${w.tags.map(t => `<span class="tag ${isPro ? 'pro' : ''}">${t}</span>`).join('')}</div>
+      </div>
+    `).join('');
+  }
+
+  function toggle(id) {
+    if (selected.has(id)) {
+      selected.delete(id);
+      document.getElementById('card-' + id).classList.remove('selected');
+    } else {
+      selected.add(id);
+      document.getElementById('card-' + id).classList.add('selected');
+    }
+    updateCTA();
+  }
+
+  function updateCTA() {
+    const bar = document.getElementById('cta-bar');
+    const count = selected.size;
+    if (count === 0) { bar.classList.remove('visible'); return; }
+    bar.classList.add('visible');
+
+    const proIds = PRO_WORKFLOWS.map(w => w.id);
+    const hasPro = [...selected].some(id => proIds.includes(id));
+    const hasStarter = [...selected].some(id => !proIds.includes(id));
+
+    document.getElementById('cta-count').textContent = `${count} workflow${count !== 1 ? 's' : ''} selected`;
+    document.getElementById('cta-tier-note').textContent = hasPro && hasStarter
+      ? '— includes Starter + Pro workflows'
+      : hasPro ? '— Pro / Custom build' : '— Starter, AI instant setup';
+  }
+
+  function clearAll() {
+    selected.forEach(id => document.getElementById('card-' + id)?.classList.remove('selected'));
+    selected.clear();
+    updateCTA();
+  }
+
+  function proceed() {
+    if (selected.size === 0) return;
+    const proIds = PRO_WORKFLOWS.map(w => w.id);
+    const selectedList = [...selected];
+    const hasPro = selectedList.some(id => proIds.includes(id));
+    const params = new URLSearchParams({ workflows: selectedList.join(','), tier: hasPro ? 'pro' : 'starter' });
+    window.location.href = `workflow-confirm.html?${params}`;
+  }
+
+  async function signOut() {
+    await sb.auth.signOut();
+    window.location.href = 'login.html';
+  }
+
+  async function init() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { window.location.href = 'login.html'; return; }
+  }
+
+  renderGrid(STARTER_WORKFLOWS, 'starter-grid', false);
+  renderGrid(PRO_WORKFLOWS, 'pro-grid', true);
+  init();
+</script>
+</body>
+</html>
