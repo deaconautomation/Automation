@@ -8,7 +8,7 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { email, workflows, custom } = req.body || {};
+  const { email, name, business, workflows, custom } = req.body || {};
   if (!email) return res.status(400).json({ error: 'Missing client email.' });
 
   const APP_URL = process.env.APP_URL || 'https://your-app.vercel.app';
@@ -18,7 +18,9 @@ module.exports = async function handler(req, res) {
     email,
     tier: 'starter',
   });
-  if (custom) params.set('custom', custom);
+  if (name)     params.set('name', name);
+  if (business) params.set('business', business);
+  if (custom)   params.set('custom', custom);
 
   const onboardingLink = `${APP_URL}/workflow-onboarding.html?${params}`;
 
