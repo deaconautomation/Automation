@@ -1,3 +1,5 @@
+const { sendEmail } = require('./_mailer');
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -9,9 +11,7 @@ module.exports = async function handler(req, res) {
   const { email, workflows, custom } = req.body || {};
   if (!email) return res.status(400).json({ error: 'Missing client email.' });
 
-  const RESEND_API_KEY = process.env.RESEND_API_KEY;
-  const FROM_EMAIL     = process.env.ALERT_FROM_EMAIL || 'onboarding@resend.dev';
-  const APP_URL        = process.env.APP_URL          || 'https://your-app.vercel.app';
+  const APP_URL = process.env.APP_URL || 'https://your-app.vercel.app';
 
   const params = new URLSearchParams({
     workflows: (workflows || []).join(','),
@@ -55,33 +55,11 @@ module.exports = async function handler(req, res) {
 </div>
 </body></html>`;
 
-  if (!RESEND_API_KEY) {
-    console.log('send-onboarding: no RESEND_API_KEY — link would be:', onboardingLink);
-    return res.status(200).json({ ok: true, link: onboardingLink });
-  }
-
   try {
-    const r = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        from: FROM_EMAIL,
-        to: email,
-        subject: 'Your Vela onboarding is ready — click to start',
-        html: clientHtml,
-      }),
-    });
-
-    if (!r.ok) {
-      const err = await r.json().catch(() => ({}));
-      console.error('send-onboarding resend error:', err);
-      const msg = err?.message || err?.name || JSON.stringify(err) || 'Unknown Resend error';
-      return res.status(500).json({ error: `Resend error: ${msg}` });
-    }
-
+    await sendEmail({ to: email, subject: 'Your Vela onboarding is ready — click to start', html: clientHtml });
     return res.status(200).json({ ok: true });
   } catch (err) {
     console.error('send-onboarding error:', err.message);
-    return res.status(500).json({ error: 'Failed to send email.' });
+    return res.status(500).json({ error: err.message || 'Failed to send email.' });
   }
 };

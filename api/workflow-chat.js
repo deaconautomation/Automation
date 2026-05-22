@@ -1,4 +1,5 @@
 const Anthropic = require('@anthropic-ai/sdk');
+const { sendEmail } = require('./_mailer');
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -92,29 +93,20 @@ Important: be warm, clear, and efficient. Don't be robotic. Make the client feel
       reply  = rawReply.replace('[STATUS:escalate]', '').trim();
 
       // Notify admin of escalation
-      const RESEND_API_KEY = process.env.RESEND_API_KEY;
-      const FROM_EMAIL     = process.env.ALERT_FROM_EMAIL || 'onboarding@resend.dev';
-      const ADMIN_EMAIL    = process.env.ADMIN_EMAIL      || 'vela.automate@gmail.com';
-      if (RESEND_API_KEY) {
-        const convo = (messages || []).map(m => `${m.role === 'user' ? clientName || 'Client' : 'AI'}: ${m.content}`).join('\n\n');
-        fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            from:    FROM_EMAIL,
-            to:      ADMIN_EMAIL,
-            subject: `🚨 Escalation needed — ${clientBiz || clientName}`,
-            html: `<pre style="font-family:monospace;font-size:13px;line-height:1.6;color:#333">
+      const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'vela.automate@gmail.com';
+      const convo = (messages || []).map(m => `${m.role === 'user' ? clientName || 'Client' : 'AI'}: ${m.content}`).join('\n\n');
+      sendEmail({
+        to: ADMIN_EMAIL,
+        subject: `🚨 Escalation needed — ${clientBiz || clientName}`,
+        html: `<pre style="font-family:monospace;font-size:13px;line-height:1.6;color:#333">
 Client: ${clientName} &lt;${clientEmail}&gt;
 Business: ${clientBiz || '—'}
 Workflows: ${(workflows || []).join(', ')}
 
 --- Conversation ---
 ${convo}
-            </pre>`,
-          }),
-        }).catch(() => {});
-      }
+        </pre>`,
+      }).catch(() => {});
     }
 
     return res.status(200).json({ reply, status });
