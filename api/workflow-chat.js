@@ -1,5 +1,4 @@
 const Anthropic = require('@anthropic-ai/sdk');
-const { sendEmail } = require('./_mailer');
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -93,6 +92,7 @@ Important: be warm, clear, and efficient. Don't be robotic. Make the client feel
       reply  = rawReply.replace('[STATUS:escalate]', '').trim();
 
       // Notify admin of escalation
+      const { sendEmail } = require('./_mailer');
       const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'vela.automate@gmail.com';
       const convo = (messages || []).map(m => `${m.role === 'user' ? clientName || 'Client' : 'AI'}: ${m.content}`).join('\n\n');
       sendEmail({

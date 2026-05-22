@@ -401,7 +401,7 @@
           <td>
             <div style="display:flex;gap:.4rem">
               <button class="btn btn-ghost btn-sm" onclick="viewInventory('${esc(c.id)}', '${esc(c.business_name || c.email)}')">View Inventory</button>
-              ${!c.is_admin ? `<button class="btn btn-primary btn-sm" onclick="openOnboarding('${esc(c.email)}', '${esc(c.business_name || '')}')">Send Onboarding</button>` : ''}
+              ${!c.is_admin ? `<button class="btn btn-primary btn-sm" onclick="openOnboarding('${esc(c.email)}', '${esc(c.business_name || '')}', '${esc(c.full_name || '')}')">Send Onboarding</button>` : ''}
               <button class="btn btn-danger btn-sm" onclick="deleteClient('${esc(c.id)}', '${esc(c.email)}')">Delete</button>
             </div>
           </td>
@@ -550,9 +550,13 @@
   ];
 
   let obEmail = '';
+  let obName  = '';
+  let obBiz   = '';
 
-  function openOnboarding(email, business) {
+  function openOnboarding(email, business, name) {
     obEmail = email;
+    obName  = name || '';
+    obBiz   = business || '';
     document.getElementById('ob-email').value = email;
     document.getElementById('ob-custom').value = '';
     document.getElementById('onboard-error').style.display = 'none';
@@ -591,7 +595,7 @@
     const res  = await fetch('/api/send-onboarding', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: obEmail, workflows, custom }),
+      body: JSON.stringify({ email: obEmail, name: obName, business: obBiz, workflows, custom }),
     });
     const data = await res.json();
 

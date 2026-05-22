@@ -29,7 +29,9 @@ module.exports = async function handler(req, res) {
     const users = (data.users || []).map(u => ({
       id: u.id,
       email: u.email,
+      full_name:     u.user_metadata?.full_name     || '',
       business_name: u.user_metadata?.business_name || '',
+      is_admin:      u.user_metadata?.is_admin      || false,
       created_at: u.created_at,
     }));
 
