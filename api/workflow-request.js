@@ -13,7 +13,7 @@ module.exports = async function handler(req, res) {
 
   const RESEND_API_KEY = process.env.RESEND_API_KEY;
   const FROM_EMAIL     = process.env.ALERT_FROM_EMAIL || 'onboarding@resend.dev';
-  const ADMIN_EMAIL    = process.env.ADMIN_EMAIL       || 'deacon.automation@gmail.com';
+  const ADMIN_EMAIL    = process.env.ADMIN_EMAIL       || 'vela.automate@gmail.com';
   const APP_URL        = process.env.APP_URL           || 'https://your-app.vercel.app';
 
   const isPro          = tier === 'pro';
