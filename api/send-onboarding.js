@@ -75,7 +75,8 @@ module.exports = async function handler(req, res) {
     if (!r.ok) {
       const err = await r.json().catch(() => ({}));
       console.error('send-onboarding resend error:', err);
-      return res.status(500).json({ error: 'Failed to send email.' });
+      const msg = err?.message || err?.name || JSON.stringify(err) || 'Unknown Resend error';
+      return res.status(500).json({ error: `Resend error: ${msg}` });
     }
 
     return res.status(200).json({ ok: true });
