@@ -65,7 +65,18 @@ Your approach:
 
 Response format:
 - Always respond in plain conversational text.
-- When setup is fully complete and confirmed: end your message with exactly: [STATUS:complete]
+- When setup is fully complete and confirmed: end your message with:
+[STATUS:complete]
+[CONFIG:{"workflow-id":{"key":"value"},...}]
+The CONFIG must be a single line of valid JSON. Only include starter workflows (not Pro ones). Use these exact keys per workflow:
+  low-stock-alerts: {"alert_email":"...","threshold":N,"monitor_all":true/false}
+  out-of-stock-alerts: {"alert_email":"..."}
+  weekly-report: {"report_email":"...","day_of_week":"Monday"}
+  supplier-auto-email: {"supplier_name":"...","supplier_email":"..."}
+  reorder-reminders: {"reminder_email":"...","frequency":"Weekly"}
+  csv-auto-import: {"column_names":"...","schedule":"Daily"}
+  inventory-value-report: {"report_email":"...","frequency":"Weekly"}
+  custom-email-alerts: {"conditions":"...","notify_email":"..."}
 - When escalation is needed: end your message with exactly: [STATUS:escalate]
 - Otherwise include no status tag — just keep the conversation going.
 
@@ -77,6 +88,8 @@ Important: be warm, clear, and efficient. Don't be robotic. Make the client feel
     : [{ role: 'user', content: 'Please start my onboarding.' }];
 
   try {
+    let config = null;
+
     const response = await client.messages.create({
       model:      'claude-sonnet-4-6',
       max_tokens: 1024,
@@ -91,7 +104,14 @@ Important: be warm, clear, and efficient. Don't be robotic. Make the client feel
 
     if (rawReply.includes('[STATUS:complete]')) {
       status = 'complete';
-      reply  = rawReply.replace('[STATUS:complete]', '').trim();
+      // Strip both tags from the reply shown to client
+      reply = rawReply.replace('[STATUS:complete]', '').replace(/\[CONFIG:.*?\]/s, '').trim();
+
+      // Extract config JSON
+      const configMatch = rawReply.match(/\[CONFIG:(.*?)\](?:\s|$)/s);
+      if (configMatch) {
+        try { config = JSON.parse(configMatch[1]); } catch(e) {}
+      }
 
       // Fire completion email to client
       const { sendEmail } = require('./_mailer');
@@ -153,7 +173,7 @@ ${convo}
       }).catch(() => {});
     }
 
-    return res.status(200).json({ reply, status });
+    return res.status(200).json({ reply, status, config });
   } catch (err) {
     console.error('workflow-chat error:', err.message);
     return res.status(500).json({ error: 'AI error. Please try again.' });

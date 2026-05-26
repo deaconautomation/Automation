@@ -170,7 +170,13 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+  const sb = supabase.createClient(
+    'https://ndbvmtuzmzbaaoxudmbk.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kYnZtdHV6bXpiYWFveHVkbWJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyNjUyODcsImV4cCI6MjA5Mzg0MTI4N30.CRqNEXZlUf4pRCjbVghCZg2p4rLh2Y-cKQpqSwkUw2k'
+  );
+
   const params    = new URLSearchParams(window.location.search);
   const workflows = (params.get('workflows') || '').split(',').filter(Boolean);
   const clientName  = params.get('name')     || '';
@@ -294,6 +300,21 @@
       appendMessage('assistant', data.reply);
 
       if (data.status === 'complete') {
+        // Save config to Supabase if we got structured data
+        if (data.config) {
+          try {
+            const { data: { session } } = await sb.auth.getSession();
+            if (session) {
+              const rows = Object.entries(data.config).map(([workflow_id, cfg]) => ({
+                client_id: session.user.id,
+                workflow_id,
+                config: cfg,
+                updated_at: new Date().toISOString(),
+              }));
+              await sb.from('automation_configs').upsert(rows, { onConflict: 'client_id,workflow_id' });
+            }
+          } catch(e) { /* non-fatal */ }
+        }
         setTimeout(() => {
           document.getElementById('chat-view').style.display = 'none';
           document.getElementById('success-view').style.display = 'block';
