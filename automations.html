@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vela — My Automations</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #06070d; --surface: #0e1017; --surface2: #161820;
+      --border: rgba(129,140,248,.13); --indigo: #818cf8; --cyan: #06b6d4;
+      --text: #f1f2ff; --muted: #a8aed6; --red: #f87171; --amber: #fbbf24; --green: #4ade80;
+      --grad: linear-gradient(135deg, var(--indigo), var(--cyan));
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; font-size: 16px; line-height: 1.5; }
+    body::before {
+      content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background-image: radial-gradient(circle, rgba(129,140,248,.07) 1px, transparent 1px);
+      background-size: 28px 28px;
+    }
+
+    /* NAV */
+    nav {
+      position: sticky; top: 0; z-index: 50;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 2rem; height: 64px;
+      background: rgba(6,7,13,.88); backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    .nav-logo { display: flex; align-items: center; gap: .6rem; text-decoration: none; }
+    .nav-logo svg { width: 28px; height: 28px; }
+    .nav-logo span { font-family: 'Inter', sans-serif; font-size: 1.25rem; font-weight: 800;
+      background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: inline-block; padding-bottom: 2px; }
+    .nav-links { display: flex; gap: 1.5rem; align-items: center; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-size: .875rem; font-weight: 500; transition: color .2s; }
+    .nav-links a:hover, .nav-links a.active { color: var(--text); }
+    .nav-links .btn-nav { padding: .45rem 1.1rem; border-radius: 8px; background: var(--grad);
+      color: #fff; font-weight: 600; font-size: .875rem; border: none; cursor: pointer; }
+    .hamburger { display: none; background: none; border: none; cursor: pointer; padding: .4rem; color: var(--muted); }
+    .hamburger:hover { color: var(--text); }
+    @media (max-width: 700px) {
+      nav { height: auto; padding: 0 1.25rem; position: relative; }
+      .nav-top { display: flex; align-items: center; justify-content: space-between; width: 100%; height: 64px; }
+      .hamburger { display: block; }
+      .nav-links { display: none; flex-direction: column; align-items: flex-start; gap: 0;
+        width: 100%; padding: .5rem 0 1rem; border-top: 1px solid var(--border); }
+      .nav-links.open { display: flex; }
+      .nav-links a, .nav-links button { width: 100%; padding: .65rem 0; font-size: .9rem; border-radius: 0; }
+    }
+
+    /* PAGE */
+    .page { position: relative; z-index: 1; max-width: 1000px; margin: 0 auto; padding: 2rem 1.5rem 5rem; }
+
+    .page-header { margin-bottom: 2rem; }
+    .page-header h1 { font-family: 'Inter', sans-serif; font-size: 1.75rem; font-weight: 800;
+      background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: inline-block; padding-bottom: 2px; }
+    .page-header p { color: var(--muted); font-size: .875rem; margin-top: .3rem; }
+
+    /* CARDS GRID */
+    .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1.25rem; }
+
+    /* AUTOMATION CARD */
+    .auto-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+      padding: 1.5rem; display: flex; flex-direction: column; gap: 1.1rem;
+    }
+    .card-header { display: flex; align-items: center; gap: .65rem; }
+    .card-icon { font-size: 1.5rem; flex-shrink: 0; }
+    .card-title { font-size: 1rem; font-weight: 700; color: var(--text); }
+
+    /* FORM FIELDS */
+    .form-fields { display: flex; flex-direction: column; gap: .75rem; }
+    .field-group { display: flex; flex-direction: column; gap: .3rem; }
+    .field-label { font-size: .78rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+    .field-input {
+      background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+      padding: .6rem .85rem; color: var(--text); font-family: 'Inter', sans-serif;
+      font-size: .875rem; outline: none; transition: border-color .2s; width: 100%;
+    }
+    .field-input:focus { border-color: var(--indigo); }
+    .field-input::placeholder { color: var(--muted); }
+    textarea.field-input { resize: vertical; min-height: 80px; }
+
+    /* CHECKBOX FIELD */
+    .checkbox-group { display: flex; align-items: center; gap: .65rem; padding: .4rem 0; }
+    .checkbox-group input[type="checkbox"] {
+      width: 18px; height: 18px; border-radius: 5px; border: 1px solid var(--border);
+      background: var(--surface2); accent-color: var(--indigo); cursor: pointer; flex-shrink: 0;
+    }
+    .checkbox-group label { font-size: .875rem; color: var(--text); cursor: pointer; font-weight: 500; }
+
+    /* SAVE BUTTON */
+    .card-footer { display: flex; justify-content: flex-end; }
+    .btn-save {
+      display: inline-flex; align-items: center; gap: .4rem; padding: .55rem 1.25rem;
+      border-radius: 8px; font-size: .875rem; font-weight: 600; cursor: pointer;
+      border: none; background: var(--grad); color: #fff; font-family: 'Inter', sans-serif;
+      transition: opacity .2s;
+    }
+    .btn-save:hover:not(:disabled) { opacity: .85; }
+    .btn-save:disabled { opacity: .5; cursor: not-allowed; }
+
+    /* EMPTY STATE */
+    .empty-state {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+      padding: 3.5rem 2rem; text-align: center; color: var(--muted);
+    }
+    .empty-state .empty-icon { font-size: 2.5rem; margin-bottom: 1rem; }
+    .empty-state h2 { font-size: 1.1rem; font-weight: 700; color: var(--text); margin-bottom: .5rem; }
+    .empty-state p { font-size: .875rem; max-width: 400px; margin: 0 auto; line-height: 1.6; }
+
+    /* LOADING */
+    .loading-state { text-align: center; padding: 4rem 1rem; color: var(--muted); }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spin { animation: spin .8s linear infinite; }
+
+    /* TOAST */
+    #toast {
+      position: fixed; bottom: 1.75rem; left: 50%; transform: translateX(-50%) translateY(20px);
+      padding: .65rem 1.4rem; border-radius: 10px; font-size: .875rem; font-weight: 600;
+      z-index: 200; opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none;
+      white-space: nowrap;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    #toast.success { background: rgba(74,222,128,.15); border: 1px solid rgba(74,222,128,.3); color: var(--green); }
+    #toast.error { background: rgba(248,113,113,.15); border: 1px solid rgba(248,113,113,.3); color: var(--red); }
+
+    footer { position: relative; z-index: 1; border-top: 1px solid var(--border);
+      text-align: center; padding: 1.5rem; color: var(--muted); font-size: .8rem; }
+    footer a { color: var(--indigo); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-top">
+    <a class="nav-logo" href="index.html">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+        <defs><linearGradient id="ng" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#818cf8"/><stop offset="100%" stop-color="#06b6d4"/>
+        </linearGradient></defs>
+        <path d="M 6 4 Q 16 26 23 46 L 23 4 Z" fill="url(#ng)"/>
+        <path d="M 42 4 Q 32 26 25 46 L 25 4 Z" fill="url(#ng)" opacity="0.72"/>
+        <path d="M 12 44 Q 24 48 36 44" stroke="url(#ng)" stroke-width="2.2" stroke-linecap="round" fill="none" opacity="0.55"/>
+      </svg>
+      <span>Vela</span>
+    </a>
+    <button class="hamburger" onclick="document.getElementById('nav-links').classList.toggle('open')" aria-label="Menu">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="nav-links" id="nav-links">
+    <a href="dashboard.html">Dashboard</a>
+    <a href="inventory.html">Inventory</a>
+    <a href="automations.html" class="active">Automations</a>
+    <a href="settings.html">Settings</a>
+    <button class="btn-nav" style="background:none;border:1px solid var(--border);color:var(--muted);font-size:.8rem;padding:.35rem .85rem;border-radius:8px;cursor:pointer;font-family:inherit;" onclick="signOut()">Sign Out</button>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="page-header">
+    <h1>My Automations</h1>
+    <p>View and update your automation settings.</p>
+  </div>
+
+  <div id="loading-state" class="loading-state">
+    <svg class="spin" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+    <p style="margin-top:.75rem">Loading your automations…</p>
+  </div>
+
+  <div id="main-content" style="display:none">
+    <div id="empty-state" class="empty-state" style="display:none">
+      <div class="empty-icon">⚙️</div>
+      <h2>No automations configured yet</h2>
+      <p>Your admin will send you a setup link to get started. Once your automations are configured, you can view and update them here.</p>
+    </div>
+    <div class="cards-grid" id="cards-grid"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<footer>
+  <p>© 2025 Vela · <a href="index.html">Back to home</a></p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const sb = supabase.createClient(
+    'https://ndbvmtuzmzbaaoxudmbk.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kYnZtdHV6bXpiYWFveHVkbWJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyNjUyODcsImV4cCI6MjA5Mzg0MTI4N30.CRqNEXZlUf4pRCjbVghCZg2p4rLh2Y-cKQpqSwkUw2k'
+  );
+
+  let currentUser = null;
+
+  const ALL_WORKFLOWS = {
+    'low-stock-alerts':       { icon: '🔔', title: 'Low Stock Alerts' },
+    'out-of-stock-alerts':    { icon: '🚨', title: 'Out of Stock Alerts' },
+    'weekly-report':          { icon: '📊', title: 'Weekly Inventory Report' },
+    'supplier-auto-email':    { icon: '📦', title: 'Supplier Auto-Email' },
+    'reorder-reminders':      { icon: '🔄', title: 'Reorder Reminders' },
+    'csv-auto-import':        { icon: '📥', title: 'CSV Scheduled Import' },
+    'inventory-value-report': { icon: '💰', title: 'Inventory Value Report' },
+    'custom-email-alerts':    { icon: '✉️', title: 'Custom Email Alerts' },
+    'shopify-sync':           { icon: '🛍️', title: 'Shopify / WooCommerce Sync' },
+    'quickbooks-sync':        { icon: '📒', title: 'QuickBooks / Xero Integration' },
+    'multi-location':         { icon: '🏭', title: 'Multi-Location Inventory' },
+    'barcode-scanning':       { icon: '📷', title: 'Barcode / QR Scanning' },
+    'ai-forecasting':         { icon: '🤖', title: 'AI Demand Forecasting' },
+    'purchase-orders':        { icon: '🧾', title: 'Purchase Order Automation' },
+    'custom-api':             { icon: '🔌', title: 'Custom API Integration' },
+    'custom-dashboard':       { icon: '📈', title: 'Custom Reporting Dashboard' },
+  };
+
+  const WORKFLOW_FIELDS = {
+    'low-stock-alerts': [
+      { key: 'alert_email',  label: 'Alert Email',              type: 'email'    },
+      { key: 'threshold',    label: 'Default Threshold (qty)',  type: 'number'   },
+      { key: 'monitor_all',  label: 'Monitor All Items',        type: 'checkbox' },
+    ],
+    'out-of-stock-alerts': [
+      { key: 'alert_email',  label: 'Alert Email',              type: 'email'    },
+    ],
+    'weekly-report': [
+      { key: 'report_email', label: 'Report Email',             type: 'email'    },
+      { key: 'day_of_week',  label: 'Day of Week',              type: 'select',  options: ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'] },
+    ],
+    'supplier-auto-email': [
+      { key: 'supplier_name',  label: 'Supplier Name',          type: 'text'     },
+      { key: 'supplier_email', label: 'Supplier Email',         type: 'email'    },
+    ],
+    'reorder-reminders': [
+      { key: 'reminder_email', label: 'Reminder Email',         type: 'email'    },
+      { key: 'frequency',      label: 'Frequency',              type: 'select',  options: ['Weekly','Monthly'] },
+    ],
+    'csv-auto-import': [
+      { key: 'column_names', label: 'CSV Column Names (comma-separated)', type: 'text'   },
+      { key: 'schedule',     label: 'Import Schedule',          type: 'select',  options: ['Daily','Weekly'] },
+    ],
+    'inventory-value-report': [
+      { key: 'report_email', label: 'Report Email',             type: 'email'    },
+      { key: 'frequency',    label: 'Frequency',                type: 'select',  options: ['Weekly','Monthly'] },
+    ],
+    'custom-email-alerts': [
+      { key: 'conditions',   label: 'Alert Conditions',         type: 'textarea' },
+      { key: 'notify_email', label: 'Notify Email',             type: 'email'    },
+    ],
+  };
+
+  function showToast(message, type = 'success') {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.className = `show ${type}`;
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => { toast.className = ''; }, 2800);
+  }
+
+  function buildFieldHtml(field, value) {
+    const val = value !== undefined && value !== null ? value : '';
+    if (field.type === 'checkbox') {
+      const checked = val === true || val === 'true' ? 'checked' : '';
+      return `
+        <div class="checkbox-group">
+          <input type="checkbox" id="field-${field.key}" data-key="${field.key}" ${checked} />
+          <label for="field-${field.key}">${field.label}</label>
+        </div>`;
+    }
+    if (field.type === 'select') {
+      const opts = (field.options || []).map(o =>
+        `<option value="${o}" ${o === val ? 'selected' : ''}>${o}</option>`
+      ).join('');
+      return `
+        <div class="field-group">
+          <div class="field-label">${field.label}</div>
+          <select class="field-input" data-key="${field.key}">${opts}</select>
+        </div>`;
+    }
+    if (field.type === 'textarea') {
+      return `
+        <div class="field-group">
+          <div class="field-label">${field.label}</div>
+          <textarea class="field-input" data-key="${field.key}" placeholder="${field.label}">${esc(String(val))}</textarea>
+        </div>`;
+    }
+    // text, email, number
+    return `
+      <div class="field-group">
+        <div class="field-label">${field.label}</div>
+        <input type="${field.type}" class="field-input" data-key="${field.key}" value="${esc(String(val))}" placeholder="${field.label}" />
+      </div>`;
+  }
+
+  function buildCard(workflowId, configData) {
+    const wf = ALL_WORKFLOWS[workflowId] || { icon: '⚙️', title: workflowId.replace(/-/g, ' ') };
+    const fields = WORKFLOW_FIELDS[workflowId] || [];
+    const cfg = configData || {};
+
+    const fieldsHtml = fields.length
+      ? fields.map(f => buildFieldHtml(f, cfg[f.key])).join('')
+      : `<p style="color:var(--muted);font-size:.85rem">No editable fields for this workflow.</p>`;
+
+    const card = document.createElement('div');
+    card.className = 'auto-card';
+    card.dataset.workflowId = workflowId;
+    card.innerHTML = `
+      <div class="card-header">
+        <span class="card-icon">${wf.icon}</span>
+        <span class="card-title">${wf.title}</span>
+      </div>
+      <div class="form-fields">${fieldsHtml}</div>
+      <div class="card-footer">
+        <button class="btn-save" onclick="handleSave(this)">Save Changes</button>
+      </div>`;
+    return card;
+  }
+
+  async function saveConfig(workflowId, formEl) {
+    const fields = WORKFLOW_FIELDS[workflowId] || [];
+    const config = {};
+    for (const f of fields) {
+      const el = formEl.querySelector(`[data-key="${f.key}"]`);
+      if (!el) continue;
+      config[f.key] = f.type === 'checkbox' ? el.checked : (f.type === 'number' ? Number(el.value) : el.value);
+    }
+    const { error } = await sb.from('automation_configs').upsert(
+      { client_id: currentUser.id, workflow_id: workflowId, config, updated_at: new Date().toISOString() },
+      { onConflict: 'client_id,workflow_id' }
+    );
+    return !error;
+  }
+
+  async function handleSave(btn) {
+    const card = btn.closest('.auto-card');
+    const workflowId = card.dataset.workflowId;
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+    const ok = await saveConfig(workflowId, card);
+    btn.disabled = false;
+    btn.textContent = 'Save Changes';
+    if (ok) {
+      showToast('Saved!', 'success');
+    } else {
+      showToast('Failed to save. Please try again.', 'error');
+    }
+  }
+
+  function esc(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  async function signOut() {
+    await sb.auth.signOut();
+    window.location.href = 'login.html';
+  }
+
+  async function init() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { window.location.href = 'login.html'; return; }
+    currentUser = session.user;
+
+    const { data: profile } = await sb.from('profiles').select('is_admin').eq('id', session.user.id).single();
+    if (profile?.is_admin) { window.location.href = 'clients.html'; return; }
+
+    const { data: configs, error } = await sb
+      .from('automation_configs')
+      .select('*')
+      .eq('client_id', session.user.id);
+
+    document.getElementById('loading-state').style.display = 'none';
+    document.getElementById('main-content').style.display = 'block';
+
+    if (!configs || configs.length === 0) {
+      document.getElementById('empty-state').style.display = 'block';
+      return;
+    }
+
+    const grid = document.getElementById('cards-grid');
+    for (const row of configs) {
+      const card = buildCard(row.workflow_id, row.config);
+      grid.appendChild(card);
+    }
+  }
+
+  init();
+</script>
+</body>
+</html>
