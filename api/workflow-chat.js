@@ -92,6 +92,45 @@ Important: be warm, clear, and efficient. Don't be robotic. Make the client feel
     if (rawReply.includes('[STATUS:complete]')) {
       status = 'complete';
       reply  = rawReply.replace('[STATUS:complete]', '').trim();
+
+      // Fire completion email to client
+      const { sendEmail } = require('./_mailer');
+      const APP_URL = process.env.APP_URL || 'https://your-app.vercel.app';
+      const workflowListHtml = (workflows || []).map(w => `<li style="padding:.25rem 0;color:#f1f2ff;font-size:14px">• ${w.replace(/-/g, ' ')}</li>`).join('');
+      const completionHtml = `
+<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#06070d;font-family:Inter,sans-serif">
+<div style="max-width:540px;margin:40px auto;background:#0e1017;border:1px solid rgba(129,140,248,.13);border-radius:16px;overflow:hidden">
+  <div style="padding:28px 32px;border-bottom:1px solid rgba(129,140,248,.13);background:linear-gradient(135deg,rgba(129,140,248,.08),rgba(6,182,212,.08))">
+    <div style="font-size:20px;font-weight:800;background:linear-gradient(135deg,#818cf8,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Vela</div>
+    <div style="color:#f1f2ff;font-size:18px;font-weight:700;margin-top:8px">Your Vela automations are all set! 🎉</div>
+  </div>
+  <div style="padding:28px 32px">
+    <p style="color:#a8aed6;font-size:14px;line-height:1.6;margin:0 0 16px">
+      Hey ${clientName || 'there'}, great news — your automations for <strong style="color:#f1f2ff">${clientBiz || 'your business'}</strong> have been fully configured and are ready to go.
+    </p>
+    ${workflowListHtml ? `
+    <div style="background:#161820;border:1px solid rgba(129,140,248,.13);border-radius:10px;padding:16px 20px;margin-bottom:24px">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#a8aed6;margin-bottom:10px">Configured Workflows</div>
+      <ul style="list-style:none;margin:0;padding:0">${workflowListHtml}</ul>
+    </div>` : ''}
+    <p style="color:#a8aed6;font-size:14px;line-height:1.6;margin:0 0 24px">
+      Head to your dashboard to view your inventory, monitor stock levels, and see your automations in action.
+    </p>
+    <a href="${APP_URL}/dashboard.html" style="display:inline-block;padding:13px 26px;background:linear-gradient(135deg,#818cf8,#06b6d4);color:#fff;text-decoration:none;border-radius:10px;font-weight:700;font-size:15px">
+      Go to Dashboard →
+    </a>
+    <p style="color:#a8aed6;font-size:12px;margin:20px 0 0;line-height:1.5">
+      Questions? Just reply to this email — we're here to help.
+    </p>
+  </div>
+</div>
+</body></html>`;
+      sendEmail({
+        to: clientEmail,
+        subject: "Your Vela automations are all set! 🎉",
+        html: completionHtml,
+      }).catch(() => {});
     } else if (rawReply.includes('[STATUS:escalate]')) {
       status = 'escalate';
       reply  = rawReply.replace('[STATUS:escalate]', '').trim();

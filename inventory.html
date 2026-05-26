@@ -197,6 +197,7 @@
   </div>
   <div class="nav-links" id="nav-links">
     <a href="index.html">Home</a>
+    <a href="dashboard.html" id="dashboard-link" style="display:none">Dashboard</a>
     <a href="inventory.html" class="active btn-nav">Inventory</a>
     <a href="workflows.html">Workflows</a>
     <a href="clients.html" id="clients-link" style="display:none">Clients</a>
@@ -420,6 +421,7 @@
       window.location.href = 'clients.html';
       return;
     }
+    document.getElementById('dashboard-link').style.display = '';
     await loadItems();
   }
 

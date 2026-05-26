@@ -136,7 +136,7 @@
 
   async function redirectUser(userId) {
     const { data: profile } = await sb.from('profiles').select('is_admin').eq('id', userId).single();
-    window.location.href = profile?.is_admin ? 'clients.html' : 'inventory.html';
+    window.location.href = profile?.is_admin ? 'clients.html' : 'dashboard.html';
   }
 
   function showView(name) {
