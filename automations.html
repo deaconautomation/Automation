@@ -260,13 +260,13 @@
 <div id="toast"></div>
 
 <!-- AI Chat Panel -->
-<div id="chat-panel" class="minimized" style="height:420px">
+<div id="chat-panel" style="height:420px">
   <div id="chat-panel-header" onclick="toggleChat()">
     <div class="chat-title">
       <span>✦</span> Automation Assistant
     </div>
     <div class="chat-header-actions" onclick="event.stopPropagation()">
-      <button class="chat-header-btn" id="chat-min-btn" onclick="toggleChat()" title="Expand">▲</button>
+      <button class="chat-header-btn" id="chat-min-btn" onclick="toggleChat()" title="Minimize">—</button>
     </div>
   </div>
   <div id="chat-msgs"></div>
@@ -467,6 +467,16 @@
     document.getElementById('loading-state').style.display = 'none';
     document.getElementById('main-content').style.display = 'block';
 
+    if (error) {
+      document.getElementById('empty-state').innerHTML = `
+        <div class="empty-icon">⚠️</div>
+        <h2>Couldn't load automations</h2>
+        <p style="color:var(--red)">${error.message}</p>
+        <p style="margin-top:.5rem">Make sure the <code style="color:var(--indigo)">automation_configs</code> table has been created in Supabase.</p>`;
+      document.getElementById('empty-state').style.display = 'block';
+      return;
+    }
+
     if (!configs || configs.length === 0) {
       document.getElementById('empty-state').style.display = 'block';
       return;
@@ -480,7 +490,7 @@
     }
   }
 
-  init();
+  init().then(() => chatWelcome());
 
   // ── CHAT PANEL ──────────────────────────────────────────
   let chatMessages = [];
@@ -493,7 +503,7 @@
     const minimized = panel.classList.toggle('minimized');
     btn.textContent  = minimized ? '▲' : '—';
     btn.title        = minimized ? 'Expand' : 'Minimize';
-    if (!minimized && chatMessages.length === 0) chatGreet();
+    if (!minimized) document.getElementById('chat-text').focus();
   }
 
   function appendChatMsg(role, text) {
@@ -531,9 +541,8 @@
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); chatSend(); }
   }
 
-  async function chatGreet() {
-    chatTyping = true; setChatInput(false); showTyping();
-    await callChatAPI();
+  function chatWelcome() {
+    appendChatMsg('assistant', 'Hi! I can update your automation settings. Try saying something like "change my alert email to x@y.com" or "set weekly report to Fridays".');
   }
 
   async function chatSend() {
