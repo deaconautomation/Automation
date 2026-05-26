@@ -452,45 +452,53 @@
   }
 
   async function init() {
-    const { data: { session } } = await sb.auth.getSession();
-    if (!session) { window.location.href = 'login.html'; return; }
-    currentUser = session.user;
+    try {
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session) { window.location.href = 'login.html'; return; }
+      currentUser = session.user;
 
-    const { data: profile } = await sb.from('profiles').select('is_admin').eq('id', session.user.id).single();
-    if (profile?.is_admin) { window.location.href = 'clients.html'; return; }
+      const { data: profile } = await sb.from('profiles').select('is_admin').eq('id', session.user.id).single();
+      if (profile?.is_admin) { window.location.href = 'clients.html'; return; }
 
-    const { data: configs, error } = await sb
-      .from('automation_configs')
-      .select('*')
-      .eq('client_id', session.user.id);
+      // Race the query against a 10-second timeout so we never hang forever
+      const queryPromise = sb.from('automation_configs').select('*').eq('client_id', session.user.id);
+      const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('automation_configs table not found — run the SQL migration in Supabase.')), 10000));
+      const { data: configs, error } = await Promise.race([queryPromise, timeout]);
 
-    document.getElementById('loading-state').style.display = 'none';
-    document.getElementById('main-content').style.display = 'block';
+      document.getElementById('loading-state').style.display = 'none';
+      document.getElementById('main-content').style.display = 'block';
 
-    if (error) {
+      if (error) {
+        document.getElementById('empty-state').innerHTML = `
+          <div class="empty-icon">⚠️</div>
+          <h2>Couldn't load automations</h2>
+          <p style="color:var(--red)">${error.message}</p>
+          <p style="margin-top:.5rem">Make sure the <code style="color:var(--indigo)">automation_configs</code> table has been created in Supabase.</p>`;
+        document.getElementById('empty-state').style.display = 'block';
+        return;
+      }
+
+      if (!configs || configs.length === 0) {
+        document.getElementById('empty-state').style.display = 'block';
+        return;
+      }
+
+      configsData = configs;
+      const grid = document.getElementById('cards-grid');
+      for (const row of configs) {
+        const card = buildCard(row.workflow_id, row.config);
+        grid.appendChild(card);
+      }
+    } catch(e) {
+      document.getElementById('loading-state').style.display = 'none';
+      document.getElementById('main-content').style.display = 'block';
       document.getElementById('empty-state').innerHTML = `
         <div class="empty-icon">⚠️</div>
         <h2>Couldn't load automations</h2>
-        <p style="color:var(--red)">${error.message}</p>
-        <p style="margin-top:.5rem">Make sure the <code style="color:var(--indigo)">automation_configs</code> table has been created in Supabase.</p>`;
+        <p style="color:var(--red)">${e.message}</p>`;
       document.getElementById('empty-state').style.display = 'block';
-      return;
-    }
-
-    if (!configs || configs.length === 0) {
-      document.getElementById('empty-state').style.display = 'block';
-      return;
-    }
-
-    configsData = configs;
-    const grid = document.getElementById('cards-grid');
-    for (const row of configs) {
-      const card = buildCard(row.workflow_id, row.config);
-      grid.appendChild(card);
     }
   }
-
-  init().then(() => chatWelcome());
 
   // ── CHAT PANEL ──────────────────────────────────────────
   let chatMessages = [];
@@ -629,6 +637,10 @@
       document.getElementById('empty-state').style.display = 'none';
     }
   }
+
+  // Chat welcome shows immediately; data loads in parallel
+  chatWelcome();
+  init();
 
 </body>
 </html>
