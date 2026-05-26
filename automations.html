@@ -128,6 +128,81 @@
     #toast.success { background: rgba(74,222,128,.15); border: 1px solid rgba(74,222,128,.3); color: var(--green); }
     #toast.error { background: rgba(248,113,113,.15); border: 1px solid rgba(248,113,113,.3); color: var(--red); }
 
+    /* ── AI CHAT PANEL ── */
+    #chat-panel {
+      position: fixed; top: 80px; right: 1.25rem; z-index: 300;
+      width: 340px; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 16px;
+      display: flex; flex-direction: column;
+      box-shadow: 0 8px 40px rgba(0,0,0,.45);
+      transition: height .3s ease, box-shadow .2s;
+      overflow: hidden;
+    }
+    #chat-panel.minimized { height: 52px !important; }
+    #chat-panel-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: .75rem 1rem; border-bottom: 1px solid var(--border);
+      cursor: pointer; flex-shrink: 0;
+      background: linear-gradient(135deg,rgba(129,140,248,.08),rgba(6,182,212,.08));
+    }
+    #chat-panel-header .chat-title {
+      display: flex; align-items: center; gap: .5rem;
+      font-size: .875rem; font-weight: 700; color: var(--text);
+    }
+    #chat-panel-header .chat-title span { font-size: 1rem; }
+    .chat-header-actions { display: flex; gap: .4rem; }
+    .chat-header-btn {
+      background: none; border: none; cursor: pointer; color: var(--muted);
+      font-size: 1rem; line-height: 1; padding: .1rem .3rem; border-radius: 4px;
+      transition: color .15s;
+    }
+    .chat-header-btn:hover { color: var(--text); }
+    #chat-msgs {
+      flex: 1; overflow-y: auto; padding: .85rem 1rem;
+      display: flex; flex-direction: column; gap: .65rem;
+    }
+    .cmsg { display: flex; gap: .5rem; animation: fadeIn .2s ease; }
+    .cmsg.user { flex-direction: row-reverse; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
+    .cmsg-bubble {
+      max-width: 82%; padding: .55rem .8rem; border-radius: 12px;
+      font-size: .84rem; line-height: 1.5;
+    }
+    .cmsg.ai   .cmsg-bubble { background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-bottom-left-radius: 3px; }
+    .cmsg.user .cmsg-bubble { background: linear-gradient(135deg,rgba(129,140,248,.2),rgba(6,182,212,.15)); border: 1px solid rgba(129,140,248,.25); color: var(--text); border-bottom-right-radius: 3px; }
+    .cmsg-avatar { width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0; font-size: .8rem;
+      display: flex; align-items: center; justify-content: center; margin-top: .1rem; }
+    .cmsg.ai   .cmsg-avatar { background: linear-gradient(135deg,rgba(129,140,248,.2),rgba(6,182,212,.2)); border: 1px solid rgba(129,140,248,.25); }
+    .cmsg.user .cmsg-avatar { background: var(--surface2); border: 1px solid var(--border); }
+    .typing-dots { display: flex; gap: 3px; align-items: center; padding: .55rem .8rem;
+      background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; border-bottom-left-radius: 3px; width: fit-content; }
+    .typing-dots span { width: 5px; height: 5px; border-radius: 50%; background: var(--muted);
+      animation: pulse .9s infinite; }
+    .typing-dots span:nth-child(2) { animation-delay: .15s; }
+    .typing-dots span:nth-child(3) { animation-delay: .3s; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+    #chat-input-row { display: flex; gap: .5rem; padding: .65rem .85rem; border-top: 1px solid var(--border); flex-shrink: 0; }
+    #chat-text {
+      flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+      padding: .5rem .75rem; color: var(--text); font-family: 'Inter', sans-serif;
+      font-size: .84rem; outline: none; transition: border-color .2s; resize: none;
+    }
+    #chat-text:focus { border-color: var(--indigo); }
+    #chat-text::placeholder { color: var(--muted); }
+    #chat-text:disabled { opacity: .5; }
+    #chat-send {
+      width: 36px; height: 36px; border-radius: 8px; background: var(--grad);
+      border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; align-self: flex-end; transition: opacity .2s;
+    }
+    #chat-send:hover:not(:disabled) { opacity: .85; }
+    #chat-send:disabled { opacity: .4; cursor: not-allowed; }
+    .card-updated-flash { animation: cardFlash .8s ease; }
+    @keyframes cardFlash { 0%,100%{border-color:rgba(129,140,248,.13)} 40%{border-color:#818cf8; box-shadow:0 0 0 2px rgba(129,140,248,.2);} }
+    @media (max-width: 600px) {
+      #chat-panel { width: calc(100vw - 1.5rem); right: .75rem; }
+    }
+
     footer { position: relative; z-index: 1; border-top: 1px solid var(--border);
       text-align: center; padding: 1.5rem; color: var(--muted); font-size: .8rem; }
     footer a { color: var(--indigo); text-decoration: none; }
@@ -183,6 +258,25 @@
 </div>
 
 <div id="toast"></div>
+
+<!-- AI Chat Panel -->
+<div id="chat-panel" class="minimized" style="height:420px">
+  <div id="chat-panel-header" onclick="toggleChat()">
+    <div class="chat-title">
+      <span>✦</span> Automation Assistant
+    </div>
+    <div class="chat-header-actions" onclick="event.stopPropagation()">
+      <button class="chat-header-btn" id="chat-min-btn" onclick="toggleChat()" title="Expand">▲</button>
+    </div>
+  </div>
+  <div id="chat-msgs"></div>
+  <div id="chat-input-row">
+    <textarea id="chat-text" rows="1" placeholder="Ask to update your automations…" onkeydown="handleChatKey(event)"></textarea>
+    <button id="chat-send" onclick="chatSend()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    </button>
+  </div>
+</div>
 
 <footer>
   <p>© 2025 Vela · <a href="index.html">Back to home</a></p>
@@ -378,6 +472,7 @@
       return;
     }
 
+    configsData = configs;
     const grid = document.getElementById('cards-grid');
     for (const row of configs) {
       const card = buildCard(row.workflow_id, row.config);
@@ -386,6 +481,145 @@
   }
 
   init();
-</script>
+
+  // ── CHAT PANEL ──────────────────────────────────────────
+  let chatMessages = [];
+  let chatTyping   = false;
+  let configsData  = [];
+
+  function toggleChat() {
+    const panel = document.getElementById('chat-panel');
+    const btn   = document.getElementById('chat-min-btn');
+    const minimized = panel.classList.toggle('minimized');
+    btn.textContent  = minimized ? '▲' : '—';
+    btn.title        = minimized ? 'Expand' : 'Minimize';
+    if (!minimized && chatMessages.length === 0) chatGreet();
+  }
+
+  function appendChatMsg(role, text) {
+    const list = document.getElementById('chat-msgs');
+    const isAI = role === 'assistant';
+    const div  = document.createElement('div');
+    div.className = `cmsg ${isAI ? 'ai' : 'user'}`;
+    div.innerHTML = `
+      <div class="cmsg-avatar">${isAI ? '✦' : '👤'}</div>
+      <div class="cmsg-bubble">${text.replace(/\n/g, '<br>')}</div>`;
+    list.appendChild(div);
+    list.scrollTop = list.scrollHeight;
+  }
+
+  function showTyping() {
+    const list = document.getElementById('chat-msgs');
+    const div  = document.createElement('div');
+    div.className = 'cmsg ai'; div.id = 'chat-typing';
+    div.innerHTML = `<div class="cmsg-avatar">✦</div><div class="typing-dots"><span></span><span></span><span></span></div>`;
+    list.appendChild(div);
+    list.scrollTop = list.scrollHeight;
+  }
+
+  function hideTyping() {
+    const el = document.getElementById('chat-typing');
+    if (el) el.remove();
+  }
+
+  function setChatInput(enabled) {
+    document.getElementById('chat-text').disabled = !enabled;
+    document.getElementById('chat-send').disabled = !enabled;
+  }
+
+  function handleChatKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); chatSend(); }
+  }
+
+  async function chatGreet() {
+    chatTyping = true; setChatInput(false); showTyping();
+    await callChatAPI();
+  }
+
+  async function chatSend() {
+    const input = document.getElementById('chat-text');
+    const text  = input.value.trim();
+    if (!text || chatTyping) return;
+    input.value = '';
+    chatMessages.push({ role: 'user', content: text });
+    appendChatMsg('user', text);
+    chatTyping = true; setChatInput(false); showTyping();
+    await callChatAPI();
+  }
+
+  async function callChatAPI() {
+    try {
+      const res  = await fetch('/api/automation-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages:   chatMessages,
+          configs:    configsData,
+          clientName: currentUser?.user_metadata?.full_name || '',
+          clientBiz:  currentUser?.user_metadata?.business_name || '',
+        }),
+      });
+      const data = await res.json();
+      hideTyping();
+
+      if (!res.ok) {
+        appendChatMsg('assistant', 'Sorry, something went wrong. Please try again.');
+        chatTyping = false; setChatInput(true); return;
+      }
+
+      chatMessages.push({ role: 'assistant', content: data.reply });
+      appendChatMsg('assistant', data.reply);
+
+      // Apply any config updates
+      for (const update of (data.updates || [])) {
+        await applyUpdate(update);
+      }
+    } catch(e) {
+      hideTyping();
+      appendChatMsg('assistant', 'Connection error. Please check your internet and try again.');
+    }
+    chatTyping = false; setChatInput(true);
+    document.getElementById('chat-text').focus();
+  }
+
+  async function applyUpdate({ workflow_id, config }) {
+    if (!workflow_id || !config) return;
+
+    // Save to Supabase
+    const { error } = await sb.from('automation_configs').upsert(
+      { client_id: currentUser.id, workflow_id, config, updated_at: new Date().toISOString() },
+      { onConflict: 'client_id,workflow_id' }
+    );
+    if (error) return;
+
+    // Update local configsData
+    const existing = configsData.find(c => c.workflow_id === workflow_id);
+    if (existing) { existing.config = config; }
+    else { configsData.push({ client_id: currentUser.id, workflow_id, config }); }
+
+    // Update the card fields on screen
+    const card = document.querySelector(`.auto-card[data-workflow-id="${workflow_id}"]`);
+    if (card) {
+      const fields = WORKFLOW_FIELDS[workflow_id] || [];
+      for (const f of fields) {
+        const el = card.querySelector(`[data-key="${f.key}"]`);
+        if (!el || config[f.key] === undefined) continue;
+        if (f.type === 'checkbox') el.checked = config[f.key];
+        else el.value = config[f.key];
+      }
+      card.classList.remove('card-updated-flash');
+      void card.offsetWidth; // reflow to restart animation
+      card.classList.add('card-updated-flash');
+      showToast(`Updated: ${ALL_WORKFLOWS[workflow_id]?.title || workflow_id}`, 'success');
+    } else {
+      // Workflow not yet on page — add a new card
+      const grid = document.getElementById('cards-grid');
+      const newCard = buildCard(workflow_id, config);
+      grid.appendChild(newCard);
+      configsData.push({ client_id: currentUser.id, workflow_id, config });
+      document.getElementById('empty-state').style.display = 'none';
+    }
+  }
+
 </body>
 </html>
