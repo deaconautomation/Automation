@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vela — Dashboard</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #06070d; --surface: #0e1017; --surface2: #161820;
+      --border: rgba(129,140,248,.13); --indigo: #818cf8; --cyan: #06b6d4;
+      --text: #f1f2ff; --muted: #a8aed6; --red: #f87171; --amber: #fbbf24; --green: #4ade80;
+      --grad: linear-gradient(135deg, var(--indigo), var(--cyan));
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; font-size: 16px; line-height: 1.5; }
+    body::before {
+      content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background-image: radial-gradient(circle, rgba(129,140,248,.07) 1px, transparent 1px);
+      background-size: 28px 28px;
+    }
+
+    /* NAV */
+    nav {
+      position: sticky; top: 0; z-index: 50;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 2rem; height: 64px;
+      background: rgba(6,7,13,.88); backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    .nav-logo { display: flex; align-items: center; gap: .6rem; text-decoration: none; }
+    .nav-logo svg { width: 28px; height: 28px; }
+    .nav-logo span { font-family: 'Inter', sans-serif; font-size: 1.25rem; font-weight: 800;
+      background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: inline-block; padding-bottom: 2px; }
+    .nav-links { display: flex; gap: 1.5rem; align-items: center; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-size: .875rem; font-weight: 500; transition: color .2s; }
+    .nav-links a:hover, .nav-links a.active { color: var(--text); }
+    .nav-links .btn-nav { padding: .45rem 1.1rem; border-radius: 8px; background: var(--grad);
+      color: #fff; font-weight: 600; font-size: .875rem; border: none; cursor: pointer; }
+    .hamburger { display: none; background: none; border: none; cursor: pointer; padding: .4rem; color: var(--muted); }
+    .hamburger:hover { color: var(--text); }
+    @media (max-width: 700px) {
+      nav { height: auto; padding: 0 1.25rem; position: relative; }
+      .nav-top { display: flex; align-items: center; justify-content: space-between; width: 100%; height: 64px; }
+      .hamburger { display: block; }
+      .nav-links { display: none; flex-direction: column; align-items: flex-start; gap: 0;
+        width: 100%; padding: .5rem 0 1rem; border-top: 1px solid var(--border); }
+      .nav-links.open { display: flex; }
+      .nav-links a, .nav-links button { width: 100%; padding: .65rem 0; font-size: .9rem; border-radius: 0; }
+    }
+
+    /* PAGE */
+    .page { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem 5rem; }
+
+    .page-header { margin-bottom: 2rem; }
+    .page-header h1 { font-family: 'Inter', sans-serif; font-size: 1.75rem; font-weight: 800;
+      background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: inline-block; padding-bottom: 2px; }
+    .page-header p { color: var(--muted); font-size: .875rem; margin-top: .3rem; }
+
+    /* STATS */
+    .stats-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: .75rem; margin-bottom: 2rem; }
+    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+      padding: 1rem 1.1rem; }
+    .stat-label { font-size: .75rem; font-weight: 600; letter-spacing: .06em;
+      text-transform: uppercase; color: var(--muted); margin-bottom: .3rem; }
+    .stat-value { font-family: 'Inter', sans-serif; font-size: 1.75rem; font-weight: 700; letter-spacing: -.02em; }
+    .stat-value.green { color: var(--green); }
+    .stat-value.amber { color: var(--amber); }
+    .stat-value.red   { color: var(--red); }
+
+    /* SECTION */
+    .section { margin-bottom: 2rem; }
+    .section-title { font-size: 1rem; font-weight: 700; margin-bottom: 1rem; color: var(--text); }
+
+    /* TABLE */
+    .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; }
+    thead tr { border-bottom: 1px solid var(--border); }
+    th { padding: .9rem 1rem; text-align: left; font-size: .75rem; font-weight: 600;
+      letter-spacing: .06em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+    td { padding: .9rem 1rem; font-size: .9rem; border-bottom: 1px solid rgba(129,140,248,.06); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(129,140,248,.03); }
+
+    /* STATUS BADGES */
+    .stock-badge { display: inline-flex; align-items: center; gap: .35rem;
+      padding: .25rem .7rem; border-radius: 20px; font-size: .75rem; font-weight: 600; }
+    .stock-badge.low  { background: rgba(251,191,36,.1);  color: var(--amber); }
+    .stock-badge.out  { background: rgba(248,113,113,.1); color: var(--red); }
+    .stock-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+    /* WELL STOCKED */
+    .well-stocked { background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+      padding: 2rem; text-align: center; color: var(--muted); font-size: .9rem; }
+    .well-stocked span { color: var(--green); font-weight: 600; }
+
+    /* QUICK ACTIONS */
+    .actions-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: .75rem; }
+    .action-btn { display: block; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 1.1rem 1.4rem; text-decoration: none; color: var(--text);
+      font-weight: 600; font-size: .9rem; transition: all .2s; }
+    .action-btn:hover { border-color: var(--indigo); background: rgba(129,140,248,.05); }
+    .action-btn .action-label { font-size: .75rem; font-weight: 600; letter-spacing: .06em;
+      text-transform: uppercase; color: var(--muted); margin-bottom: .35rem; }
+
+    footer { position: relative; z-index: 1; border-top: 1px solid var(--border);
+      text-align: center; padding: 1.5rem; color: var(--muted); font-size: .8rem; }
+    footer a { color: var(--indigo); text-decoration: none; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-state { text-align: center; padding: 3rem 1rem; color: var(--muted); }
+    .loading-state svg { animation: spin .8s linear infinite; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-top">
+    <a class="nav-logo" href="index.html">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+        <defs><linearGradient id="ng" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#818cf8"/><stop offset="100%" stop-color="#06b6d4"/>
+        </linearGradient></defs>
+        <path d="M 6 4 Q 16 26 23 46 L 23 4 Z" fill="url(#ng)"/>
+        <path d="M 42 4 Q 32 26 25 46 L 25 4 Z" fill="url(#ng)" opacity="0.72"/>
+        <path d="M 12 44 Q 24 48 36 44" stroke="url(#ng)" stroke-width="2.2" stroke-linecap="round" fill="none" opacity="0.55"/>
+      </svg>
+      <span>Vela</span>
+    </a>
+    <button class="hamburger" onclick="document.getElementById('nav-links').classList.toggle('open')" aria-label="Menu">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="nav-links" id="nav-links">
+    <a href="dashboard.html" class="active">Dashboard</a>
+    <a href="inventory.html">Inventory</a>
+    <a href="settings.html">Settings</a>
+    <button class="btn-nav" style="background:none;border:1px solid var(--border);color:var(--muted);font-size:.8rem;padding:.35rem .85rem;border-radius:8px;cursor:pointer;font-family:inherit;" onclick="signOut()">Sign Out</button>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="page-header">
+    <h1 id="welcome-heading">Welcome back</h1>
+    <p id="welcome-sub">Here's an overview of your inventory.</p>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-bar">
+    <div class="stat-card">
+      <div class="stat-label">Total Items</div>
+      <div class="stat-value" id="stat-total">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">In Stock</div>
+      <div class="stat-value green" id="stat-instock">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Low Stock</div>
+      <div class="stat-value amber" id="stat-low">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Out of Stock</div>
+      <div class="stat-value red" id="stat-out">—</div>
+    </div>
+  </div>
+
+  <!-- LOW STOCK ALERTS -->
+  <div class="section">
+    <div class="section-title">Low Stock Alerts</div>
+    <div id="alerts-loading" class="loading-state">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+      <p style="margin-top:.75rem">Loading…</p>
+    </div>
+    <div id="alerts-content" style="display:none"></div>
+  </div>
+
+  <!-- QUICK ACTIONS -->
+  <div class="section">
+    <div class="section-title">Quick Actions</div>
+    <div class="actions-grid">
+      <a href="inventory.html" class="action-btn">
+        <div class="action-label">Manage</div>
+        Manage Inventory →
+      </a>
+      <a href="settings.html" class="action-btn">
+        <div class="action-label">Account</div>
+        Account Settings →
+      </a>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <p>© 2025 Vela · <a href="index.html">Back to home</a></p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const sb = supabase.createClient(
+    'https://ndbvmtuzmzbaaoxudmbk.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kYnZtdHV6bXpiYWFveHVkbWJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyNjUyODcsImV4cCI6MjA5Mzg0MTI4N30.CRqNEXZlUf4pRCjbVghCZg2p4rLh2Y-cKQpqSwkUw2k'
+  );
+
+  function esc(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function stockStatus(item) {
+    if (item.qty === 0) return 'out';
+    if (item.threshold > 0 && item.qty <= item.threshold) return 'low';
+    return 'ok';
+  }
+
+  async function init() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { window.location.href = 'login.html'; return; }
+
+    const { data: profile } = await sb.from('profiles').select('business_name, is_admin').eq('id', session.user.id).single();
+    if (profile?.is_admin) { window.location.href = 'clients.html'; return; }
+
+    const bizName = profile?.business_name || session.user.email;
+    document.getElementById('welcome-heading').textContent = 'Welcome back, ' + bizName;
+
+    const { data: items } = await sb.from('inventory_items').select('*').order('name');
+    const allItems = items || [];
+
+    // Stats
+    const total   = allItems.length;
+    const outItems = allItems.filter(i => stockStatus(i) === 'out');
+    const lowItems = allItems.filter(i => stockStatus(i) === 'low');
+    const inStock  = allItems.filter(i => stockStatus(i) === 'ok').length;
+
+    document.getElementById('stat-total').textContent   = total;
+    document.getElementById('stat-instock').textContent = inStock;
+    document.getElementById('stat-low').textContent     = lowItems.length;
+    document.getElementById('stat-out').textContent     = outItems.length;
+
+    // Low stock alerts table
+    document.getElementById('alerts-loading').style.display = 'none';
+    const alertItems = [...outItems, ...lowItems];
+
+    const alertsContent = document.getElementById('alerts-content');
+    alertsContent.style.display = 'block';
+
+    if (alertItems.length === 0) {
+      alertsContent.innerHTML = `<div class="well-stocked"><span>All items are well stocked ✓</span></div>`;
+    } else {
+      const rows = alertItems.map(item => {
+        const st = stockStatus(item);
+        const label = st === 'out' ? 'Out of Stock' : 'Low Stock';
+        const threshold = item.threshold > 0 ? item.threshold : '—';
+        return `<tr>
+          <td style="font-weight:600">${esc(item.name)}</td>
+          <td>${item.qty}</td>
+          <td>${threshold}</td>
+          <td><span class="stock-badge ${st}"><span class="stock-dot"></span>${label}</span></td>
+        </tr>`;
+      }).join('');
+
+      alertsContent.innerHTML = `
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Qty</th>
+                <th>Threshold</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>`;
+    }
+  }
+
+  async function signOut() {
+    await sb.auth.signOut();
+    window.location.href = 'login.html';
+  }
+
+  init();
+</script>
+</body>
+</html>
