@@ -1,4 +1,5 @@
 const { sendEmail } = require('./_mailer');
+const { createClient } = require('@supabase/supabase-js');
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -59,6 +60,25 @@ module.exports = async function handler(req, res) {
 
   try {
     await sendEmail({ to: email, subject: 'Your Vela onboarding is ready — click to start', html: clientHtml });
+
+    // Create a purchase record so it shows in the admin Purchases page
+    if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      const sbAdmin = createClient(
+        process.env.SUPABASE_URL || 'https://ndbvmtuzmzbaaoxudmbk.supabase.co',
+        process.env.SUPABASE_SERVICE_ROLE_KEY
+      );
+      await sbAdmin.from('purchases').insert({
+        client_name:   name || email.split('@')[0],
+        client_email:  email,
+        business_name: business || null,
+        tier:          'starter',
+        billing:       'monthly',
+        workflows:     workflows || [],
+        notes:         custom || null,
+        status:        'pending',
+      });
+    }
+
     return res.status(200).json({ ok: true });
   } catch (err) {
     console.error('send-onboarding error:', err.message);

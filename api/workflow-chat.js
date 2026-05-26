@@ -1,4 +1,5 @@
 const Anthropic = require('@anthropic-ai/sdk');
+const { createClient } = require('@supabase/supabase-js');
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -111,6 +112,29 @@ Important: be warm, clear, and efficient. Don't be robotic. Make the client feel
       const configMatch = rawReply.match(/\[CONFIG:(.*?)\](?:\s|$)/s);
       if (configMatch) {
         try { config = JSON.parse(configMatch[1]); } catch(e) {}
+      }
+
+      // Save configs to Supabase — client is not logged in during onboarding so we use service key
+      if (config && clientEmail && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        try {
+          const sbAdmin = createClient(
+            process.env.SUPABASE_URL || 'https://ndbvmtuzmzbaaoxudmbk.supabase.co',
+            process.env.SUPABASE_SERVICE_ROLE_KEY
+          );
+          const { data: { users } } = await sbAdmin.auth.admin.listUsers({ perPage: 1000 });
+          const user = (users || []).find(u => u.email === clientEmail);
+          if (user) {
+            const rows = Object.entries(config).map(([workflow_id, cfg]) => ({
+              client_id:   user.id,
+              workflow_id,
+              config:      cfg,
+              updated_at:  new Date().toISOString(),
+            }));
+            await sbAdmin.from('automation_configs').upsert(rows, { onConflict: 'client_id,workflow_id' });
+          }
+        } catch(e) {
+          console.error('Failed to save automation configs:', e.message);
+        }
       }
 
       // Fire completion email to client
