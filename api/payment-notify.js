@@ -1,4 +1,5 @@
 const { sendEmail } = require('./_mailer');
+const { createClient } = require('@supabase/supabase-js');
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -86,9 +87,27 @@ module.exports = async function handler(req, res) {
 </body></html>`;
 
   try {
+    const sbAdmin = createClient(
+      process.env.SUPABASE_URL || 'https://ndbvmtuzmzbaaoxudmbk.supabase.co',
+      process.env.SUPABASE_SERVICE_KEY
+    );
+
     await Promise.all([
       sendEmail({ to: ADMIN_EMAIL, subject: `💸 Payment claim — ${business || name} · ${amount} via ${method}`, html: adminHtml }),
       sendEmail({ to: email,       subject: 'Payment received — Vela', html: clientHtml }),
+      sbAdmin.from('purchases').insert({
+        client_name:    name,
+        client_email:   email,
+        business_name:  business || null,
+        tier:           tier || 'starter',
+        billing:        billing || 'monthly',
+        amount:         amount,
+        payment_method: method,
+        transaction_id: txn || null,
+        workflows:      workflows || [],
+        notes:          notes || null,
+        status:         'pending',
+      }),
     ]);
 
     return res.status(200).json({ ok: true });

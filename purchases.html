@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vela — Purchases</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #06070d; --surface: #0e1017; --surface2: #161820;
+      --border: rgba(129,140,248,.13); --indigo: #818cf8; --cyan: #06b6d4;
+      --text: #f1f2ff; --muted: #a8aed6; --red: #f87171; --amber: #fbbf24; --green: #4ade80;
+      --grad: linear-gradient(135deg, var(--indigo), var(--cyan));
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; font-size: 16px; line-height: 1.5; }
+    body::before {
+      content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background-image: radial-gradient(circle, rgba(129,140,248,.07) 1px, transparent 1px);
+      background-size: 28px 28px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    nav {
+      position: sticky; top: 0; z-index: 50;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 2rem; height: 64px;
+      background: rgba(6,7,13,.88); backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    .nav-logo { display: flex; align-items: center; gap: .6rem; text-decoration: none; }
+    .nav-logo svg { width: 28px; height: 28px; }
+    .nav-logo span { font-size: 1.25rem; font-weight: 800;
+      background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: inline-block; padding-bottom: 2px; }
+    .nav-links { display: flex; gap: 1.5rem; align-items: center; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-size: .875rem; font-weight: 500; transition: color .2s; }
+    .nav-links a:hover, .nav-links a.active { color: var(--text); }
+    .nav-links .btn-nav { padding: .45rem 1.1rem; border-radius: 8px; background: var(--grad); color: #fff; font-weight: 600; font-size: .875rem; border: none; cursor: pointer; }
+    .hamburger { display: none; background: none; border: none; cursor: pointer; padding: .4rem; color: var(--muted); }
+    .hamburger:hover { color: var(--text); }
+    @media (max-width: 700px) {
+      nav { height: auto; padding: 0 1.25rem; position: relative; }
+      .nav-top { display: flex; align-items: center; justify-content: space-between; width: 100%; height: 64px; }
+      .hamburger { display: block; }
+      .nav-links { display: none; flex-direction: column; align-items: flex-start; gap: 0;
+        width: 100%; padding: .5rem 0 1rem; border-top: 1px solid var(--border); }
+      .nav-links.open { display: flex; }
+      .nav-links a, .nav-links button { width: 100%; padding: .65rem 0; font-size: .9rem; border-radius: 0; }
+    }
+
+    .page { position: relative; z-index: 1; max-width: 1300px; margin: 0 auto; padding: 2rem 1.5rem 5rem; }
+
+    .page-header { display: flex; align-items: flex-start; justify-content: space-between;
+      flex-wrap: wrap; gap: 1rem; margin-bottom: 1.75rem; }
+    .page-header h1 { font-size: 1.75rem; font-weight: 800;
+      background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: inline-block; padding-bottom: 2px; }
+    .page-header p { color: var(--muted); font-size: .875rem; margin-top: .2rem; }
+
+    /* STATS */
+    .stats-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: .75rem; margin-bottom: 1.5rem; }
+    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.1rem; }
+    .stat-label { font-size: .75rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: .3rem; }
+    .stat-value { font-size: 1.75rem; font-weight: 700; letter-spacing: -.02em; }
+    .stat-value.indigo { color: var(--indigo); }
+    .stat-value.green  { color: var(--green); }
+    .stat-value.amber  { color: var(--amber); }
+    .stat-value.cyan   { color: var(--cyan); }
+
+    /* TOOLBAR */
+    .toolbar { display: flex; gap: .75rem; flex-wrap: wrap; margin-bottom: 1.25rem; align-items: center; }
+    .search-wrap { position: relative; flex: 1; min-width: 200px; }
+    .search-wrap svg { position: absolute; left: .75rem; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+    #search { width: 100%; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: .55rem .75rem .55rem 2.25rem; color: var(--text);
+      font-family: 'Inter', sans-serif; font-size: .875rem; outline: none; transition: border-color .2s; }
+    #search:focus { border-color: var(--indigo); }
+    #search::placeholder { color: var(--muted); }
+
+    /* FILTER TABS */
+    .filter-tabs { display: flex; gap: .35rem; flex-wrap: wrap; }
+    .filter-tab { padding: .4rem .9rem; border-radius: 20px; font-size: .8rem; font-weight: 600;
+      cursor: pointer; border: 1px solid var(--border); background: var(--surface);
+      color: var(--muted); font-family: 'Inter', sans-serif; transition: all .2s; white-space: nowrap; }
+    .filter-tab:hover { color: var(--text); border-color: rgba(129,140,248,.3); }
+    .filter-tab.active { background: rgba(129,140,248,.15); border-color: rgba(129,140,248,.4); color: var(--indigo); }
+
+    /* BUTTONS */
+    .btn { display: inline-flex; align-items: center; gap: .4rem; padding: .55rem 1.1rem;
+      border-radius: 8px; font-size: .875rem; font-weight: 600; cursor: pointer;
+      border: none; transition: all .2s; font-family: 'Inter', sans-serif; }
+    .btn-ghost { background: var(--surface); border: 1px solid var(--border); color: var(--muted); }
+    .btn-ghost:hover { border-color: var(--indigo); color: var(--text); }
+    .btn-success { background: rgba(74,222,128,.12); border: 1px solid rgba(74,222,128,.25); color: var(--green); }
+    .btn-success:hover { background: rgba(74,222,128,.2); }
+    .btn-warning { background: rgba(251,191,36,.12); border: 1px solid rgba(251,191,36,.25); color: var(--amber); }
+    .btn-warning:hover { background: rgba(251,191,36,.2); }
+    .btn-danger { background: rgba(248,113,113,.12); border: 1px solid rgba(248,113,113,.25); color: var(--red); }
+    .btn-danger:hover { background: rgba(248,113,113,.2); }
+    .btn-sm { padding: .3rem .65rem; font-size: .8rem; }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+    /* TABLE */
+    .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; }
+    thead tr { border-bottom: 1px solid var(--border); }
+    th { padding: .9rem 1rem; text-align: left; font-size: .72rem; font-weight: 600;
+      letter-spacing: .06em; text-transform: uppercase; color: var(--muted); white-space: nowrap; cursor: pointer; user-select: none; }
+    th:hover { color: var(--text); }
+    th .sort-arrow { margin-left: .25rem; opacity: .4; }
+    th.sorted .sort-arrow { opacity: 1; color: var(--indigo); }
+    td { padding: .85rem 1rem; font-size: .875rem; border-bottom: 1px solid rgba(129,140,248,.06); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(129,140,248,.03); cursor: pointer; }
+
+    .client-name { font-weight: 600; color: var(--text); }
+    .client-email { font-size: .78rem; color: var(--muted); margin-top: .1rem; }
+
+    /* BADGES */
+    .badge { display: inline-flex; align-items: center; gap: .3rem; padding: .22rem .65rem; border-radius: 20px; font-size: .72rem; font-weight: 600; white-space: nowrap; }
+    .badge-pending  { background: rgba(251,191,36,.1);   color: var(--amber); }
+    .badge-verified { background: rgba(74,222,128,.1);   color: var(--green); }
+    .badge-cancelled{ background: rgba(248,113,113,.1);  color: var(--red); }
+    .badge-monthly  { background: rgba(129,140,248,.12); color: var(--indigo); }
+    .badge-onetime  { background: rgba(6,182,212,.1);    color: var(--cyan); }
+    .badge-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+
+    /* AMOUNT */
+    .amount-text { font-weight: 700; color: var(--green); font-size: .9rem; }
+
+    /* WORKFLOWS CHIPS */
+    .wf-chips { display: flex; flex-wrap: wrap; gap: .25rem; }
+    .wf-chip { padding: .15rem .5rem; border-radius: 4px; font-size: .7rem; font-weight: 600;
+      background: rgba(129,140,248,.1); color: var(--indigo); border: 1px solid rgba(129,140,248,.15); }
+    .wf-more { padding: .15rem .5rem; border-radius: 4px; font-size: .7rem; font-weight: 600;
+      background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+
+    /* EMPTY / LOADING */
+    .empty-state { text-align: center; padding: 4rem 1rem; color: var(--muted); }
+    .empty-state p { font-size: .9rem; margin-top: .75rem; }
+
+    /* ERROR */
+    .error-banner { background: rgba(248,113,113,.08); border: 1px solid rgba(248,113,113,.25);
+      border-radius: 12px; padding: .85rem 1.1rem; margin-bottom: 1.25rem;
+      font-size: .875rem; color: var(--red); display: none; }
+
+    /* MODAL */
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.65);
+      backdrop-filter: blur(4px); z-index: 100; display: none; align-items: center; justify-content: center; padding: 1rem; }
+    .modal-backdrop.open { display: flex; }
+    .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+      padding: 0; width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto; }
+    .modal-header { padding: 1.5rem 1.75rem 1.25rem; border-bottom: 1px solid var(--border);
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+    .modal-header h2 { font-size: 1.15rem; font-weight: 800; }
+    .modal-close { background: none; border: none; cursor: pointer; color: var(--muted);
+      font-size: 1.2rem; line-height: 1; padding: .1rem; transition: color .15s; }
+    .modal-close:hover { color: var(--text); }
+    .modal-body { padding: 1.5rem 1.75rem; display: flex; flex-direction: column; gap: 1.25rem; }
+    .modal-footer { padding: 1.1rem 1.75rem; border-top: 1px solid var(--border);
+      display: flex; gap: .6rem; justify-content: flex-end; flex-wrap: wrap; }
+
+    .detail-section { display: flex; flex-direction: column; gap: .6rem; }
+    .detail-section-title { font-size: .72rem; font-weight: 700; letter-spacing: .07em;
+      text-transform: uppercase; color: var(--muted); margin-bottom: .1rem; }
+    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+    .detail-row { display: flex; flex-direction: column; gap: .15rem; }
+    .detail-row.full { grid-column: 1 / -1; }
+    .detail-key { font-size: .72rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+    .detail-val { font-size: .875rem; color: var(--text); font-weight: 500; word-break: break-all; }
+    .detail-val.mono { font-family: monospace; font-size: .82rem; }
+    .detail-val.green { color: var(--green); font-weight: 700; }
+
+    .wf-list { display: flex; flex-wrap: wrap; gap: .35rem; }
+    .wf-tag { padding: .3rem .7rem; border-radius: 6px; font-size: .78rem; font-weight: 600;
+      background: rgba(129,140,248,.1); color: var(--indigo); border: 1px solid rgba(129,140,248,.15); }
+
+    .notes-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+      padding: .75rem 1rem; font-size: .85rem; color: var(--text); line-height: 1.6; white-space: pre-wrap; }
+
+    footer { position: relative; z-index: 1; border-top: 1px solid var(--border);
+      text-align: center; padding: 1.5rem; color: var(--muted); font-size: .8rem; }
+    footer a { color: var(--indigo); text-decoration: none; }
+
+    @media (max-width: 900px) {
+      th:nth-child(5), td:nth-child(5),
+      th:nth-child(6), td:nth-child(6) { display: none; }
+    }
+    @media (max-width: 640px) {
+      th:nth-child(3), td:nth-child(3) { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-top">
+    <a class="nav-logo" href="index.html">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+        <defs><linearGradient id="ng" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#818cf8"/><stop offset="100%" stop-color="#06b6d4"/>
+        </linearGradient></defs>
+        <path d="M 6 4 Q 16 26 23 46 L 23 4 Z" fill="url(#ng)"/>
+        <path d="M 42 4 Q 32 26 25 46 L 25 4 Z" fill="url(#ng)" opacity="0.72"/>
+        <path d="M 12 44 Q 24 48 36 44" stroke="url(#ng)" stroke-width="2.2" stroke-linecap="round" fill="none" opacity="0.55"/>
+      </svg>
+      <span>Vela</span>
+    </a>
+    <button class="hamburger" onclick="document.getElementById('nav-links').classList.toggle('open')" aria-label="Menu">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="nav-links" id="nav-links">
+    <a href="clients.html">Clients</a>
+    <a href="purchases.html" class="active">Purchases</a>
+    <a href="leads.html">Leads</a>
+    <a href="sales.html">Scripts</a>
+    <a href="settings.html">Settings</a>
+    <button onclick="signOut()" style="background:none;border:1px solid var(--border);color:var(--muted);font-size:.8rem;padding:.35rem .85rem;border-radius:8px;cursor:pointer;font-family:inherit;">Sign Out</button>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1>Purchases</h1>
+      <p>Track client payments and subscription history.</p>
+    </div>
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat-card">
+      <div class="stat-label">Total Purchases</div>
+      <div class="stat-value indigo" id="stat-total">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Monthly Subs</div>
+      <div class="stat-value cyan" id="stat-monthly">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">One-Time</div>
+      <div class="stat-value green" id="stat-onetime">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Pending Verification</div>
+      <div class="stat-value amber" id="stat-pending">—</div>
+    </div>
+  </div>
+
+  <div class="error-banner" id="error-banner"></div>
+
+  <div class="toolbar">
+    <div class="search-wrap">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="search" id="search" placeholder="Search by name, email, or business…" oninput="renderFiltered()" autocomplete="off" />
+    </div>
+    <div class="filter-tabs">
+      <button class="filter-tab active" data-filter="all"      onclick="setFilter('all')">All</button>
+      <button class="filter-tab"        data-filter="pending"  onclick="setFilter('pending')">Pending</button>
+      <button class="filter-tab"        data-filter="verified" onclick="setFilter('verified')">Verified</button>
+      <button class="filter-tab"        data-filter="monthly"  onclick="setFilter('monthly')">Monthly</button>
+      <button class="filter-tab"        data-filter="onetime"  onclick="setFilter('onetime')">One-Time</button>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th onclick="sortBy('client_name')">Client <span class="sort-arrow" id="sort-client_name">↕</span></th>
+          <th onclick="sortBy('billing')">Plan <span class="sort-arrow" id="sort-billing">↕</span></th>
+          <th onclick="sortBy('amount')">Amount <span class="sort-arrow" id="sort-amount">↕</span></th>
+          <th onclick="sortBy('payment_method')">Method <span class="sort-arrow" id="sort-payment_method">↕</span></th>
+          <th>Workflows</th>
+          <th onclick="sortBy('created_at')">Date <span class="sort-arrow" id="sort-created_at">↕</span></th>
+          <th onclick="sortBy('status')">Status <span class="sort-arrow" id="sort-status">↕</span></th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div class="empty-state" id="empty-state" style="display:none">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity=".4"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+      <p>No purchases found.</p>
+    </div>
+    <div class="empty-state" id="loading-state">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="animation:spin .8s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+      <p style="margin-top:.75rem">Loading purchases…</p>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <p>© 2025 Vela · <a href="index.html">Back to home</a></p>
+</footer>
+
+<!-- DETAIL MODAL -->
+<div class="modal-backdrop" id="detail-modal" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <h2 id="modal-title">Purchase Details</h2>
+        <div id="modal-subtitle" style="font-size:.82rem;color:var(--muted);margin-top:.2rem"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-footer" id="modal-footer"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const sb = supabase.createClient(
+    'https://ndbvmtuzmzbaaoxudmbk.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kYnZtdHV6bXpiYWFveHVkbWJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyNjUyODcsImV4cCI6MjA5Mzg0MTI4N30.CRqNEXZlUf4pRCjbVghCZg2p4rLh2Y-cKQpqSwkUw2k'
+  );
+
+  let allPurchases = [];
+  let activeFilter = 'all';
+  let sortCol = 'created_at';
+  let sortDir = -1;
+  let currentPurchase = null;
+
+  function esc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function fmtDate(ts) {
+    if (!ts) return '—';
+    return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  function statusBadge(s) {
+    if (s === 'verified')  return `<span class="badge badge-verified"><span class="badge-dot"></span>Verified</span>`;
+    if (s === 'cancelled') return `<span class="badge badge-cancelled"><span class="badge-dot"></span>Cancelled</span>`;
+    return `<span class="badge badge-pending"><span class="badge-dot"></span>Pending</span>`;
+  }
+
+  function planBadge(billing) {
+    if (billing === 'monthly') return `<span class="badge badge-monthly">Monthly</span>`;
+    return `<span class="badge badge-onetime">One-Time</span>`;
+  }
+
+  function workflowChips(workflows) {
+    if (!workflows || workflows.length === 0) return '<span style="color:var(--muted);font-size:.8rem">—</span>';
+    const show = workflows.slice(0, 2);
+    const rest = workflows.length - 2;
+    const chips = show.map(w => `<span class="wf-chip">${esc(w.replace(/-/g,' '))}</span>`).join('');
+    const more = rest > 0 ? `<span class="wf-more">+${rest}</span>` : '';
+    return `<div class="wf-chips">${chips}${more}</div>`;
+  }
+
+  async function init() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { window.location.href = 'login.html'; return; }
+
+    const { data: profile } = await sb.from('profiles').select('is_admin').eq('id', session.user.id).single();
+    if (!profile?.is_admin) { window.location.href = 'dashboard.html'; return; }
+
+    await loadPurchases();
+  }
+
+  async function loadPurchases() {
+    document.getElementById('loading-state').style.display = 'block';
+    document.getElementById('empty-state').style.display = 'none';
+
+    const { data, error } = await sb.from('purchases').select('*').order('created_at', { ascending: false });
+
+    document.getElementById('loading-state').style.display = 'none';
+
+    if (error) {
+      document.getElementById('error-banner').textContent = error.message;
+      document.getElementById('error-banner').style.display = 'block';
+      return;
+    }
+
+    allPurchases = data || [];
+    updateStats();
+    renderFiltered();
+  }
+
+  function updateStats() {
+    document.getElementById('stat-total').textContent   = allPurchases.length;
+    document.getElementById('stat-monthly').textContent = allPurchases.filter(p => p.billing === 'monthly').length;
+    document.getElementById('stat-onetime').textContent = allPurchases.filter(p => p.billing !== 'monthly').length;
+    document.getElementById('stat-pending').textContent = allPurchases.filter(p => p.status === 'pending' || !p.status).length;
+  }
+
+  function setFilter(f) {
+    activeFilter = f;
+    document.querySelectorAll('.filter-tab').forEach(t => t.classList.toggle('active', t.dataset.filter === f));
+    renderFiltered();
+  }
+
+  function sortBy(col) {
+    if (sortCol === col) { sortDir *= -1; }
+    else { sortCol = col; sortDir = -1; }
+    document.querySelectorAll('th .sort-arrow').forEach(el => el.textContent = '↕');
+    const el = document.getElementById('sort-' + col);
+    if (el) { el.textContent = sortDir === 1 ? '↑' : '↓'; el.closest('th').classList.add('sorted'); }
+    renderFiltered();
+  }
+
+  function renderFiltered() {
+    const q = document.getElementById('search').value.toLowerCase();
+
+    let list = allPurchases.filter(p => {
+      if (activeFilter === 'pending')  return (p.status === 'pending' || !p.status);
+      if (activeFilter === 'verified') return p.status === 'verified';
+      if (activeFilter === 'monthly')  return p.billing === 'monthly';
+      if (activeFilter === 'onetime')  return p.billing !== 'monthly';
+      return true;
+    });
+
+    if (q) {
+      list = list.filter(p =>
+        (p.client_name  || '').toLowerCase().includes(q) ||
+        (p.client_email || '').toLowerCase().includes(q) ||
+        (p.business_name|| '').toLowerCase().includes(q) ||
+        (p.amount       || '').toLowerCase().includes(q)
+      );
+    }
+
+    list.sort((a, b) => {
+      let av = a[sortCol] ?? '';
+      let bv = b[sortCol] ?? '';
+      return String(av).localeCompare(String(bv), undefined, { numeric: true }) * sortDir;
+    });
+
+    render(list);
+  }
+
+  function render(list) {
+    const tbody = document.getElementById('tbody');
+    const empty = document.getElementById('empty-state');
+
+    if (!list || list.length === 0) {
+      tbody.innerHTML = '';
+      empty.style.display = 'block';
+      return;
+    }
+
+    empty.style.display = 'none';
+    tbody.innerHTML = list.map(p => `
+      <tr onclick="openModal('${esc(p.id)}')">
+        <td>
+          <div class="client-name">${esc(p.client_name || '—')}</div>
+          <div class="client-email">${esc(p.client_email || '')}</div>
+          ${p.business_name ? `<div class="client-email">${esc(p.business_name)}</div>` : ''}
+        </td>
+        <td>${planBadge(p.billing)}</td>
+        <td><span class="amount-text">${esc(p.amount || '—')}</span></td>
+        <td style="color:var(--muted)">${esc(p.payment_method || '—')}</td>
+        <td>${workflowChips(p.workflows)}</td>
+        <td style="color:var(--muted);white-space:nowrap">${fmtDate(p.created_at)}</td>
+        <td>${statusBadge(p.status)}</td>
+        <td onclick="event.stopPropagation()">
+          <button class="btn btn-ghost btn-sm" onclick="openModal('${esc(p.id)}')">View</button>
+        </td>
+      </tr>`).join('');
+  }
+
+  function openModal(id) {
+    const p = allPurchases.find(x => x.id === id);
+    if (!p) return;
+    currentPurchase = p;
+
+    document.getElementById('modal-title').textContent = p.client_name || p.client_email || 'Purchase';
+    document.getElementById('modal-subtitle').textContent = fmtDate(p.created_at);
+
+    const wfHtml = (p.workflows && p.workflows.length)
+      ? p.workflows.map(w => `<span class="wf-tag">${esc(w.replace(/-/g,' '))}</span>`).join('')
+      : '<span style="color:var(--muted);font-size:.85rem">None listed</span>';
+
+    document.getElementById('modal-body').innerHTML = `
+      <div class="detail-section">
+        <div class="detail-section-title">Client Info</div>
+        <div class="detail-grid">
+          <div class="detail-row">
+            <div class="detail-key">Name</div>
+            <div class="detail-val">${esc(p.client_name || '—')}</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-key">Email</div>
+            <div class="detail-val">${esc(p.client_email || '—')}</div>
+          </div>
+          <div class="detail-row full">
+            <div class="detail-key">Business</div>
+            <div class="detail-val">${esc(p.business_name || '—')}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <div class="detail-section-title">Payment Details</div>
+        <div class="detail-grid">
+          <div class="detail-row">
+            <div class="detail-key">Amount</div>
+            <div class="detail-val green">${esc(p.amount || '—')}</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-key">Plan</div>
+            <div class="detail-val">${p.billing === 'monthly' ? 'Monthly Subscription' : 'One-Time Payment'}</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-key">Method</div>
+            <div class="detail-val">${esc(p.payment_method || '—')}</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-key">Tier</div>
+            <div class="detail-val">${esc(p.tier || '—')}</div>
+          </div>
+          ${p.transaction_id ? `
+          <div class="detail-row full">
+            <div class="detail-key">Transaction ID</div>
+            <div class="detail-val mono">${esc(p.transaction_id)}</div>
+          </div>` : ''}
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <div class="detail-section-title">Workflows Purchased</div>
+        <div class="wf-list">${wfHtml}</div>
+      </div>
+
+      ${p.notes ? `
+      <div class="detail-section">
+        <div class="detail-section-title">Notes</div>
+        <div class="notes-box">${esc(p.notes)}</div>
+      </div>` : ''}
+
+      <div class="detail-section">
+        <div class="detail-section-title">Status</div>
+        <div>${statusBadge(p.status)}</div>
+      </div>`;
+
+    const footer = document.getElementById('modal-footer');
+    footer.innerHTML = `<button class="btn btn-ghost" onclick="closeModal()">Close</button>`;
+
+    if (p.status !== 'verified') {
+      footer.innerHTML += `<button class="btn btn-success" onclick="updateStatus('${p.id}','verified')">✓ Mark Verified</button>`;
+    }
+    if (p.status !== 'pending') {
+      footer.innerHTML += `<button class="btn btn-warning btn-sm" onclick="updateStatus('${p.id}','pending')">Reset to Pending</button>`;
+    }
+    if (p.status !== 'cancelled') {
+      footer.innerHTML += `<button class="btn btn-danger btn-sm" onclick="updateStatus('${p.id}','cancelled')">Cancel</button>`;
+    }
+
+    document.getElementById('detail-modal').classList.add('open');
+  }
+
+  async function updateStatus(id, status) {
+    const { error } = await sb.from('purchases').update({ status }).eq('id', id);
+    if (error) { alert('Failed to update status: ' + error.message); return; }
+
+    const p = allPurchases.find(x => x.id === id);
+    if (p) p.status = status;
+
+    closeModal();
+    updateStats();
+    renderFiltered();
+  }
+
+  function closeModal() { document.getElementById('detail-modal').classList.remove('open'); currentPurchase = null; }
+  function closeModalOutside(e) { if (e.target === document.getElementById('detail-modal')) closeModal(); }
+
+  async function signOut() {
+    await sb.auth.signOut();
+    window.location.href = 'login.html';
+  }
+
+  init();
+</script>
+</body>
+</html>
