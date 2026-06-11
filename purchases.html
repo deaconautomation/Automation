@@ -192,6 +192,28 @@
     select.edit-input { cursor: pointer; }
     textarea.edit-input { resize: vertical; min-height: 72px; line-height: 1.5; }
 
+    /* AUTOMATION CARDS */
+    .auto-card {
+      background: var(--surface2); border: 1px solid var(--border); border-radius: 12px;
+      padding: 1.1rem 1.25rem; display: flex; flex-direction: column; gap: .75rem;
+    }
+    .auto-card-header { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+    .auto-card-title { display: flex; align-items: center; gap: .5rem; font-weight: 700; font-size: .9rem; }
+    .auto-card-actions { display: flex; gap: .35rem; flex-shrink: 0; }
+    .auto-config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .4rem .75rem; }
+    .auto-config-row { display: flex; flex-direction: column; gap: .15rem; }
+    .auto-config-row.full { grid-column: 1 / -1; }
+    .auto-config-key { font-size: .68rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+    .auto-config-val { font-size: .84rem; color: var(--text); word-break: break-all; }
+    .toggle-btn {
+      display: inline-flex; align-items: center; gap: .35rem; padding: .25rem .65rem;
+      border-radius: 20px; font-size: .75rem; font-weight: 600; cursor: pointer;
+      border: none; font-family: 'Inter', sans-serif; transition: all .2s;
+    }
+    .toggle-btn.enabled  { background: rgba(74,222,128,.1);  color: var(--green); border: 1px solid rgba(74,222,128,.25); }
+    .toggle-btn.disabled { background: rgba(248,113,113,.1); color: var(--red);   border: 1px solid rgba(248,113,113,.25); }
+    .auto-empty { text-align: center; padding: 2.5rem 1rem; color: var(--muted); font-size: .875rem; }
+
     footer { position: relative; z-index: 1; border-top: 1px solid var(--border);
       text-align: center; padding: 1.5rem; color: var(--muted); font-size: .8rem; }
     footer a { color: var(--indigo); text-decoration: none; }
@@ -320,6 +342,23 @@
     </div>
     <div class="modal-body" id="modal-body"></div>
     <div class="modal-footer" id="modal-footer"></div>
+  </div>
+</div>
+
+<!-- AUTOMATIONS MODAL -->
+<div class="modal-backdrop" id="auto-modal" onclick="closeAutoModalOutside(event)">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-header">
+      <div>
+        <h2 id="auto-modal-title">Client Automations</h2>
+        <div id="auto-modal-subtitle" style="font-size:.82rem;color:var(--muted);margin-top:.2rem"></div>
+      </div>
+      <button class="modal-close" onclick="closeAutoModal()">✕</button>
+    </div>
+    <div class="modal-body" id="auto-modal-body" style="gap:.75rem"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeAutoModal()">Close</button>
+    </div>
   </div>
 </div>
 
@@ -469,8 +508,9 @@
         <td>${workflowChips(p.workflows)}</td>
         <td style="color:var(--muted);white-space:nowrap">${fmtDate(p.created_at)}</td>
         <td>${statusBadge(p.status)}</td>
-        <td onclick="event.stopPropagation()">
+        <td onclick="event.stopPropagation()" style="white-space:nowrap">
           <button class="btn btn-ghost btn-sm" onclick="openModal('${esc(p.id)}')">View</button>
+          <button class="btn btn-ghost btn-sm" style="margin-left:.3rem" onclick="openAutomationsModal('${esc(p.client_email)}','${esc(p.client_name||p.client_email)}')">Automations</button>
         </td>
       </tr>`).join('');
   }
@@ -615,6 +655,196 @@
 
   function closeModal() { document.getElementById('detail-modal').classList.remove('open'); currentPurchase = null; }
   function closeModalOutside(e) { if (e.target === document.getElementById('detail-modal')) closeModal(); }
+
+  // ── AUTOMATIONS MODAL ───────────────────────────────────────
+  const WF_META = {
+    'low-stock-alerts':       { icon: '🔔', title: 'Low Stock Alerts' },
+    'out-of-stock-alerts':    { icon: '🚨', title: 'Out of Stock Alerts' },
+    'weekly-report':          { icon: '📊', title: 'Weekly Inventory Report' },
+    'supplier-auto-email':    { icon: '📦', title: 'Supplier Auto-Email' },
+    'reorder-reminders':      { icon: '🔄', title: 'Reorder Reminders' },
+    'csv-auto-import':        { icon: '📥', title: 'CSV Scheduled Import' },
+    'inventory-value-report': { icon: '💰', title: 'Inventory Value Report' },
+    'custom-email-alerts':    { icon: '✉️',  title: 'Custom Email Alerts' },
+    'shopify-sync':           { icon: '🛍️', title: 'Shopify Sync' },
+    'quickbooks-sync':        { icon: '📒', title: 'QuickBooks / Xero' },
+    'multi-location':         { icon: '🏭', title: 'Multi-Location' },
+    'barcode-scanning':       { icon: '📷', title: 'Barcode Scanning' },
+    'ai-forecasting':         { icon: '🤖', title: 'AI Forecasting' },
+    'purchase-orders':        { icon: '🧾', title: 'Purchase Orders' },
+    'custom-api':             { icon: '🔌', title: 'Custom API' },
+    'custom-dashboard':       { icon: '📈', title: 'Custom Dashboard' },
+  };
+
+  let autoConfigs = [];
+  let currentAutoEmail = '';
+
+  async function openAutomationsModal(email, label) {
+    currentAutoEmail = email;
+    document.getElementById('auto-modal-title').textContent = 'Automations';
+    document.getElementById('auto-modal-subtitle').textContent = label || email;
+    document.getElementById('auto-modal-body').innerHTML = `
+      <div style="text-align:center;padding:2rem;color:var(--muted)">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="animation:spin .8s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+        <p style="margin-top:.6rem;font-size:.875rem">Loading…</p>
+      </div>`;
+    document.getElementById('auto-modal').classList.add('open');
+
+    try {
+      const res = await fetch(`/api/admin-automations?email=${encodeURIComponent(email)}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to load.');
+      autoConfigs = data.configs || [];
+      renderAutoConfigs();
+    } catch(e) {
+      document.getElementById('auto-modal-body').innerHTML =
+        `<p style="color:var(--red);font-size:.875rem;padding:.5rem 0">${esc(e.message)}</p>`;
+    }
+  }
+
+  function renderAutoConfigs() {
+    const body = document.getElementById('auto-modal-body');
+    if (!autoConfigs.length) {
+      body.innerHTML = `<div class="auto-empty">No automations configured for this client yet.</div>`;
+      return;
+    }
+    body.innerHTML = autoConfigs.map(c => buildAutoCard(c)).join('');
+  }
+
+  function buildAutoCard(c) {
+    const meta    = WF_META[c.workflow_id] || { icon: '⚙️', title: c.workflow_id.replace(/-/g,' ') };
+    const cfg     = c.config || {};
+    const enabled = cfg._enabled !== false;
+
+    const configFields = Object.entries(cfg)
+      .filter(([k]) => k !== '_enabled')
+      .map(([k, v]) => {
+        const label = k.replace(/_/g, ' ');
+        const val   = typeof v === 'boolean' ? (v ? 'Yes' : 'No') : String(v ?? '—');
+        return `<div class="auto-config-row">
+          <div class="auto-config-key">${esc(label)}</div>
+          <div class="auto-config-val" id="cfgval-${esc(c.id)}-${esc(k)}">${esc(val)}</div>
+        </div>`;
+      }).join('') || `<div class="auto-config-row full"><div class="auto-config-val" style="color:var(--muted)">No fields configured.</div></div>`;
+
+    return `<div class="auto-card" id="autocard-${esc(c.id)}">
+      <div class="auto-card-header">
+        <div class="auto-card-title">
+          <span>${meta.icon}</span>
+          <span>${esc(meta.title)}</span>
+        </div>
+        <div class="auto-card-actions">
+          <button class="toggle-btn ${enabled ? 'enabled' : 'disabled'}" id="toggle-${esc(c.id)}" onclick="toggleAuto('${esc(c.id)}')">
+            ${enabled ? '● Enabled' : '○ Disabled'}
+          </button>
+          <button class="btn btn-ghost btn-sm" onclick="editAutoCard('${esc(c.id)}')">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteAuto('${esc(c.id)}')">Delete</button>
+        </div>
+      </div>
+      <div class="auto-config-grid" id="cfggrid-${esc(c.id)}">${configFields}</div>
+    </div>`;
+  }
+
+  async function toggleAuto(id) {
+    const c = autoConfigs.find(x => x.id === id);
+    if (!c) return;
+    const newEnabled = c.config._enabled === false;
+    const newConfig  = { ...c.config, _enabled: newEnabled };
+
+    const res = await fetch('/api/admin-automations', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, config: newConfig }),
+    });
+    if (!res.ok) { alert('Failed to update.'); return; }
+
+    c.config = newConfig;
+    const btn = document.getElementById('toggle-' + id);
+    if (btn) {
+      btn.className = `toggle-btn ${newEnabled ? 'enabled' : 'disabled'}`;
+      btn.textContent = newEnabled ? '● Enabled' : '○ Disabled';
+    }
+  }
+
+  function editAutoCard(id) {
+    const c = autoConfigs.find(x => x.id === id);
+    if (!c) return;
+    const cfg = c.config || {};
+
+    const fields = Object.entries(cfg)
+      .filter(([k]) => k !== '_enabled')
+      .map(([k, v]) => {
+        const label   = k.replace(/_/g, ' ');
+        const inputId = `editfield-${id}-${k}`;
+        const val     = typeof v === 'boolean' ? (v ? 'true' : 'false') : String(v ?? '');
+        return `<div class="auto-config-row">
+          <div class="auto-config-key">${esc(label)}</div>
+          <input class="edit-input" id="${inputId}" data-key="${esc(k)}" data-origtype="${typeof v}" value="${esc(val)}" />
+        </div>`;
+      }).join('') || `<div class="auto-config-row full"><div class="auto-config-val" style="color:var(--muted)">No editable fields.</div></div>`;
+
+    document.getElementById('cfggrid-' + id).innerHTML = fields;
+
+    // Swap Edit → Save button
+    const card  = document.getElementById('autocard-' + id);
+    const eBtn  = card.querySelector('.btn-ghost.btn-sm');
+    eBtn.textContent = 'Save';
+    eBtn.onclick = () => saveAutoEdit(id);
+  }
+
+  async function saveAutoEdit(id) {
+    const c = autoConfigs.find(x => x.id === id);
+    if (!c) return;
+
+    const inputs  = document.querySelectorAll(`#cfggrid-${id} [data-key]`);
+    const newConfig = { ...c.config };
+    inputs.forEach(inp => {
+      const key  = inp.dataset.key;
+      const orig = inp.dataset.origtype;
+      let val    = inp.value.trim();
+      if (orig === 'boolean') val = val === 'true';
+      else if (orig === 'number') val = Number(val);
+      newConfig[key] = val;
+    });
+
+    const res = await fetch('/api/admin-automations', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, config: newConfig }),
+    });
+    if (!res.ok) { alert('Failed to save.'); return; }
+
+    c.config = newConfig;
+    // Re-render just this card
+    const card = document.getElementById('autocard-' + id);
+    if (card) card.outerHTML = buildAutoCard(c);
+  }
+
+  async function deleteAuto(id) {
+    const c = autoConfigs.find(x => x.id === id);
+    if (!c) return;
+    const meta = WF_META[c.workflow_id] || { title: c.workflow_id };
+    if (!confirm(`Delete "${meta.title}" automation for this client? This cannot be undone.`)) return;
+
+    const res = await fetch('/api/admin-automations', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+    if (!res.ok) { alert('Failed to delete.'); return; }
+
+    autoConfigs = autoConfigs.filter(x => x.id !== id);
+    renderAutoConfigs();
+  }
+
+  function closeAutoModal() {
+    document.getElementById('auto-modal').classList.remove('open');
+    autoConfigs = [];
+    currentAutoEmail = '';
+  }
+  function closeAutoModalOutside(e) {
+    if (e.target === document.getElementById('auto-modal')) closeAutoModal();
+  }
 
   async function signOut() {
     await sb.auth.signOut();
