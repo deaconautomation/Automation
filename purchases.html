@@ -91,6 +91,8 @@
     .btn { display: inline-flex; align-items: center; gap: .4rem; padding: .55rem 1.1rem;
       border-radius: 8px; font-size: .875rem; font-weight: 600; cursor: pointer;
       border: none; transition: all .2s; font-family: 'Inter', sans-serif; }
+    .btn-primary { background: var(--grad); color: #fff; border: none; }
+    .btn-primary:hover:not(:disabled) { opacity: .88; }
     .btn-ghost { background: var(--surface); border: 1px solid var(--border); color: var(--muted); }
     .btn-ghost:hover { border-color: var(--indigo); color: var(--text); }
     .btn-success { background: rgba(74,222,128,.12); border: 1px solid rgba(74,222,128,.25); color: var(--green); }
@@ -179,6 +181,16 @@
 
     .notes-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
       padding: .75rem 1rem; font-size: .85rem; color: var(--text); line-height: 1.6; white-space: pre-wrap; }
+
+    .edit-input {
+      background: var(--surface2); border: 1px solid var(--border); border-radius: 7px;
+      padding: .5rem .75rem; color: var(--text); font-family: 'Inter', sans-serif;
+      font-size: .875rem; outline: none; transition: border-color .2s; width: 100%;
+    }
+    .edit-input:focus { border-color: var(--indigo); }
+    .edit-input::placeholder { color: var(--muted); }
+    select.edit-input { cursor: pointer; }
+    textarea.edit-input { resize: vertical; min-height: 72px; line-height: 1.5; }
 
     footer { position: relative; z-index: 1; border-top: 1px solid var(--border);
       text-align: center; padding: 1.5rem; color: var(--muted); font-size: .8rem; }
@@ -481,15 +493,15 @@
         <div class="detail-grid">
           <div class="detail-row">
             <div class="detail-key">Name</div>
-            <div class="detail-val">${esc(p.client_name || '—')}</div>
+            <input class="edit-input" id="edit-client_name" value="${esc(p.client_name || '')}" placeholder="Client name" />
           </div>
           <div class="detail-row">
             <div class="detail-key">Email</div>
-            <div class="detail-val">${esc(p.client_email || '—')}</div>
+            <input class="edit-input" id="edit-client_email" type="email" value="${esc(p.client_email || '')}" placeholder="Email" />
           </div>
           <div class="detail-row full">
             <div class="detail-key">Business</div>
-            <div class="detail-val">${esc(p.business_name || '—')}</div>
+            <input class="edit-input" id="edit-business_name" value="${esc(p.business_name || '')}" placeholder="Business name" />
           </div>
         </div>
       </div>
@@ -499,25 +511,30 @@
         <div class="detail-grid">
           <div class="detail-row">
             <div class="detail-key">Amount</div>
-            <div class="detail-val green">${esc(p.amount || '—')}</div>
+            <input class="edit-input" id="edit-amount" value="${esc(p.amount || '')}" placeholder="e.g. $37" />
           </div>
           <div class="detail-row">
             <div class="detail-key">Plan</div>
-            <div class="detail-val">${p.billing === 'monthly' ? 'Monthly Subscription' : 'One-Time Payment'}</div>
+            <select class="edit-input" id="edit-billing">
+              <option value="monthly"  ${p.billing === 'monthly'  ? 'selected' : ''}>Monthly</option>
+              <option value="onetime"  ${p.billing !== 'monthly'  ? 'selected' : ''}>One-Time</option>
+            </select>
           </div>
           <div class="detail-row">
-            <div class="detail-key">Method</div>
-            <div class="detail-val">${esc(p.payment_method || '—')}</div>
+            <div class="detail-key">Payment Method</div>
+            <input class="edit-input" id="edit-payment_method" value="${esc(p.payment_method || '')}" placeholder="e.g. CashApp, Venmo" />
           </div>
           <div class="detail-row">
             <div class="detail-key">Tier</div>
-            <div class="detail-val">${esc(p.tier || '—')}</div>
+            <select class="edit-input" id="edit-tier">
+              <option value="starter" ${(p.tier || 'starter') === 'starter' ? 'selected' : ''}>Starter</option>
+              <option value="pro"     ${p.tier === 'pro' ? 'selected' : ''}>Pro</option>
+            </select>
           </div>
-          ${p.transaction_id ? `
           <div class="detail-row full">
             <div class="detail-key">Transaction ID</div>
-            <div class="detail-val mono">${esc(p.transaction_id)}</div>
-          </div>` : ''}
+            <input class="edit-input" id="edit-transaction_id" value="${esc(p.transaction_id || '')}" placeholder="Optional" />
+          </div>
         </div>
       </div>
 
@@ -526,39 +543,70 @@
         <div class="wf-list">${wfHtml}</div>
       </div>
 
-      ${p.notes ? `
       <div class="detail-section">
         <div class="detail-section-title">Notes</div>
-        <div class="notes-box">${esc(p.notes)}</div>
-      </div>` : ''}
+        <textarea class="edit-input" id="edit-notes" placeholder="Add notes…">${esc(p.notes || '')}</textarea>
+      </div>
 
       <div class="detail-section">
         <div class="detail-section-title">Status</div>
-        <div>${statusBadge(p.status)}</div>
+        <div style="display:flex;gap:.4rem;flex-wrap:wrap">
+          <button class="btn btn-sm ${p.status === 'pending'   ? 'btn-warning'  : 'btn-ghost'}" onclick="setStatus('pending')">Pending</button>
+          <button class="btn btn-sm ${p.status === 'verified'  ? 'btn-success'  : 'btn-ghost'}" onclick="setStatus('verified')">✓ Verified</button>
+          <button class="btn btn-sm ${p.status === 'cancelled' ? 'btn-danger'   : 'btn-ghost'}" onclick="setStatus('cancelled')">Cancelled</button>
+        </div>
       </div>`;
 
-    const footer = document.getElementById('modal-footer');
-    footer.innerHTML = `<button class="btn btn-ghost" onclick="closeModal()">Close</button>`;
-
-    if (p.status !== 'verified') {
-      footer.innerHTML += `<button class="btn btn-success" onclick="updateStatus('${p.id}','verified')">✓ Mark Verified</button>`;
-    }
-    if (p.status !== 'pending') {
-      footer.innerHTML += `<button class="btn btn-warning btn-sm" onclick="updateStatus('${p.id}','pending')">Reset to Pending</button>`;
-    }
-    if (p.status !== 'cancelled') {
-      footer.innerHTML += `<button class="btn btn-danger btn-sm" onclick="updateStatus('${p.id}','cancelled')">Cancel</button>`;
-    }
+    document.getElementById('modal-footer').innerHTML = `
+      <button class="btn btn-ghost" onclick="closeModal()">Close</button>
+      <button class="btn btn-primary" id="save-btn" onclick="saveEdit()">Save Changes</button>`;
 
     document.getElementById('detail-modal').classList.add('open');
+    document.getElementById('edit-client_name').focus();
   }
 
-  async function updateStatus(id, status) {
-    const { error } = await sb.from('purchases').update({ status }).eq('id', id);
-    if (error) { alert('Failed to update status: ' + error.message); return; }
+  function setStatus(status) {
+    if (!currentPurchase) return;
+    currentPurchase._pendingStatus = status;
+    document.querySelectorAll('#modal-body .detail-section:last-child .btn').forEach(btn => {
+      btn.className = 'btn btn-sm btn-ghost';
+    });
+    const labels = { pending: 'Pending', verified: '✓ Verified', cancelled: 'Cancelled' };
+    const classes = { pending: 'btn-warning', verified: 'btn-success', cancelled: 'btn-danger' };
+    document.querySelectorAll('#modal-body .detail-section:last-child .btn').forEach(btn => {
+      const s = btn.getAttribute('onclick').match(/'(\w+)'/)?.[1];
+      if (s === status) btn.className = `btn btn-sm ${classes[status]}`;
+    });
+  }
 
-    const p = allPurchases.find(x => x.id === id);
-    if (p) p.status = status;
+  async function saveEdit() {
+    if (!currentPurchase) return;
+    const btn = document.getElementById('save-btn');
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+
+    const updates = {
+      client_name:    document.getElementById('edit-client_name').value.trim(),
+      client_email:   document.getElementById('edit-client_email').value.trim(),
+      business_name:  document.getElementById('edit-business_name').value.trim() || null,
+      amount:         document.getElementById('edit-amount').value.trim() || null,
+      billing:        document.getElementById('edit-billing').value,
+      payment_method: document.getElementById('edit-payment_method').value.trim() || null,
+      tier:           document.getElementById('edit-tier').value,
+      transaction_id: document.getElementById('edit-transaction_id').value.trim() || null,
+      notes:          document.getElementById('edit-notes').value.trim() || null,
+      status:         currentPurchase._pendingStatus || currentPurchase.status,
+    };
+
+    const { error } = await sb.from('purchases').update(updates).eq('id', currentPurchase.id);
+
+    btn.disabled = false;
+    btn.textContent = 'Save Changes';
+
+    if (error) { alert('Failed to save: ' + error.message); return; }
+
+    Object.assign(currentPurchase, updates);
+    delete currentPurchase._pendingStatus;
 
     closeModal();
     updateStats();
