@@ -682,13 +682,13 @@
   ]);
 
   const SEND_DATE_LABEL = {
-    'low-stock-alerts':       'Start Monitoring Date',
-    'out-of-stock-alerts':    'Start Monitoring Date',
-    'weekly-report':          'First Send Date',
-    'supplier-auto-email':    'First Send Date',
-    'reorder-reminders':      'Next Reminder Date',
+    'low-stock-alerts':       'Start Date',
+    'out-of-stock-alerts':    'Start Date',
+    'weekly-report':          'Start Date',
+    'supplier-auto-email':    'Start Date',
+    'reorder-reminders':      'Start Date',
     'csv-auto-import':        'Start Date',
-    'inventory-value-report': 'First Report Date',
+    'inventory-value-report': 'Start Date',
     'custom-email-alerts':    'Start Date',
   };
 
@@ -735,9 +735,12 @@
     const configFields = Object.entries(cfg)
       .filter(([k]) => k !== '_enabled')
       .map(([k, v]) => {
-        const label = k === 'send_date' ? (SEND_DATE_LABEL[c.workflow_id] || 'Send Date') : k.replace(/_/g, ' ');
+        const label = k === 'send_date' ? (SEND_DATE_LABEL[c.workflow_id] || 'Start Date')
+                    : k === 'end_date'  ? 'End Date'
+                    : k.replace(/_/g, ' ');
         let val = typeof v === 'boolean' ? (v ? 'Yes' : 'No') : String(v ?? '—');
-        if (k === 'send_date' && v) val = new Date(v).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        if ((k === 'send_date' || k === 'end_date') && v)
+          val = new Date(v).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
         return `<div class="auto-config-row">
           <div class="auto-config-key">${esc(label)}</div>
           <div class="auto-config-val">${esc(val)}</div>
@@ -788,19 +791,21 @@
     if (!c) return;
     const cfg = c.config || {};
 
-    // Build field list from existing config keys, then add send_date if missing for email workflows
+    // Build field list; inject send_date + end_date for email workflows if missing
     const entries = Object.entries(cfg).filter(([k]) => k !== '_enabled');
-    const hasSendDate = entries.some(([k]) => k === 'send_date');
-    if (!hasSendDate && DATE_WORKFLOWS.has(c.workflow_id)) {
-      entries.push(['send_date', '']);
+    if (DATE_WORKFLOWS.has(c.workflow_id)) {
+      if (!entries.some(([k]) => k === 'send_date')) entries.push(['send_date', '']);
+      if (!entries.some(([k]) => k === 'end_date'))   entries.push(['end_date',  '']);
     }
 
     const fields = entries.map(([k, v]) => {
-        const isDate  = k === 'send_date';
-        const label   = isDate ? (SEND_DATE_LABEL[c.workflow_id] || 'Send Date') : k.replace(/_/g, ' ');
+        const isDate  = k === 'send_date' || k === 'end_date';
+        const label   = k === 'send_date' ? (SEND_DATE_LABEL[c.workflow_id] || 'Start Date')
+                      : k === 'end_date'  ? 'End Date (optional)'
+                      : k.replace(/_/g, ' ');
         const inputId = `editfield-${id}-${k}`;
         const val     = typeof v === 'boolean' ? (v ? 'true' : 'false') : String(v ?? '');
-        const type    = isDate ? 'date' : (typeof v === 'boolean' ? 'text' : 'text');
+        const type    = isDate ? 'date' : 'text';
         return `<div class="auto-config-row ${isDate ? 'full' : ''}">
           <div class="auto-config-key">${esc(label)}</div>
           <input class="edit-input" type="${type}" id="${inputId}" data-key="${esc(k)}" data-origtype="${typeof v}" value="${esc(val)}" />
