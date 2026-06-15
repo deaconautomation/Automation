@@ -218,6 +218,21 @@
       text-align: center; padding: 1.5rem; color: var(--muted); font-size: .8rem; }
     footer a { color: var(--indigo); text-decoration: none; }
 
+    /* CALENDAR PICKER */
+    .cal-wrap { display: flex; flex-direction: column; gap: .55rem; }
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+    .cal-day {
+      aspect-ratio: 1; border-radius: 6px; border: 1px solid var(--border);
+      background: var(--surface2); color: var(--muted); font-size: .75rem; font-weight: 600;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-family: 'Inter', sans-serif; transition: all .15s; padding: 0;
+    }
+    .cal-day:hover:not(.cal-max) { border-color: rgba(129,140,248,.5); color: var(--indigo); }
+    .cal-day.cal-sel { background: rgba(129,140,248,.18); border-color: var(--indigo); color: var(--indigo); }
+    .cal-day.cal-max:not(.cal-sel) { opacity: .3; cursor: not-allowed; }
+    .cal-note { font-size: .75rem; color: var(--muted); }
+    .cal-note.cal-active { color: var(--indigo); font-weight: 600; }
+
     @media (max-width: 900px) {
       th:nth-child(5), td:nth-child(5),
       th:nth-child(6), td:nth-child(6) { display: none; }
@@ -681,17 +696,6 @@
     'reorder-reminders','csv-auto-import','inventory-value-report','custom-email-alerts',
   ]);
 
-  const SEND_DATE_LABEL = {
-    'low-stock-alerts':       'Start Date',
-    'out-of-stock-alerts':    'Start Date',
-    'weekly-report':          'Start Date',
-    'supplier-auto-email':    'Start Date',
-    'reorder-reminders':      'Start Date',
-    'csv-auto-import':        'Start Date',
-    'inventory-value-report': 'Start Date',
-    'custom-email-alerts':    'Start Date',
-  };
-
   let autoConfigs = [];
   let currentAutoEmail = '';
 
@@ -735,13 +739,17 @@
     const configFields = Object.entries(cfg)
       .filter(([k]) => k !== '_enabled')
       .map(([k, v]) => {
-        const label = k === 'send_date' ? (SEND_DATE_LABEL[c.workflow_id] || 'Start Date')
-                    : k === 'end_date'  ? 'End Date'
+        const label = k === 'monthly_days' ? 'Send Days'
                     : k.replace(/_/g, ' ');
-        let val = typeof v === 'boolean' ? (v ? 'Yes' : 'No') : String(v ?? '—');
-        if ((k === 'send_date' || k === 'end_date') && v)
-          val = new Date(v).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-        return `<div class="auto-config-row">
+        let val;
+        if (k === 'monthly_days') {
+          const days = Array.isArray(v) ? v : [];
+          val = days.length ? days.map(ordinal).join(', ') + ' of every month' : '—';
+        } else {
+          val = typeof v === 'boolean' ? (v ? 'Yes' : 'No') : String(v ?? '—');
+        }
+        const fullRow = k === 'monthly_days';
+        return `<div class="auto-config-row ${fullRow?'full':''}">
           <div class="auto-config-key">${esc(label)}</div>
           <div class="auto-config-val">${esc(val)}</div>
         </div>`;
@@ -791,24 +799,28 @@
     if (!c) return;
     const cfg = c.config || {};
 
-    // Build field list; inject send_date + end_date for email workflows if missing
-    const entries = Object.entries(cfg).filter(([k]) => k !== '_enabled');
-    if (DATE_WORKFLOWS.has(c.workflow_id)) {
-      if (!entries.some(([k]) => k === 'send_date')) entries.push(['send_date', '']);
-      if (!entries.some(([k]) => k === 'end_date'))   entries.push(['end_date',  '']);
+    // Build field list; inject monthly_days for email workflows if missing
+    const entries = Object.entries(cfg).filter(([k]) => k !== '_enabled' && k !== 'send_date' && k !== 'end_date');
+    if (DATE_WORKFLOWS.has(c.workflow_id) && !entries.some(([k]) => k === 'monthly_days')) {
+      entries.push(['monthly_days', []]);
     }
 
     const fields = entries.map(([k, v]) => {
-        const isDate  = k === 'send_date' || k === 'end_date';
-        const label   = k === 'send_date' ? (SEND_DATE_LABEL[c.workflow_id] || 'Start Date')
-                      : k === 'end_date'  ? 'End Date (optional)'
-                      : k.replace(/_/g, ' ');
+        const isCal   = k === 'monthly_days';
+        const label   = isCal ? 'Send Days (monthly)' : k.replace(/_/g, ' ');
+        if (isCal) {
+          const calId   = `cal-edit-${id}`;
+          const selected = Array.isArray(v) ? v : [];
+          return `<div class="auto-config-row full">
+            <div class="auto-config-key">${esc(label)}</div>
+            ${buildCalHtml(k, calId, selected)}
+          </div>`;
+        }
         const inputId = `editfield-${id}-${k}`;
         const val     = typeof v === 'boolean' ? (v ? 'true' : 'false') : String(v ?? '');
-        const type    = isDate ? 'date' : 'text';
-        return `<div class="auto-config-row ${isDate ? 'full' : ''}">
+        return `<div class="auto-config-row">
           <div class="auto-config-key">${esc(label)}</div>
-          <input class="edit-input" type="${type}" id="${inputId}" data-key="${esc(k)}" data-origtype="${typeof v}" value="${esc(val)}" />
+          <input class="edit-input" id="${inputId}" data-key="${esc(k)}" data-origtype="${typeof v}" value="${esc(val)}" />
         </div>`;
       }).join('') || `<div class="auto-config-row full"><div class="auto-config-val" style="color:var(--muted)">No editable fields.</div></div>`;
 
@@ -827,11 +839,15 @@
 
     const inputs  = document.querySelectorAll(`#cfggrid-${id} [data-key]`);
     const newConfig = { ...c.config };
+    // remove legacy date keys if present
+    delete newConfig.send_date;
+    delete newConfig.end_date;
     inputs.forEach(inp => {
       const key  = inp.dataset.key;
       const orig = inp.dataset.origtype;
       let val    = inp.value.trim();
-      if (orig === 'boolean') val = val === 'true';
+      if (key === 'monthly_days') { try { val = JSON.parse(inp.value||'[]'); } catch(e){ val=[]; } }
+      else if (orig === 'boolean') val = val === 'true';
       else if (orig === 'number') val = Number(val);
       newConfig[key] = val;
     });
@@ -881,6 +897,54 @@
   }
 
   init();
+
+function ordinal(n) {
+  const s = ['th','st','nd','rd'];
+  const v = n % 100;
+  return n + (s[(v-20)%10]||s[v]||s[0]);
+}
+
+function calToggle(btn, calId) {
+  const valEl = document.getElementById(calId+'-val');
+  const noteEl = document.getElementById(calId+'-note');
+  const grid   = document.getElementById(calId+'-grid');
+  let sel = JSON.parse(valEl.value||'[]');
+  const day = parseInt(btn.dataset.day);
+  if (btn.classList.contains('cal-sel')) {
+    sel = sel.filter(d=>d!==day);
+    btn.classList.remove('cal-sel');
+  } else {
+    if (sel.length>=4) return;
+    sel.push(day);
+    btn.classList.add('cal-sel');
+  }
+  sel.sort((a,b)=>a-b);
+  valEl.value = JSON.stringify(sel);
+  grid.querySelectorAll('.cal-day').forEach(b => {
+    b.classList.toggle('cal-max', sel.length>=4 && !b.classList.contains('cal-sel'));
+  });
+  noteEl.textContent = sel.length
+    ? 'Repeats on the '+sel.map(ordinal).join(', ')+' of every month'
+    : 'Select up to 4 days — repeats every month';
+  noteEl.classList.toggle('cal-active', sel.length>0);
+}
+
+function buildCalHtml(key, calId, selected) {
+  selected = Array.isArray(selected) ? selected : [];
+  const days = Array.from({length:31},(_,i)=>i+1).map(d => {
+    const sel = selected.includes(d) ? 'cal-sel' : '';
+    const max = selected.length>=4 && !selected.includes(d) ? 'cal-max' : '';
+    return `<button type="button" class="cal-day ${sel} ${max}" data-day="${d}" onclick="calToggle(this,'${calId}')">${d}</button>`;
+  }).join('');
+  const note = selected.length
+    ? 'Repeats on the '+selected.map(ordinal).join(', ')+' of every month'
+    : 'Select up to 4 days — repeats every month';
+  return `<div class="cal-wrap">
+    <div class="cal-grid" id="${calId}-grid">${days}</div>
+    <div class="cal-note ${selected.length?'cal-active':''}" id="${calId}-note">${note}</div>
+    <input type="hidden" id="${calId}-val" data-key="${key}" value="${JSON.stringify(selected).replace(/"/g,'&quot;')}" />
+  </div>`;
+}
 </script>
 </body>
 </html>
