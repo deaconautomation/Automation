@@ -315,33 +315,41 @@
       { key: 'alert_email',  label: 'Alert Email',              type: 'email'    },
       { key: 'threshold',    label: 'Default Threshold (qty)',  type: 'number'   },
       { key: 'monitor_all',  label: 'Monitor All Items',        type: 'checkbox' },
+      { key: 'send_date',    label: 'Start Monitoring Date',    type: 'date'     },
     ],
     'out-of-stock-alerts': [
       { key: 'alert_email',  label: 'Alert Email',              type: 'email'    },
+      { key: 'send_date',    label: 'Start Monitoring Date',    type: 'date'     },
     ],
     'weekly-report': [
       { key: 'report_email', label: 'Report Email',             type: 'email'    },
       { key: 'day_of_week',  label: 'Day of Week',              type: 'select',  options: ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'] },
+      { key: 'send_date',    label: 'First Send Date',          type: 'date'     },
     ],
     'supplier-auto-email': [
       { key: 'supplier_name',  label: 'Supplier Name',          type: 'text'     },
       { key: 'supplier_email', label: 'Supplier Email',         type: 'email'    },
+      { key: 'send_date',      label: 'First Send Date',        type: 'date'     },
     ],
     'reorder-reminders': [
       { key: 'reminder_email', label: 'Reminder Email',         type: 'email'    },
       { key: 'frequency',      label: 'Frequency',              type: 'select',  options: ['Weekly','Monthly'] },
+      { key: 'send_date',      label: 'Next Reminder Date',     type: 'date'     },
     ],
     'csv-auto-import': [
       { key: 'column_names', label: 'CSV Column Names (comma-separated)', type: 'text'   },
       { key: 'schedule',     label: 'Import Schedule',          type: 'select',  options: ['Daily','Weekly'] },
+      { key: 'send_date',    label: 'Start Date',               type: 'date'     },
     ],
     'inventory-value-report': [
       { key: 'report_email', label: 'Report Email',             type: 'email'    },
       { key: 'frequency',    label: 'Frequency',                type: 'select',  options: ['Weekly','Monthly'] },
+      { key: 'send_date',    label: 'First Report Date',        type: 'date'     },
     ],
     'custom-email-alerts': [
       { key: 'conditions',   label: 'Alert Conditions',         type: 'textarea' },
       { key: 'notify_email', label: 'Notify Email',             type: 'email'    },
+      { key: 'send_date',    label: 'Start Date',               type: 'date'     },
     ],
   };
 
