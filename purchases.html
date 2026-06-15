@@ -218,6 +218,21 @@
       text-align: center; padding: 1.5rem; color: var(--muted); font-size: .8rem; }
     footer a { color: var(--indigo); text-decoration: none; }
 
+    /* CALENDAR PICKER */
+    .cal-wrap { display: flex; flex-direction: column; gap: .55rem; }
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+    .cal-day {
+      aspect-ratio: 1; border-radius: 6px; border: 1px solid var(--border);
+      background: var(--surface2); color: var(--muted); font-size: .75rem; font-weight: 600;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-family: 'Inter', sans-serif; transition: all .15s; padding: 0;
+    }
+    .cal-day:hover:not(.cal-max) { border-color: rgba(129,140,248,.5); color: var(--indigo); }
+    .cal-day.cal-sel { background: rgba(129,140,248,.18); border-color: var(--indigo); color: var(--indigo); }
+    .cal-day.cal-max:not(.cal-sel) { opacity: .3; cursor: not-allowed; }
+    .cal-note { font-size: .75rem; color: var(--muted); }
+    .cal-note.cal-active { color: var(--indigo); font-weight: 600; }
+
     @media (max-width: 900px) {
       th:nth-child(5), td:nth-child(5),
       th:nth-child(6), td:nth-child(6) { display: none; }
@@ -681,17 +696,6 @@
     'reorder-reminders','csv-auto-import','inventory-value-report','custom-email-alerts',
   ]);
 
-  const SEND_DATE_LABEL = {
-    'low-stock-alerts':       'Start Date',
-    'out-of-stock-alerts':    'Start Date',
-    'weekly-report':          'Start Date',
-    'supplier-auto-email':    'Start Date',
-    'reorder-reminders':      'Start Date',
-    'csv-auto-import':        'Start Date',
-    'inventory-value-report': 'Start Date',
-    'custom-email-alerts':    'Start Date',
-  };
-
   let autoConfigs = [];
   let currentAutoEmail = '';
 
@@ -735,13 +739,17 @@
     const configFields = Object.entries(cfg)
       .filter(([k]) => k !== '_enabled')
       .map(([k, v]) => {
-        const label = k === 'send_date' ? (SEND_DATE_LABEL[c.workflow_id] || 'Start Date')
-                    : k === 'end_date'  ? 'End Date'
+        const label = k === 'monthly_days' ? 'Send Days'
                     : k.replace(/_/g, ' ');
-        let val = typeof v === 'boolean' ? (v ? 'Yes' : 'No') : String(v ?? '—');
-        if ((k === 'send_date' || k === 'end_date') && v)
-          val = new Date(v).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-        return `<div class="auto-config-row">
+        let val;
+        if (k === 'monthly_days') {
+          const days = Array.isArray(v) ? v : [];
+          val = days.length ? days.map(ordinal).join(', ') + ' of every month' : '—';
+        } else {
+          val = typeof v === 'boolean' ? (v ? 'Yes' : 'No') : String(v ?? '—');
+        }
+        const fullRow = k === 'monthly_days';
+        return `<div class="auto-config-row ${fullRow?'full':''}">
           <div class="auto-config-key">${esc(label)}</div>
           <div class="auto-config-val">${esc(val)}</div>
         </div>`;

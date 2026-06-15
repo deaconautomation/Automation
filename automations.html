@@ -206,6 +206,21 @@
     footer { position: relative; z-index: 1; border-top: 1px solid var(--border);
       text-align: center; padding: 1.5rem; color: var(--muted); font-size: .8rem; }
     footer a { color: var(--indigo); text-decoration: none; }
+
+    /* CALENDAR PICKER */
+    .cal-wrap { display: flex; flex-direction: column; gap: .55rem; }
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+    .cal-day {
+      aspect-ratio: 1; border-radius: 6px; border: 1px solid var(--border);
+      background: var(--surface2); color: var(--muted); font-size: .75rem; font-weight: 600;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-family: 'Inter', sans-serif; transition: all .15s; padding: 0;
+    }
+    .cal-day:hover:not(.cal-max) { border-color: rgba(129,140,248,.5); color: var(--indigo); }
+    .cal-day.cal-sel { background: rgba(129,140,248,.18); border-color: var(--indigo); color: var(--indigo); }
+    .cal-day.cal-max:not(.cal-sel) { opacity: .3; cursor: not-allowed; }
+    .cal-note { font-size: .75rem; color: var(--muted); }
+    .cal-note.cal-active { color: var(--indigo); font-weight: 600; }
   </style>
 </head>
 <body>
@@ -312,52 +327,44 @@
 
   const WORKFLOW_FIELDS = {
     'low-stock-alerts': [
-      { key: 'alert_email',  label: 'Alert Email',              type: 'email'    },
-      { key: 'threshold',    label: 'Default Threshold (qty)',  type: 'number'   },
-      { key: 'monitor_all',  label: 'Monitor All Items',        type: 'checkbox' },
-      { key: 'send_date',    label: 'Start Date',               type: 'date'     },
-      { key: 'end_date',     label: 'End Date (optional)',       type: 'date'     },
+      { key: 'alert_email',   label: 'Alert Email',             type: 'email'        },
+      { key: 'threshold',     label: 'Default Threshold (qty)', type: 'number'       },
+      { key: 'monitor_all',   label: 'Monitor All Items',       type: 'checkbox'     },
+      { key: 'monthly_days',  label: 'Send Days (monthly)',     type: 'monthly_days' },
     ],
     'out-of-stock-alerts': [
-      { key: 'alert_email',  label: 'Alert Email',              type: 'email'    },
-      { key: 'send_date',    label: 'Start Date',               type: 'date'     },
-      { key: 'end_date',     label: 'End Date (optional)',       type: 'date'     },
+      { key: 'alert_email',   label: 'Alert Email',             type: 'email'        },
+      { key: 'monthly_days',  label: 'Send Days (monthly)',     type: 'monthly_days' },
     ],
     'weekly-report': [
-      { key: 'report_email', label: 'Report Email',             type: 'email'    },
-      { key: 'day_of_week',  label: 'Day of Week',              type: 'select',  options: ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'] },
-      { key: 'send_date',    label: 'Start Date',               type: 'date'     },
-      { key: 'end_date',     label: 'End Date (optional)',       type: 'date'     },
+      { key: 'report_email',  label: 'Report Email',            type: 'email'        },
+      { key: 'day_of_week',   label: 'Day of Week',             type: 'select',  options: ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'] },
+      { key: 'monthly_days',  label: 'Send Days (monthly)',     type: 'monthly_days' },
     ],
     'supplier-auto-email': [
-      { key: 'supplier_name',  label: 'Supplier Name',          type: 'text'     },
-      { key: 'supplier_email', label: 'Supplier Email',         type: 'email'    },
-      { key: 'send_date',      label: 'Start Date',             type: 'date'     },
-      { key: 'end_date',       label: 'End Date (optional)',     type: 'date'     },
+      { key: 'supplier_name',  label: 'Supplier Name',          type: 'text'         },
+      { key: 'supplier_email', label: 'Supplier Email',         type: 'email'        },
+      { key: 'monthly_days',   label: 'Send Days (monthly)',    type: 'monthly_days' },
     ],
     'reorder-reminders': [
-      { key: 'reminder_email', label: 'Reminder Email',         type: 'email'    },
+      { key: 'reminder_email', label: 'Reminder Email',         type: 'email'        },
       { key: 'frequency',      label: 'Frequency',              type: 'select',  options: ['Weekly','Monthly'] },
-      { key: 'send_date',      label: 'Start Date',             type: 'date'     },
-      { key: 'end_date',       label: 'End Date (optional)',     type: 'date'     },
+      { key: 'monthly_days',   label: 'Send Days (monthly)',    type: 'monthly_days' },
     ],
     'csv-auto-import': [
-      { key: 'column_names', label: 'CSV Column Names (comma-separated)', type: 'text'   },
-      { key: 'schedule',     label: 'Import Schedule',          type: 'select',  options: ['Daily','Weekly'] },
-      { key: 'send_date',    label: 'Start Date',               type: 'date'     },
-      { key: 'end_date',     label: 'End Date (optional)',       type: 'date'     },
+      { key: 'column_names',  label: 'CSV Column Names (comma-separated)', type: 'text'  },
+      { key: 'schedule',      label: 'Import Schedule',         type: 'select',  options: ['Daily','Weekly'] },
+      { key: 'monthly_days',  label: 'Send Days (monthly)',     type: 'monthly_days' },
     ],
     'inventory-value-report': [
-      { key: 'report_email', label: 'Report Email',             type: 'email'    },
-      { key: 'frequency',    label: 'Frequency',                type: 'select',  options: ['Weekly','Monthly'] },
-      { key: 'send_date',    label: 'Start Date',               type: 'date'     },
-      { key: 'end_date',     label: 'End Date (optional)',       type: 'date'     },
+      { key: 'report_email',  label: 'Report Email',            type: 'email'        },
+      { key: 'frequency',     label: 'Frequency',               type: 'select',  options: ['Weekly','Monthly'] },
+      { key: 'monthly_days',  label: 'Send Days (monthly)',     type: 'monthly_days' },
     ],
     'custom-email-alerts': [
-      { key: 'conditions',   label: 'Alert Conditions',         type: 'textarea' },
-      { key: 'notify_email', label: 'Notify Email',             type: 'email'    },
-      { key: 'send_date',    label: 'Start Date',               type: 'date'     },
-      { key: 'end_date',     label: 'End Date (optional)',       type: 'date'     },
+      { key: 'conditions',    label: 'Alert Conditions',        type: 'textarea'     },
+      { key: 'notify_email',  label: 'Notify Email',            type: 'email'        },
+      { key: 'monthly_days',  label: 'Send Days (monthly)',     type: 'monthly_days' },
     ],
   };
 
@@ -395,6 +402,11 @@
           <div class="field-label">${field.label}</div>
           <textarea class="field-input" data-key="${field.key}" placeholder="${field.label}">${esc(String(val))}</textarea>
         </div>`;
+    }
+    if (field.type === 'monthly_days') {
+      const calId = 'cal-' + field.key;
+      const selected = Array.isArray(val) ? val : [];
+      return `<div class="field-group"><div class="field-label">${field.label}</div>${buildCalHtml(field.key, calId, selected)}</div>`;
     }
     // text, email, number
     return `
@@ -434,7 +446,10 @@
     for (const f of fields) {
       const el = formEl.querySelector(`[data-key="${f.key}"]`);
       if (!el) continue;
-      config[f.key] = f.type === 'checkbox' ? el.checked : (f.type === 'number' ? Number(el.value) : el.value);
+      config[f.key] = f.type === 'checkbox'     ? el.checked
+                    : f.type === 'number'        ? Number(el.value)
+                    : f.type === 'monthly_days'  ? JSON.parse(el.value || '[]')
+                    : el.value;
     }
     const { error } = await sb.from('automation_configs').upsert(
       { client_id: currentUser.id, workflow_id: workflowId, config, updated_at: new Date().toISOString() },
@@ -657,6 +672,54 @@
   // Chat welcome shows immediately; data loads in parallel
   chatWelcome();
   init();
+
+function ordinal(n) {
+  const s = ['th','st','nd','rd'];
+  const v = n % 100;
+  return n + (s[(v-20)%10]||s[v]||s[0]);
+}
+
+function calToggle(btn, calId) {
+  const valEl = document.getElementById(calId+'-val');
+  const noteEl = document.getElementById(calId+'-note');
+  const grid   = document.getElementById(calId+'-grid');
+  let sel = JSON.parse(valEl.value||'[]');
+  const day = parseInt(btn.dataset.day);
+  if (btn.classList.contains('cal-sel')) {
+    sel = sel.filter(d=>d!==day);
+    btn.classList.remove('cal-sel');
+  } else {
+    if (sel.length>=4) return;
+    sel.push(day);
+    btn.classList.add('cal-sel');
+  }
+  sel.sort((a,b)=>a-b);
+  valEl.value = JSON.stringify(sel);
+  grid.querySelectorAll('.cal-day').forEach(b => {
+    b.classList.toggle('cal-max', sel.length>=4 && !b.classList.contains('cal-sel'));
+  });
+  noteEl.textContent = sel.length
+    ? 'Repeats on the '+sel.map(ordinal).join(', ')+' of every month'
+    : 'Select up to 4 days — repeats every month';
+  noteEl.classList.toggle('cal-active', sel.length>0);
+}
+
+function buildCalHtml(key, calId, selected) {
+  selected = Array.isArray(selected) ? selected : [];
+  const days = Array.from({length:31},(_,i)=>i+1).map(d => {
+    const sel = selected.includes(d) ? 'cal-sel' : '';
+    const max = selected.length>=4 && !selected.includes(d) ? 'cal-max' : '';
+    return `<button type="button" class="cal-day ${sel} ${max}" data-day="${d}" onclick="calToggle(this,'${calId}')">${d}</button>`;
+  }).join('');
+  const note = selected.length
+    ? 'Repeats on the '+selected.map(ordinal).join(', ')+' of every month'
+    : 'Select up to 4 days — repeats every month';
+  return `<div class="cal-wrap">
+    <div class="cal-grid" id="${calId}-grid">${days}</div>
+    <div class="cal-note ${selected.length?'cal-active':''}" id="${calId}-note">${note}</div>
+    <input type="hidden" id="${calId}-val" data-key="${key}" value="${JSON.stringify(selected).replace(/"/g,'&quot;')}" />
+  </div>`;
+}
 </script>
 </body>
 </html>
