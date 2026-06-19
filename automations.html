@@ -597,12 +597,15 @@
 
   async function callChatAPI() {
     try {
+      const { data: { session } } = await sb.auth.getSession();
       const res  = await fetch('/api/automation-chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token || ''}`,
+        },
         body: JSON.stringify({
           messages:   chatMessages,
-          configs:    configsData,
           clientName: currentUser?.user_metadata?.full_name || '',
           clientBiz:  currentUser?.user_metadata?.business_name || '',
         }),
