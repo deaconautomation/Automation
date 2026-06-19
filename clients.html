@@ -247,10 +247,6 @@
       <label>Email *</label>
       <input type="email" id="f-email" placeholder="client@business.com" />
     </div>
-    <div class="form-group">
-      <label>Password *</label>
-      <input type="password" id="f-password" placeholder="Min 8 chars + symbol (e.g. !@#$)" />
-    </div>
     <div class="modal-error" id="modal-error"></div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
@@ -415,7 +411,7 @@
   }
 
   function openModal() {
-    ['f-business','f-email','f-password'].forEach(id => document.getElementById(id).value = '');
+    ['f-business','f-email'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('modal-error').style.display = 'none';
     document.getElementById('modal').classList.add('open');
     document.getElementById('f-business').focus();
@@ -426,11 +422,9 @@
 
   async function createClient() {
     const email        = document.getElementById('f-email').value.trim();
-    const password     = document.getElementById('f-password').value;
     const businessName = document.getElementById('f-business').value.trim();
 
-    if (!email || !password) { showModalError('Email and password are required.'); return; }
-    if (password.length < 8 || !/[^a-zA-Z0-9]/.test(password)) { showModalError('Password must be at least 8 characters and include a symbol (e.g. !@#$).'); return; }
+    if (!email) { showModalError('Email is required.'); return; }
 
     const btn = document.getElementById('save-btn');
     btn.disabled = true; btn.textContent = 'Creating…';
@@ -439,7 +433,7 @@
     const res  = await fetch('/api/create-client', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, businessName }),
+      body: JSON.stringify({ email, businessName }),
     });
     const data = await res.json();
 
