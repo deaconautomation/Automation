@@ -325,104 +325,115 @@
   <button class="add-row-btn" onclick="addRow()">+ Add new lead</button>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+  const sb = supabase.createClient(
+    'https://ndbvmtuzmzbaaoxudmbk.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kYnZtdHV6bXpiYWFveHVkbWJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyNjUyODcsImV4cCI6MjA5Mzg0MTI4N30.CRqNEXZlUf4pRCjbVghCZg2p4rLh2Y-cKQpqSwkUw2k'
+  );
+
   const STATUSES = ['Not Contacted','Contacted','Replied','Demo Booked','Customer','Not Interested'];
   const STATUS_CLASS = {
     'Not Contacted': 's-not-contacted',
-    'Contacted': 's-contacted',
-    'Replied': 's-replied',
-    'Demo Booked': 's-demo-booked',
-    'Customer': 's-customer',
-    'Not Interested': 's-not-interested'
+    'Contacted':     's-contacted',
+    'Replied':       's-replied',
+    'Demo Booked':   's-demo-booked',
+    'Customer':      's-customer',
+    'Not Interested':'s-not-interested',
   };
 
-  const SEED = [
-    { name:'', title:'Head of Operations',         company:'', industry:'SaaS',                    size:'11–50',   email:'', linkedin:'', pain:'Manual reporting, data entry between tools',            status:'Not Contacted', followup:'', notes:'' },
-    { name:'', title:'VP of Operations',            company:'', industry:'E-commerce',              size:'50–200',  email:'', linkedin:'', pain:'Order processing, inventory sync, customer comms',      status:'Not Contacted', followup:'', notes:'' },
-    { name:'', title:'Founder / CEO',               company:'', industry:'Marketing Agency',        size:'1–10',    email:'', linkedin:'', pain:'Client reporting, onboarding workflows, invoicing',     status:'Not Contacted', followup:'', notes:'' },
-    { name:'', title:'Revenue Operations Manager',  company:'', industry:'B2B SaaS',                size:'50–200',  email:'', linkedin:'', pain:'CRM hygiene, lead routing, pipeline updates',           status:'Not Contacted', followup:'', notes:'' },
-    { name:'', title:'Director of Operations',      company:'', industry:'Logistics',               size:'200–500', email:'', linkedin:'', pain:'Shipment tracking, vendor comms, document processing',  status:'Not Contacted', followup:'', notes:'' },
-    { name:'', title:'COO',                         company:'', industry:'Professional Services',   size:'50–200',  email:'', linkedin:'', pain:'Timesheet collection, project updates, billing',        status:'Not Contacted', followup:'', notes:'' },
-    { name:'', title:'Head of Growth',              company:'', industry:'Fintech',                 size:'11–50',   email:'', linkedin:'', pain:'Onboarding flows, KYC follow-ups, user activation',     status:'Not Contacted', followup:'', notes:'' },
-    { name:'', title:'Operations Manager',          company:'', industry:'Real Estate',             size:'11–50',   email:'', linkedin:'', pain:'Lead follow-up, contract prep, scheduling',             status:'Not Contacted', followup:'', notes:'' },
-    { name:'', title:'Chief of Staff',              company:'', industry:'Startup (Series A–C)',    size:'50–200',  email:'', linkedin:'', pain:'Cross-team reporting, meeting prep, task tracking',     status:'Not Contacted', followup:'', notes:'' },
-    { name:'', title:'Marketing Ops Manager',       company:'', industry:'B2B Tech',                size:'50–200',  email:'', linkedin:'', pain:'Campaign ops, lead enrichment, CRM sync',              status:'Not Contacted', followup:'', notes:'' },
-    { name:'', title:'IT Manager',                  company:'', industry:'Mid-Market',              size:'200–500', email:'', linkedin:'', pain:'Employee onboarding, software provisioning, helpdesk',  status:'Not Contacted', followup:'', notes:'' },
-    { name:'', title:'Head of Customer Success',    company:'', industry:'SaaS Product',            size:'50–200',  email:'', linkedin:'', pain:'Health score updates, QBR prep, churn alerts',         status:'Not Contacted', followup:'', notes:'' },
-    { name:'', title:'Founder / COO',               company:'', industry:'E-commerce Brand',        size:'1–10',    email:'', linkedin:'', pain:'Returns processing, review requests, restock alerts',   status:'Not Contacted', followup:'', notes:'' },
-    { name:'', title:'Operations Director',         company:'', industry:'Healthcare Admin',        size:'50–200',  email:'', linkedin:'', pain:'Appointment reminders, insurance follow-ups',           status:'Not Contacted', followup:'', notes:'' },
-    { name:'', title:'Business Operations Manager', company:'', industry:'Consulting',              size:'11–50',   email:'', linkedin:'', pain:'Proposal generation, timesheet aggregation',            status:'Not Contacted', followup:'', notes:'' },
-  ];
+  let leads = [];
+  let currentUser = null;
 
-  let leads = JSON.parse(localStorage.getItem('velaLeads') || 'null') || SEED;
+  /* ── AUTH + LOAD ── */
+  async function init() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { window.location.href = 'login.html'; return; }
+    currentUser = session.user;
+    const { data: profile } = await sb.from('profiles').select('is_admin').eq('id', session.user.id).single();
+    if (!profile?.is_admin) { window.location.href = 'inventory.html'; return; }
+    await loadLeads();
+  }
 
-  function save() { localStorage.setItem('velaLeads', JSON.stringify(leads)); updateStats(); }
+  async function loadLeads() {
+    const { data, error } = await sb.from('leads').select('*').eq('admin_id', currentUser.id).order('created_at');
+    if (error) { console.error('leads load error:', error.message); return; }
+    leads = data || [];
+    populateIndustries();
+    render();
+  }
 
+  /* ── CRUD ── */
+  async function addRow() {
+    const row = { admin_id: currentUser.id, name:'', title:'', company:'', industry:'', size:'', email:'', linkedin:'', pain:'', status:'Not Contacted', followup: null, notes:'' };
+    const { data, error } = await sb.from('leads').insert(row).select().single();
+    if (error) { console.error('add lead error:', error.message); return; }
+    leads.push(data);
+    render();
+    const rows = document.querySelectorAll('#leadsBody tr');
+    if (rows.length) rows[rows.length - 1].scrollIntoView({ behavior:'smooth', block:'center' });
+  }
+
+  async function editField(id, field, val) {
+    const lead = leads.find(l => l.id === id);
+    if (!lead) return;
+    lead[field] = val;
+    await sb.from('leads').update({ [field]: val || null, updated_at: new Date().toISOString() }).eq('id', id);
+  }
+
+  async function cycleStatus(id) {
+    const lead = leads.find(l => l.id === id);
+    if (!lead) return;
+    lead.status = STATUSES[(STATUSES.indexOf(lead.status) + 1) % STATUSES.length];
+    await sb.from('leads').update({ status: lead.status, updated_at: new Date().toISOString() }).eq('id', id);
+    render();
+  }
+
+  async function deleteRow(id) {
+    if (!confirm('Remove this lead?')) return;
+    leads = leads.filter(l => l.id !== id);
+    await sb.from('leads').delete().eq('id', id);
+    render();
+  }
+
+  /* ── RENDER ── */
   function renderBadge(status) {
     const cls = STATUS_CLASS[status] || 's-not-contacted';
     return `<span class="badge ${cls}"><span class="badge-dot"></span>${status}</span>`;
   }
 
-  function cycleStatus(idx) {
-    const cur = leads[idx].status;
-    const next = STATUSES[(STATUSES.indexOf(cur) + 1) % STATUSES.length];
-    leads[idx].status = next;
-    save();
-    render();
-  }
-
-  function deleteRow(idx) {
-    if (confirm('Remove this lead?')) { leads.splice(idx, 1); save(); render(); }
-  }
-
-  function addRow() {
-    leads.push({ name:'', title:'', company:'', industry:'', size:'', email:'', linkedin:'', pain:'', status:'Not Contacted', followup:'', notes:'' });
-    save(); render();
-    // scroll to last row
-    const rows = document.querySelectorAll('#leadsBody tr');
-    if (rows.length) rows[rows.length-1].scrollIntoView({ behavior:'smooth', block:'center' });
-  }
-
-  function editField(idx, field, val) {
-    leads[idx][field] = val;
-    save();
-  }
-
   function render() {
-    const search = (document.getElementById('searchInput')?.value || '').toLowerCase();
-    const statusF = document.getElementById('statusFilter')?.value || '';
-    const industryF = document.getElementById('industryFilter')?.value || '';
+    const search   = (document.getElementById('searchInput')?.value || '').toLowerCase();
+    const statusF  = document.getElementById('statusFilter')?.value || '';
+    const industryF= document.getElementById('industryFilter')?.value || '';
 
-    const filtered = leads.filter((l, i) => {
+    const filtered = leads.filter(l => {
       const text = [l.name, l.title, l.company, l.industry, l.pain].join(' ').toLowerCase();
       return (!search || text.includes(search))
-          && (!statusF || l.status === statusF)
+          && (!statusF   || l.status   === statusF)
           && (!industryF || l.industry === industryF);
     });
 
     const body = document.getElementById('leadsBody');
     if (filtered.length === 0) {
-      body.innerHTML = `<tr><td colspan="12"><div class="empty-state">No leads match your filters.</div></td></tr>`;
-      return;
+      body.innerHTML = `<tr><td colspan="12"><div class="empty-state">${leads.length === 0 ? 'No leads yet — click <strong>+ Add Lead</strong> to get started.' : 'No leads match your filters.'}</div></td></tr>`;
+      updateStats(); return;
     }
 
-    body.innerHTML = filtered.map((l) => {
-      const idx = leads.indexOf(l);
-      return `<tr>
-        <td class="name" contenteditable="true" onblur="editField(${idx},'name',this.innerText)">${l.name}</td>
-        <td contenteditable="true" onblur="editField(${idx},'title',this.innerText)">${l.title}</td>
-        <td class="company" contenteditable="true" onblur="editField(${idx},'company',this.innerText)">${l.company}</td>
-        <td><span class="industry-tag" contenteditable="true" onblur="editField(${idx},'industry',this.innerText);populateIndustries()">${l.industry}</span></td>
-        <td contenteditable="true" onblur="editField(${idx},'size',this.innerText)">${l.size}</td>
-        <td contenteditable="true" onblur="editField(${idx},'email',this.innerText)" style="color:var(--cyan)">${l.email}</td>
-        <td>${l.linkedin ? `<a class="li-link" href="${l.linkedin}" target="_blank" rel="noopener">↗ View</a>` : `<span contenteditable="true" onblur="editField(${idx},'linkedin',this.innerText)" style="color:var(--faint)">Add URL</span>`}</td>
-        <td contenteditable="true" onblur="editField(${idx},'pain',this.innerText)" style="max-width:200px;white-space:normal;">${l.pain}</td>
-        <td onclick="cycleStatus(${idx})" style="cursor:pointer;">${renderBadge(l.status)}</td>
-        <td><input type="date" value="${l.followup}" onchange="editField(${idx},'followup',this.value)" style="background:transparent;border:none;color:var(--muted);font-size:0.8rem;font-family:inherit;outline:none;cursor:pointer;" /></td>
-        <td contenteditable="true" onblur="editField(${idx},'notes',this.innerText)" style="max-width:180px;white-space:normal;color:var(--faint)">${l.notes}</td>
-        <td><button onclick="deleteRow(${idx})" style="background:none;border:none;color:var(--faint);cursor:pointer;font-size:1rem;padding:4px 8px;border-radius:4px;" title="Delete">✕</button></td>
-      </tr>`;
-    }).join('');
+    body.innerHTML = filtered.map(l => `<tr>
+      <td class="name" contenteditable="true" onblur="editField('${l.id}','name',this.innerText.trim())">${esc(l.name)}</td>
+      <td contenteditable="true" onblur="editField('${l.id}','title',this.innerText.trim())">${esc(l.title)}</td>
+      <td class="company" contenteditable="true" onblur="editField('${l.id}','company',this.innerText.trim())">${esc(l.company)}</td>
+      <td><span class="industry-tag" contenteditable="true" onblur="editField('${l.id}','industry',this.innerText.trim());populateIndustries()">${esc(l.industry)}</span></td>
+      <td contenteditable="true" onblur="editField('${l.id}','size',this.innerText.trim())">${esc(l.size)}</td>
+      <td contenteditable="true" onblur="editField('${l.id}','email',this.innerText.trim())" style="color:var(--cyan)">${esc(l.email)}</td>
+      <td>${l.linkedin ? `<a class="li-link" href="${esc(l.linkedin)}" target="_blank" rel="noopener">↗ View</a>` : `<span contenteditable="true" onblur="editField('${l.id}','linkedin',this.innerText.trim())" style="color:var(--faint)">Add URL</span>`}</td>
+      <td contenteditable="true" onblur="editField('${l.id}','pain',this.innerText.trim())" style="max-width:200px;white-space:normal;">${esc(l.pain)}</td>
+      <td onclick="cycleStatus('${l.id}')" style="cursor:pointer;">${renderBadge(l.status)}</td>
+      <td><input type="date" value="${l.followup || ''}" onchange="editField('${l.id}','followup',this.value||null)" style="background:transparent;border:none;color:var(--muted);font-size:0.8rem;font-family:inherit;outline:none;cursor:pointer;" /></td>
+      <td contenteditable="true" onblur="editField('${l.id}','notes',this.innerText.trim())" style="max-width:180px;white-space:normal;color:var(--faint)">${esc(l.notes)}</td>
+      <td><button onclick="deleteRow('${l.id}')" style="background:none;border:none;color:var(--faint);cursor:pointer;font-size:1rem;padding:4px 8px;border-radius:4px;" title="Delete">✕</button></td>
+    </tr>`).join('');
 
     updateStats();
   }
@@ -441,7 +452,7 @@
     const sel = document.getElementById('industryFilter');
     const current = sel.value;
     const industries = [...new Set(leads.map(l => l.industry).filter(Boolean))].sort();
-    sel.innerHTML = `<option value="">All Industries</option>` + industries.map(i => `<option${i===current?' selected':''}>${i}</option>`).join('');
+    sel.innerHTML = `<option value="">All Industries</option>` + industries.map(i => `<option${i===current?' selected':''}>${esc(i)}</option>`).join('');
   }
 
   let sortDir = {};
@@ -453,15 +464,15 @@
       const av = (a[key]||'').toLowerCase(), bv = (b[key]||'').toLowerCase();
       return sortDir[col] ? av.localeCompare(bv) : bv.localeCompare(av);
     });
-    save(); render();
+    render();
   }
 
   function exportCSV() {
     const headers = ['Name','Title','Company','Industry','Size','Email','LinkedIn','Pain Point','Status','Follow Up','Notes'];
-    const rows = leads.map(l => [l.name,l.title,l.company,l.industry,l.size,l.email,l.linkedin,l.pain,l.status,l.followup,l.notes].map(v => `"${(v||'').replace(/"/g,'""')}"`).join(','));
+    const rows = leads.map(l => [l.name,l.title,l.company,l.industry,l.size,l.email,l.linkedin,l.pain,l.status,l.followup||'',l.notes].map(v => `"${(v||'').replace(/"/g,'""')}"`).join(','));
     const csv = [headers.join(','), ...rows].join('\n');
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+    a.href = URL.createObjectURL(new Blob([csv], { type:'text/csv' }));
     a.download = 'vela-leads.csv';
     a.click();
   }
@@ -478,22 +489,11 @@
     window.location.href = 'login.html';
   }
 
-  async function authCheck() {
-    const sb = supabase.createClient(
-      'https://ndbvmtuzmzbaaoxudmbk.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kYnZtdHV6bXpiYWFveHVkbWJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyNjUyODcsImV4cCI6MjA5Mzg0MTI4N30.CRqNEXZlUf4pRCjbVghCZg2p4rLh2Y-cKQpqSwkUw2k'
-    );
-    const { data: { session } } = await sb.auth.getSession();
-    if (!session) { window.location.href = 'login.html'; return; }
-    const { data: profile } = await sb.from('profiles').select('is_admin').eq('id', session.user.id).single();
-    if (!profile?.is_admin) { window.location.href = 'inventory.html'; return; }
+  function esc(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
-  // init
-  populateIndustries();
-  render();
-  authCheck();
+  init();
 </script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </body>
 </html>
