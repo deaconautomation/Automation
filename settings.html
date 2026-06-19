@@ -150,7 +150,7 @@
     <div class="section-title">Change Password</div>
     <div class="form-group">
       <label>New Password</label>
-      <input type="password" id="new-password" placeholder="Min 6 characters" autocomplete="new-password" />
+      <input type="password" id="new-password" placeholder="Min 8 chars + symbol (e.g. !@#$)" autocomplete="new-password" />
     </div>
     <div class="form-group">
       <label>Confirm New Password</label>
@@ -216,7 +216,7 @@
     const btn = document.getElementById('password-btn');
     hide('password-error'); hide('password-success');
 
-    if (!newPwd || newPwd.length < 6) { showMsg('password-error', 'Password must be at least 6 characters.'); return; }
+    if (!newPwd || newPwd.length < 8 || !/[^a-zA-Z0-9]/.test(newPwd)) { showMsg('password-error', 'Password must be at least 8 characters and include a symbol (e.g. !@#$).'); return; }
     if (newPwd !== confirmPwd)        { showMsg('password-error', 'Passwords do not match.'); return; }
 
     btn.disabled = true; btn.textContent = 'Updating…';
