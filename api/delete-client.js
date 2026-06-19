@@ -1,3 +1,9 @@
+const { createClient } = require('@supabase/supabase-js');
+
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://ndbvmtuzmzbaaoxudmbk.supabase.co';
+let _sb;
+const getSb = () => _sb || (_sb = createClient(SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY));
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -9,15 +15,11 @@ module.exports = async function handler(req, res) {
   const { userId } = req.body || {};
   if (!userId) return res.status(400).json({ error: 'userId is required.' });
 
-  const SUPABASE_URL = process.env.SUPABASE_URL;
-  const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!SUPABASE_URL || !SERVICE_KEY) {
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
     return res.status(500).json({ error: 'Server misconfiguration: missing Supabase env vars.' });
   }
 
-  const { createClient } = require('@supabase/supabase-js');
-  const sb = createClient(SUPABASE_URL, SERVICE_KEY);
+  const sb = getSb();
 
   try {
     // Look up email before deleting (needed to clean up purchases by email)

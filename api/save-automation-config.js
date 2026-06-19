@@ -1,5 +1,9 @@
 const { createClient } = require('@supabase/supabase-js');
 
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://ndbvmtuzmzbaaoxudmbk.supabase.co';
+let _sb;
+const getSb = () => _sb || (_sb = createClient(SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY));
+
 module.exports = async function handler(req, res) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -14,11 +18,8 @@ module.exports = async function handler(req, res) {
   const { workflow_id, config } = req.body || {};
   if (!workflow_id || !config) return res.status(400).json({ error: 'Missing workflow_id or config' });
 
-  const SUPABASE_URL = process.env.SUPABASE_URL;
-  const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
   // Verify the user token
-  const sb = createClient(SUPABASE_URL, SERVICE_KEY);
+  const sb = getSb();
   const { data: { user }, error: authError } = await sb.auth.getUser(token);
   if (authError || !user) return res.status(401).json({ error: 'Invalid token' });
 

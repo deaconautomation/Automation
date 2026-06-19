@@ -1,6 +1,13 @@
 const Anthropic = require('@anthropic-ai/sdk');
 const { createClient } = require('@supabase/supabase-js');
 
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://ndbvmtuzmzbaaoxudmbk.supabase.co';
+const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kYnZtdHV6bXpiYWFveHVkbWJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyNjUyODcsImV4cCI6MjA5Mzg0MTI4N30.CRqNEXZlUf4pRCjbVghCZg2p4rLh2Y-cKQpqSwkUw2k';
+let _sbAdmin;
+const getSbAdmin = () => _sbAdmin || (_sbAdmin = createClient(SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY));
+let _ai;
+const getAI = () => _ai || (_ai = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY }));
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -13,23 +20,18 @@ module.exports = async function handler(req, res) {
   const token = (req.headers.authorization || '').replace('Bearer ', '').trim();
   if (!token) return res.status(401).json({ error: 'Unauthorized.' });
 
-  const SUPABASE_URL = process.env.SUPABASE_URL || 'https://ndbvmtuzmzbaaoxudmbk.supabase.co';
-  const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return res.status(500).json({ error: 'Server misconfiguration.' });
 
-  if (!SERVICE_KEY) return res.status(500).json({ error: 'Server misconfiguration.' });
-
-  // Use the user's token to verify identity
-  const sbUser = createClient(SUPABASE_URL, process.env.SUPABASE_ANON_KEY ||
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kYnZtdHV6bXpiYWFveHVkbWJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyNjUyODcsImV4cCI6MjA5Mzg0MTI4N30.CRqNEXZlUf4pRCjbVghCZg2p4rLh2Y-cKQpqSwkUw2k',
+  // Use the user's token to verify identity (per-request client — token is caller-specific)
+  const sbUser = createClient(SUPABASE_URL, process.env.SUPABASE_ANON_KEY || ANON_KEY,
     { global: { headers: { Authorization: `Bearer ${token}` } } }
   );
 
   const { data: { user }, error: authErr } = await sbUser.auth.getUser();
   if (authErr || !user) return res.status(401).json({ error: 'Invalid or expired session.' });
 
-  // Fetch the user's actual configs from DB using service key (bypasses RLS safely since identity is verified above)
-  const sbAdmin = createClient(SUPABASE_URL, SERVICE_KEY);
-  const { data: configs } = await sbAdmin
+  // Fetch the user's actual configs from DB using cached admin client
+  const { data: configs } = await getSbAdmin()
     .from('automation_configs')
     .select('workflow_id, config')
     .eq('client_id', user.id);
@@ -40,7 +42,7 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: 'Missing ANTHROPIC_API_KEY.' });
   }
 
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const client = getAI();
 
   const configSummary = (configs || []).map(c =>
     `${c.workflow_id}: ${JSON.stringify(c.config)}`

@@ -2,6 +2,10 @@ const { createClient } = require('@supabase/supabase-js');
 const { sendEmail } = require('./_mailer');
 const crypto = require('crypto');
 
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://ndbvmtuzmzbaaoxudmbk.supabase.co';
+let _sb;
+const getSb = () => _sb || (_sb = createClient(SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY));
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -13,15 +17,13 @@ module.exports = async function handler(req, res) {
   const { email, businessName } = req.body || {};
   if (!email) return res.status(400).json({ error: 'Email is required.' });
 
-  const SUPABASE_URL = process.env.SUPABASE_URL;
-  const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const APP_URL      = process.env.APP_URL || 'https://your-app.vercel.app';
+  const APP_URL = process.env.APP_URL || 'https://your-app.vercel.app';
 
-  if (!SUPABASE_URL || !SERVICE_KEY) {
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
     return res.status(500).json({ error: 'Server misconfiguration: missing Supabase env vars.' });
   }
 
-  const sb = createClient(SUPABASE_URL, SERVICE_KEY);
+  const sb = getSb();
 
   try {
     // Create the account with a random password the client never sees

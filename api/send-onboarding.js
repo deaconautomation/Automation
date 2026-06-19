@@ -1,6 +1,10 @@
 const { sendEmail } = require('./_mailer');
 const { createClient } = require('@supabase/supabase-js');
 
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://ndbvmtuzmzbaaoxudmbk.supabase.co';
+let _sb;
+const getSb = () => _sb || (_sb = createClient(SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY));
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -63,10 +67,7 @@ module.exports = async function handler(req, res) {
 
     // Create a purchase record so it shows in the admin Purchases page
     if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      const sbAdmin = createClient(
-        process.env.SUPABASE_URL || 'https://ndbvmtuzmzbaaoxudmbk.supabase.co',
-        process.env.SUPABASE_SERVICE_ROLE_KEY
-      );
+      const sbAdmin = getSb();
       await sbAdmin.from('purchases').insert({
         client_name:   name || email.split('@')[0],
         client_email:  email,

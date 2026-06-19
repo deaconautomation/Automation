@@ -1,6 +1,10 @@
 const { createClient } = require('@supabase/supabase-js');
 const { sendEmail } = require('./_mailer');
 
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://ndbvmtuzmzbaaoxudmbk.supabase.co';
+let _sb;
+const getSb = () => _sb || (_sb = createClient(SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY));
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -9,15 +13,13 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const SUPABASE_URL = process.env.SUPABASE_URL;
-  const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const APP_URL      = process.env.APP_URL || 'https://your-app.vercel.app';
+  const APP_URL = process.env.APP_URL || 'https://your-app.vercel.app';
 
-  if (!SUPABASE_URL || !SERVICE_KEY) {
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
     return res.status(500).json({ error: 'Missing Supabase env vars.' });
   }
 
-  const sb = createClient(SUPABASE_URL, SERVICE_KEY);
+  const sb = getSb();
 
   // Today's day-of-month (1–31) for monthly_days check
   const todayDay = new Date().getDate();
@@ -139,6 +141,7 @@ module.exports = async function handler(req, res) {
       });
       results.push({ email: alertEmail, status: 'sent', items: alertItems.length });
     } catch (e) {
+      console.error(`send-low-stock-alerts: failed to email ${alertEmail}:`, e.message);
       results.push({ email: alertEmail, status: 'failed', error: e.message, items: alertItems.length });
     }
   }

@@ -1,5 +1,9 @@
 const { createClient } = require('@supabase/supabase-js');
 
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://ndbvmtuzmzbaaoxudmbk.supabase.co';
+let _sb;
+const getSb = () => _sb || (_sb = createClient(SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY));
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, PATCH, DELETE, OPTIONS');
@@ -10,10 +14,7 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: 'Missing SUPABASE_SERVICE_ROLE_KEY.' });
   }
 
-  const sb = createClient(
-    process.env.SUPABASE_URL || 'https://ndbvmtuzmzbaaoxudmbk.supabase.co',
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  );
+  const sb = getSb();
 
   // GET /api/admin-automations?email=...
   if (req.method === 'GET') {
