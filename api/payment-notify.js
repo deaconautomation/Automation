@@ -1,5 +1,6 @@
 const { sendEmail } = require('./_mailer');
 const { createClient } = require('@supabase/supabase-js');
+const { allow, getIp } = require('./_ratelimit');
 
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://ndbvmtuzmzbaaoxudmbk.supabase.co';
 let _sb;
@@ -12,6 +13,10 @@ module.exports = async function handler(req, res) {
 
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  if (!allow(getIp(req), 10, 60_000)) {
+    return res.status(429).json({ error: 'Too many requests. Please wait a minute and try again.' });
+  }
 
   const { name, email, business, tier, billing, workflows, method, amount, txn, notes } = req.body || {};
 

@@ -1,5 +1,6 @@
 const Anthropic = require('@anthropic-ai/sdk');
 const { createClient } = require('@supabase/supabase-js');
+const { allow, getIp } = require('./_ratelimit');
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -8,6 +9,10 @@ module.exports = async function handler(req, res) {
 
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  if (!allow(getIp(req), 30, 60_000)) {
+    return res.status(429).json({ error: 'Too many requests. Please wait a minute and try again.' });
+  }
 
   const { messages, workflows, clientName, clientEmail, clientBiz, tier } = req.body || {};
 

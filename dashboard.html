@@ -37,6 +37,13 @@
     .nav-links { display: flex; gap: 1.5rem; align-items: center; }
     .nav-links a { color: var(--muted); text-decoration: none; font-size: .875rem; font-weight: 500; transition: color .2s; }
     .nav-links a:hover, .nav-links a.active { color: var(--text); }
+    .nav-badge-dot {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 17px; height: 17px; padding: 0 4px;
+      background: var(--red); color: #fff; border-radius: 100px;
+      font-size: .65rem; font-weight: 700; margin-left: 5px;
+      vertical-align: middle; line-height: 1;
+    }
     .nav-links .btn-nav { padding: .45rem 1.1rem; border-radius: 8px; background: var(--grad);
       color: #fff; font-weight: 600; font-size: .875rem; border: none; cursor: pointer; }
     .hamburger { display: none; background: none; border: none; cursor: pointer; padding: .4rem; color: var(--muted); }
@@ -136,7 +143,7 @@
   </div>
   <div class="nav-links" id="nav-links">
     <a href="dashboard.html" class="active">Dashboard</a>
-    <a href="inventory.html">Inventory</a>
+    <a href="inventory.html">Inventory<span id="inv-badge" class="nav-badge-dot" style="display:none"></span></a>
     <a href="automations.html">Automations</a>
     <a href="settings.html">Settings</a>
     <button class="btn-nav" style="background:none;border:1px solid var(--border);color:var(--muted);font-size:.8rem;padding:.35rem .85rem;border-radius:8px;cursor:pointer;font-family:inherit;" onclick="signOut()">Sign Out</button>
@@ -239,6 +246,14 @@
     document.getElementById('stat-instock').textContent = inStock;
     document.getElementById('stat-low').textContent     = lowItems.length;
     document.getElementById('stat-out').textContent     = outItems.length;
+
+    // Nav badge
+    const alertCount = outItems.length + lowItems.length;
+    if (alertCount > 0) {
+      const badge = document.getElementById('inv-badge');
+      badge.textContent = alertCount;
+      badge.style.display = 'inline-flex';
+    }
 
     // Low stock alerts table
     document.getElementById('alerts-loading').style.display = 'none';

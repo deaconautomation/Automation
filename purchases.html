@@ -419,6 +419,8 @@
     return `<div class="wf-chips">${chips}${more}</div>`;
   }
 
+  let currentUserId = null;
+
   async function init() {
     const { data: { session } } = await sb.auth.getSession();
     if (!session) { window.location.href = 'login.html'; return; }
@@ -426,7 +428,20 @@
     const { data: profile } = await sb.from('profiles').select('is_admin').eq('id', session.user.id).single();
     if (!profile?.is_admin) { window.location.href = 'dashboard.html'; return; }
 
+    currentUserId = session.user.id;
     await loadPurchases();
+  }
+
+  async function logAction(action, targetEmail, details) {
+    if (!currentUserId) return;
+    try {
+      await sb.from('admin_activity_log').insert({
+        admin_id:     currentUserId,
+        action,
+        target_email: targetEmail || null,
+        details:      details || null,
+      });
+    } catch(e) {}
   }
 
   async function loadPurchases() {
@@ -526,6 +541,7 @@
         <td onclick="event.stopPropagation()" style="white-space:nowrap">
           <button class="btn btn-ghost btn-sm" onclick="openModal('${esc(p.id)}')">View</button>
           <button class="btn btn-ghost btn-sm" style="margin-left:.3rem" onclick="openAutomationsModal('${esc(p.client_email)}','${esc(p.client_name||p.client_email)}')">Automations</button>
+          <button class="btn btn-ghost btn-sm" style="margin-left:.3rem" onclick="resendOnboarding('${esc(p.id)}',event)">Resend</button>
         </td>
       </tr>`).join('');
   }
@@ -660,6 +676,7 @@
 
     if (error) { alert('Failed to save: ' + error.message); return; }
 
+    logAction('edit_purchase', updates.client_email, { id: currentPurchase.id, status: updates.status });
     Object.assign(currentPurchase, updates);
     delete currentPurchase._pendingStatus;
 
@@ -698,6 +715,41 @@
 
   let autoConfigs = [];
   let currentAutoEmail = '';
+
+  async function resendOnboarding(purchaseId, event) {
+    event.stopPropagation();
+    const p = allPurchases.find(x => x.id === purchaseId);
+    if (!p) return;
+
+    const btn = event.target;
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+
+    try {
+      const res = await fetch('/api/send-onboarding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email:     p.client_email,
+          name:      p.client_name  || '',
+          business:  p.business_name || '',
+          workflows: p.workflows    || [],
+          custom:    p.notes        || '',
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast('Onboarding link sent to ' + p.client_email, 'success');
+      } else {
+        showToast(data.error || 'Failed to send.', 'error');
+      }
+    } catch (e) {
+      showToast('Network error — try again.', 'error');
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Resend';
+  }
 
   async function openAutomationsModal(email, label) {
     currentAutoEmail = email;
@@ -786,6 +838,7 @@
     });
     if (!res.ok) { alert('Failed to update.'); return; }
 
+    logAction('toggle_automation', currentAutoEmail, { workflow_id: c.workflow_id, enabled: newEnabled });
     c.config = newConfig;
     const btn = document.getElementById('toggle-' + id);
     if (btn) {
@@ -859,6 +912,7 @@
     });
     if (!res.ok) { alert('Failed to save.'); return; }
 
+    logAction('edit_automation', currentAutoEmail, { workflow_id: c.workflow_id });
     c.config = newConfig;
     // Re-render just this card
     const card = document.getElementById('autocard-' + id);
@@ -878,6 +932,7 @@
     });
     if (!res.ok) { alert('Failed to delete.'); return; }
 
+    logAction('delete_automation', currentAutoEmail, { workflow_id: c.workflow_id });
     autoConfigs = autoConfigs.filter(x => x.id !== id);
     renderAutoConfigs();
   }
