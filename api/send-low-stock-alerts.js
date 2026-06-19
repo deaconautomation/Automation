@@ -45,11 +45,8 @@ module.exports = async function handler(req, res) {
   }
 
   // Fetch auth users to get login emails as fallback
-  const usersRes  = await fetch(`${SUPABASE_URL}/auth/v1/admin/users?per_page=1000`, {
-    headers: { 'Authorization': `Bearer ${SERVICE_KEY}`, 'apikey': SERVICE_KEY },
-  });
-  const usersData = await usersRes.json();
-  const loginEmailMap = Object.fromEntries((usersData.users || []).map(u => [u.id, u.email]));
+  const { data: { users: authUsers } } = await sb.auth.admin.listUsers({ perPage: 1000 });
+  const loginEmailMap = Object.fromEntries((authUsers || []).map(u => [u.id, u.email]));
 
   // Fetch all inventory items for active clients
   const { data: allItems, error: itemsErr } = await sb
