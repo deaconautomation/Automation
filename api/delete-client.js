@@ -16,7 +16,20 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: 'Server misconfiguration: missing Supabase env vars.' });
   }
 
+  const { createClient } = require('@supabase/supabase-js');
+  const sb = createClient(SUPABASE_URL, SERVICE_KEY);
+
   try {
+    // Look up email before deleting (needed to clean up purchases by email)
+    const { data: { user }, error: userErr } = await sb.auth.admin.getUserById(userId);
+    if (userErr) return res.status(400).json({ error: userErr.message });
+
+    // Clean up purchases (linked by email, not FK)
+    if (user?.email) {
+      await sb.from('purchases').delete().eq('client_email', user.email);
+    }
+
+    // Delete auth user — CASCADE handles inventory_items, automation_configs, profiles
     const response = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${userId}`, {
       method: 'DELETE',
       headers: {
