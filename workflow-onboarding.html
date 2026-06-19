@@ -206,6 +206,31 @@
   let messages = [];
   let isTyping = false;
 
+  const STORAGE_KEY = clientEmail ? `vela_onboarding_${clientEmail}` : null;
+
+  function saveProgress() {
+    if (!STORAGE_KEY) return;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ messages, ts: Date.now() }));
+  }
+
+  function loadProgress() {
+    if (!STORAGE_KEY) return false;
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+      if (!saved || !saved.messages?.length) return false;
+      // Expire after 7 days
+      if (Date.now() - saved.ts > 7 * 24 * 60 * 60 * 1000) {
+        localStorage.removeItem(STORAGE_KEY);
+        return false;
+      }
+      return saved.messages;
+    } catch { return false; }
+  }
+
+  function clearProgress() {
+    if (STORAGE_KEY) localStorage.removeItem(STORAGE_KEY);
+  }
+
   function renderSidebar() {
     document.getElementById('wf-sidebar').innerHTML = workflows.map(id => {
       const w = ALL_WORKFLOWS[id] || { icon: '⚙️', title: id };
@@ -265,6 +290,7 @@
     input.style.height = 'auto';
     messages.push({ role: 'user', content: text });
     appendMessage('user', text);
+    saveProgress();
     await getAIReply();
   }
 
@@ -298,6 +324,7 @@
 
       messages.push({ role: 'assistant', content: data.reply });
       appendMessage('assistant', data.reply);
+      saveProgress();
 
       if (data.status === 'complete') {
         // Save config to Supabase if we got structured data
@@ -315,6 +342,7 @@
             }
           } catch(e) { /* non-fatal */ }
         }
+        clearProgress();
         setTimeout(() => {
           document.getElementById('chat-view').style.display = 'none';
           document.getElementById('success-view').style.display = 'block';
@@ -323,6 +351,7 @@
       }
 
       if (data.status === 'escalate') {
+        clearProgress();
         setTimeout(() => {
           document.getElementById('chat-view').style.display = 'none';
           document.getElementById('escalate-view').style.display = 'block';
@@ -342,7 +371,30 @@
 
   async function startChat() {
     renderSidebar();
-    await getAIReply();
+
+    const saved = loadProgress();
+    if (saved && saved.length > 0) {
+      // Restore saved conversation
+      messages = saved;
+      saved.forEach(m => appendMessage(m.role, m.content));
+
+      // Show a subtle resume notice
+      const container = document.getElementById('chat-messages');
+      const notice = document.createElement('div');
+      notice.style.cssText = 'text-align:center;font-size:.75rem;color:var(--muted);padding:.5rem 0;opacity:.7';
+      notice.textContent = '— conversation restored —';
+      container.appendChild(notice);
+      container.scrollTop = container.scrollHeight;
+
+      // If last message was from the user, the AI never replied — resume
+      if (messages[messages.length - 1]?.role === 'user') {
+        await getAIReply();
+      }
+    } else {
+      // Fresh start
+      await getAIReply();
+    }
+
     setInput(true);
     document.getElementById('chat-input').focus();
   }
